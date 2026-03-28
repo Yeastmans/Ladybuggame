@@ -4,13 +4,14 @@ class Aphid: SKSpriteNode {
 
     let points: Int
     let colorType: TextureGenerator.AphidColor
-    let isFlying: Bool
+    private var walkFrames: [SKTexture]
 
-    init(texture: SKTexture, colorType: TextureGenerator.AphidColor, isFlying: Bool) {
+    init(walkFrames: [SKTexture], colorType: TextureGenerator.AphidColor) {
         self.points = colorType.points
         self.colorType = colorType
-        self.isFlying = isFlying
-        super.init(texture: texture, color: .clear, size: texture.size())
+        self.walkFrames = walkFrames
+        let first = walkFrames.first ?? SKTexture()
+        super.init(texture: first, color: .clear, size: first.size())
         zPosition = 5
     }
 
@@ -27,19 +28,17 @@ class Aphid: SKSpriteNode {
     }
 
     func startMoving() {
-        if isFlying {
-            // Bob up and down gently
-            let bobDist = CGFloat.random(in: 12...25)
-            let bobUp = SKAction.moveBy(x: 0, y: bobDist, duration: Double.random(in: 0.6...1.0))
-            let bobDown = SKAction.moveBy(x: 0, y: -bobDist, duration: Double.random(in: 0.6...1.0))
-            run(SKAction.repeatForever(SKAction.sequence([bobUp, bobDown])), withKey: "bob")
-        } else {
-            // Scurry back and forth on the ground
-            let scurryDist = CGFloat.random(in: 8...20)
-            let scurryRight = SKAction.moveBy(x: scurryDist, y: 0, duration: Double.random(in: 0.3...0.6))
-            let scurryLeft = SKAction.moveBy(x: -scurryDist, y: 0, duration: Double.random(in: 0.3...0.6))
-            let pause = SKAction.wait(forDuration: Double.random(in: 0.2...0.5))
-            run(SKAction.repeatForever(SKAction.sequence([scurryRight, pause, scurryLeft, pause])), withKey: "scurry")
+        // Walk animation
+        if walkFrames.count >= 2 {
+            let anim = SKAction.animate(with: walkFrames, timePerFrame: 0.12)
+            run(SKAction.repeatForever(anim), withKey: "walk")
         }
+
+        // Scurry back and forth
+        let scurryDist = CGFloat.random(in: 8...20)
+        let scurryRight = SKAction.moveBy(x: scurryDist, y: 0, duration: Double.random(in: 0.3...0.6))
+        let scurryLeft = SKAction.moveBy(x: -scurryDist, y: 0, duration: Double.random(in: 0.3...0.6))
+        let pause = SKAction.wait(forDuration: Double.random(in: 0.3...0.8))
+        run(SKAction.repeatForever(SKAction.sequence([scurryRight, pause, scurryLeft, pause])), withKey: "scurry")
     }
 }
