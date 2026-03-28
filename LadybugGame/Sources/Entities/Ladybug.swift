@@ -14,9 +14,10 @@ class Ladybug: SKSpriteNode {
     private var invincibleTimer: TimeInterval = 0
     private var walkBobTime: CGFloat = 0
 
-    let gravity: CGFloat = -500
-    let followStrength: CGFloat = 2.2
-    let damping: CGFloat = 0.95
+    let gravity: CGFloat = -450
+    let followStrength: CGFloat = 1.6   // Very gentle pull
+    let damping: CGFloat = 0.96         // Heavy damping
+    let maxVelocityY: CGFloat = 220     // Clamp — can't jerk up/down fast
 
     var isInvincible: Bool { invincibleTimer > 0 }
     var isSheltered: Bool { isInsideLog && isOnGround }
@@ -77,6 +78,7 @@ class Ladybug: SKSpriteNode {
                 let diff = ty - position.y
                 velocityY += diff * followStrength
                 velocityY *= damping
+                velocityY = max(-maxVelocityY, min(maxVelocityY, velocityY))
                 let tilt = max(-0.15, min(0.15, velocityY * 0.0003))
                 zRotation = -tilt
             }

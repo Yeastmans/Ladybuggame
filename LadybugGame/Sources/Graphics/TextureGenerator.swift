@@ -618,7 +618,7 @@ enum TextureGenerator {
             cg.setLineWidth(0.8)
             cg.move(to: CGPoint(x: 0, y: h * 0.72))
             cg.addQuadCurve(to: CGPoint(x: w, y: h * 0.72),
-                             controlPoint: CGPoint(x: w * 0.5, y: h * 0.78))
+                             control: CGPoint(x: w * 0.5, y: h * 0.78))
             cg.strokePath()
 
             // Bark lines

@@ -550,6 +550,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         let checkDistance = SKAction.run { [weak self, weak frog] in
             guard let self = self, let frog = frog else { return }
+            // Face toward player
+            if self.ladybug.position.x < frog.position.x {
+                frog.xScale = -abs(frog.xScale) // Face left
+            } else {
+                frog.xScale = abs(frog.xScale) // Face right
+            }
+
             let dist = abs(frog.position.x - self.ladybug.position.x)
             if dist < 130 {
                 SoundManager.shared.play("ribbit")
