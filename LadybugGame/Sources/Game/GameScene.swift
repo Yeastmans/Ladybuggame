@@ -26,13 +26,20 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 hasShownRainbow = true
                 showRainbow()
             }
+            if score >= 2000 && !hasTransitionedToNight {
+                hasTransitionedToNight = true
+                transitionToNight()
+            }
         }
     }
     private var lives: Int = 3
     private var livesLabel: SKLabelNode!
 
     private var isGameOver = false
+    private var isNight = false
+    private var hasTransitionedToNight = false
     private var isTouching = false
+    private var gnatTimer: TimeInterval = 0
     private var touchY: CGFloat?
     private var lastUpdateTime: TimeInterval = 0
 
@@ -320,39 +327,41 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         scrollParallax(delta: sd)
         scrollWorldObjects(delta: sd)
 
-        // Spawns
-        aphidTimer += dt
-        if aphidTimer >= 1.2 { aphidTimer = 0; spawnAphid() }
-        flyTimer += dt
-        if flyTimer >= 1.5 { flyTimer = 0; spawnFruitFly() }
+        // Spawns — day vs night
+        if !isNight {
+            // DAY spawns
+            aphidTimer += dt
+            if aphidTimer >= 1.2 { aphidTimer = 0; spawnAphid() }
+            flyTimer += dt
+            if flyTimer >= 1.5 { flyTimer = 0; spawnFruitFly() }
+            antTimer += dt
+            let ai = max(3.0, 6.0 - Double(distanceTraveled) * 0.0003)
+            if antTimer >= ai { antTimer = 0; spawnAnt() }
+        } else {
+            // NIGHT spawns
+            gnatTimer += dt
+            if gnatTimer >= 1.0 { gnatTimer = 0; spawnGnatSwarm() }
+            fireflyTimer += dt
+            if fireflyTimer >= 12.0 { fireflyTimer = 0; spawnFirefly() }
+            spiderTimer += dt
+            let si = max(4.0, 8.0 - Double(distanceTraveled) * 0.0003)
+            if spiderTimer >= si { spiderTimer = 0; spawnSpider() }
+        }
+
+        // Both day and night
         logTimer += dt
         let li = max(2.5, 5.0 - Double(distanceTraveled) * 0.0003)
         if logTimer >= li { logTimer = 0; spawnLog() }
         birdTimer += dt
         let bi = max(2.5, 5.5 - Double(distanceTraveled) * 0.0003)
         if birdTimer >= bi { birdTimer = 0; spawnBird() }
+        // Frog or dragonfly at pond
         frogTimer += dt
         let fi = max(4.0, 8.0 - Double(distanceTraveled) * 0.0003)
-        if frogTimer >= fi { frogTimer = 0; spawnFrog() }
-
-        envTimer += dt
-        dragonflyTimer += dt
-        let dfi = max(5.0, 10.0 - Double(distanceTraveled) * 0.0003)
-        if dragonflyTimer >= dfi { dragonflyTimer = 0; spawnDragonfly() }
-
-        fireflyTimer += dt
-        if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
+        if frogTimer >= fi { frogTimer = 0; spawnPondCreature() }
 
         heartBugTimer += dt
         if heartBugTimer >= 20.0 && lives < 3 { heartBugTimer = 0; spawnHeartBug() }
-
-        antTimer += dt
-        let ai = max(3.0, 6.0 - Double(distanceTraveled) * 0.0003)
-        if antTimer >= ai { antTimer = 0; spawnAnt() }
-
-        spiderTimer += dt
-        let si = max(5.0, 10.0 - Double(distanceTraveled) * 0.0003)
-        if spiderTimer >= si { spiderTimer = 0; spawnSpider() }
 
         if envTimer >= 0.6 { envTimer = 0; spawnEnvironment() }
     }
@@ -415,9 +424,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func scrollGround(delta: CGFloat) {
         for tile in groundTiles {
             tile.position.x -= delta
-            if tile.position.x + tile.size.width < 0 {
+            if tile.position.x + tile.size.width < -2 {
                 let maxX = groundTiles.map { $0.position.x }.max() ?? 0
-                tile.position.x = maxX + tile.size.width - 1 // 1px overlap to prevent gaps
+                tile.position.x = floor(maxX + tile.size.width - 2)
             }
         }
     }
@@ -442,7 +451,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func scrollWorldObjects(delta: CGFloat) {
         for child in children {
-            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider {
+            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider || child is GnatSwarm {
                 child.position.x -= delta
                 if child.position.x < -120 { child.removeFromParent() }
             }
@@ -568,14 +577,17 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
 
-    private func spawnFrog() {
+    /// Spawns a pond with either a frog or dragonfly (never both)
+    private func spawnPondCreature() {
         let spawnX = size.width + 50
         if isNearGroundObject(x: spawnX, range: 120) { return }
 
-        // Pond behind the frog
+        // Pond
         let pondW = CGFloat.random(in: 70...120)
         let pond = SKShapeNode(ellipseOf: CGSize(width: pondW, height: 14))
-        pond.fillColor = SKColor(red: 0.25, green: 0.50, blue: 0.70, alpha: 0.6)
+        pond.fillColor = isNight
+            ? SKColor(red: 0.15, green: 0.30, blue: 0.50, alpha: 0.5)
+            : SKColor(red: 0.25, green: 0.50, blue: 0.70, alpha: 0.6)
         pond.strokeColor = SKColor(red: 0.20, green: 0.40, blue: 0.55, alpha: 0.5)
         pond.lineWidth = 1
         pond.position = CGPoint(x: spawnX, y: groundY + 2)
@@ -583,40 +595,46 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         pond.name = "envDecor"
         addChild(pond)
 
-        // Lily pads on pond
         for i in 0..<Int.random(in: 1...3) {
             let pad = SKShapeNode(circleOfRadius: CGFloat.random(in: 5...8))
             pad.fillColor = SKColor(red: 0.30, green: 0.68, blue: 0.25, alpha: 0.7)
-            pad.strokeColor = SKColor(red: 0.22, green: 0.50, blue: 0.18, alpha: 0.5)
-            pad.lineWidth = 0.5
-            let padX = CGFloat(i - 1) * CGFloat.random(in: 10...18)
-            pad.position = CGPoint(x: spawnX + padX, y: groundY + CGFloat.random(in: 1...5))
+            pad.strokeColor = .clear
+            pad.position = CGPoint(x: spawnX + CGFloat(i - 1) * CGFloat.random(in: 10...18),
+                                    y: groundY + CGFloat.random(in: 1...5))
             pad.zPosition = 3
             pad.name = "envDecor"
             addChild(pad)
         }
 
-        let frog = Frog(texture: frogTexture)
-        frog.position = CGPoint(x: spawnX + pondW * 0.3, y: groundY + frog.size.height / 2)
-        addChild(frog)
+        // 60% frog, 40% dragonfly
+        if Int.random(in: 0..<10) < 6 {
+            // Frog
+            let frog = Frog(texture: frogTexture)
+            frog.position = CGPoint(x: spawnX + pondW * 0.3, y: groundY + frog.size.height / 2)
+            addChild(frog)
 
-        let checkDistance = SKAction.run { [weak self, weak frog] in
-            guard let self = self, let frog = frog else { return }
-            // Face toward player
-            if self.ladybug.position.x < frog.position.x {
-                frog.xScale = -abs(frog.xScale) // Face left
-            } else {
-                frog.xScale = abs(frog.xScale) // Face right
+            let checkDistance = SKAction.run { [weak self, weak frog] in
+                guard let self = self, let frog = frog else { return }
+                if self.ladybug.position.x < frog.position.x {
+                    frog.xScale = -abs(frog.xScale)
+                } else {
+                    frog.xScale = abs(frog.xScale)
+                }
+                let dist = abs(frog.position.x - self.ladybug.position.x)
+                if dist < 130 {
+                    SoundManager.shared.play("ribbit")
+                    frog.attackToward(playerPos: self.ladybug.position)
+                }
             }
-
-            let dist = abs(frog.position.x - self.ladybug.position.x)
-            if dist < 130 {
-                SoundManager.shared.play("ribbit")
-                frog.attackToward(playerPos: self.ladybug.position)
-            }
+            frog.run(SKAction.repeatForever(SKAction.sequence([SKAction.wait(forDuration: 0.3), checkDistance])), withKey: "checkAttack")
+        } else {
+            // Dragonfly hovering over the pond
+            let df = Dragonfly(textures: dragonflyFrames)
+            df.position = CGPoint(x: spawnX, y: groundY + CGFloat.random(in: 50...size.height * 0.45))
+            df.setupPhysics()
+            df.startHovering(minY: groundY + 40, maxY: size.height * 0.60, playerX: ladybug.position.x)
+            addChild(df)
         }
-        let wait = SKAction.wait(forDuration: 0.3)
-        frog.run(SKAction.repeatForever(SKAction.sequence([wait, checkDistance])), withKey: "checkAttack")
     }
 
     private func spawnAnt() {
@@ -759,6 +777,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         if collision == PhysicsCategory.ladybug | PhysicsCategory.fruitfly {
+            // Gnat swarm
+            if let gs = (contact.bodyA.node as? GnatSwarm) ?? (contact.bodyB.node as? GnatSwarm) {
+                score += 20
+                showFloatingScore(20, at: gs.position, color: SKColor(white: 0.9, alpha: 1))
+                gs.removeFromParent()
+                ladybug.pulse()
+                SoundManager.shared.play("munch")
+                return
+            }
             // HeartBug — restore a life
             if let hb = (contact.bodyA.node as? HeartBug) ?? (contact.bodyB.node as? HeartBug) {
                 if lives < 3 { lives += 1; updateLivesDisplay() }
@@ -880,7 +907,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
             arc.run(SKAction.sequence([
                 SKAction.wait(forDuration: Double(i) * 0.15),
-                SKAction.fadeAlpha(to: 1.0, duration: 0.5)
+                SKAction.fadeAlpha(to: 1.0, duration: 0.5),
+                SKAction.wait(forDuration: 5.0),
+                SKAction.moveBy(x: -size.width * 1.5, y: 0, duration: 3.0),
+                SKAction.removeFromParent()
             ]))
         }
 
@@ -896,6 +926,117 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             SKAction.group([SKAction.moveBy(x: 0, y: 20, duration: 1.5), SKAction.fadeOut(withDuration: 1.5)]),
             SKAction.removeFromParent()
         ]))
+    }
+
+    // MARK: - Night Mode
+
+    private func transitionToNight() {
+        isNight = true
+
+        // Darken sky
+        let nightOverlay = SKShapeNode(rectOf: CGSize(width: size.width + 20, height: size.height))
+        nightOverlay.fillColor = SKColor(red: 0.05, green: 0.05, blue: 0.15, alpha: 0.0)
+        nightOverlay.strokeColor = .clear
+        nightOverlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        nightOverlay.zPosition = -1
+        nightOverlay.name = "nightOverlay"
+        addChild(nightOverlay)
+        nightOverlay.run(SKAction.customAction(withDuration: 3.0) { node, elapsed in
+            let p = min(1.0, elapsed / 3.0)
+            (node as? SKShapeNode)?.fillColor = SKColor(red: 0.05, green: 0.05, blue: 0.15, alpha: 0.65 * p)
+        })
+
+        // Darken ground
+        for tile in groundTiles {
+            tile.run(SKAction.colorize(with: SKColor(red: 0.15, green: 0.30, blue: 0.10, alpha: 1), colorBlendFactor: 0.5, duration: 3.0))
+        }
+
+        // Moon (fixed position, top-right)
+        let moon = SKShapeNode(circleOfRadius: 20)
+        moon.fillColor = SKColor(red: 0.95, green: 0.93, blue: 0.80, alpha: 0.9)
+        moon.strokeColor = .clear
+        moon.position = CGPoint(x: size.width * 0.82, y: size.height * 0.88)
+        moon.zPosition = -0.5
+        moon.alpha = 0
+        addChild(moon)
+        moon.run(SKAction.fadeAlpha(to: 1.0, duration: 3.0))
+        // Moon crater
+        let crater = SKShapeNode(circleOfRadius: 4)
+        crater.fillColor = SKColor(red: 0.85, green: 0.83, blue: 0.70, alpha: 0.5)
+        crater.strokeColor = .clear
+        crater.position = CGPoint(x: 5, y: -3)
+        moon.addChild(crater)
+
+        // Stars
+        for _ in 0..<30 {
+            let star = SKShapeNode(circleOfRadius: CGFloat.random(in: 0.5...1.5))
+            star.fillColor = .white
+            star.strokeColor = .clear
+            star.position = CGPoint(x: CGFloat.random(in: 0...size.width),
+                                     y: CGFloat.random(in: size.height * 0.45...size.height * 0.98))
+            star.zPosition = -0.8
+            star.alpha = 0
+            addChild(star)
+            star.run(SKAction.sequence([
+                SKAction.wait(forDuration: Double.random(in: 0...2)),
+                SKAction.fadeAlpha(to: CGFloat.random(in: 0.4...1.0), duration: 1.5)
+            ]))
+            // Twinkle
+            let twinkle = SKAction.sequence([
+                SKAction.fadeAlpha(to: 0.3, duration: Double.random(in: 1...3)),
+                SKAction.fadeAlpha(to: 0.9, duration: Double.random(in: 1...3))
+            ])
+            star.run(SKAction.sequence([SKAction.wait(forDuration: 3), SKAction.repeatForever(twinkle)]))
+        }
+
+        // Shooting star timer
+        let shootingStar = SKAction.run { [weak self] in
+            guard let self = self else { return }
+            if Bool.random() && Bool.random() { // ~25% chance
+                let ss = SKShapeNode(rectOf: CGSize(width: 2, height: 2))
+                ss.fillColor = .white
+                ss.strokeColor = .clear
+                ss.position = CGPoint(x: self.size.width * CGFloat.random(in: 0.3...0.9),
+                                       y: self.size.height * CGFloat.random(in: 0.70...0.95))
+                ss.zPosition = -0.6
+                self.addChild(ss)
+                let trail = CGFloat.random(in: 80...150)
+                ss.run(SKAction.sequence([
+                    SKAction.group([
+                        SKAction.moveBy(x: -trail, y: -trail * 0.5, duration: 0.4),
+                        SKAction.fadeOut(withDuration: 0.4)
+                    ]),
+                    SKAction.removeFromParent()
+                ]))
+            }
+        }
+        run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.wait(forDuration: 3, withRange: 4),
+            shootingStar
+        ])), withKey: "shootingStars")
+
+        // Notification
+        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        label.text = "Night Falls..."
+        label.fontSize = 26
+        label.fontColor = SKColor(red: 0.70, green: 0.75, blue: 1.0, alpha: 1.0)
+        label.position = CGPoint(x: size.width / 2, y: size.height * 0.65)
+        label.zPosition = 80
+        addChild(label)
+        label.run(SKAction.sequence([
+            SKAction.group([SKAction.moveBy(x: 0, y: 20, duration: 2.0), SKAction.fadeOut(withDuration: 2.0)]),
+            SKAction.removeFromParent()
+        ]))
+    }
+
+    private func spawnGnatSwarm() {
+        let swarm = GnatSwarm()
+        let y = groundY + CGFloat.random(in: 30...size.height * 0.40)
+        swarm.position = CGPoint(x: size.width + 20, y: y)
+        swarm.minY = groundY
+        swarm.setupPhysics()
+        swarm.startMoving()
+        addChild(swarm)
     }
 
     private func gameOver() {
