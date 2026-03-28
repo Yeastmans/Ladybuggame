@@ -18,7 +18,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var distanceTraveled: CGFloat = 0
 
     private var scoreLabel: SKLabelNode!
-    private var score: Int = 0 { didSet { scoreLabel.text = "\(score)" } }
+    private var hasShownRainbow = false
+    private var score: Int = 0 {
+        didSet {
+            scoreLabel.text = "\(score)"
+            if score >= 1000 && !hasShownRainbow {
+                hasShownRainbow = true
+                showRainbow()
+            }
+        }
+    }
     private var lives: Int = 3
     private var livesLabel: SKLabelNode!
 
@@ -74,6 +83,27 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             band.position = CGPoint(x: size.width / 2, y: size.height * sc.y)
             band.zPosition = -10
             addChild(band)
+        }
+
+        // Sunshine rays from top-right
+        let sunX = size.width * 0.85
+        let sunY = size.height * 0.95
+        for i in 0..<6 {
+            let ray = SKShapeNode()
+            let rp = UIBezierPath()
+            let angle = CGFloat(i) * 0.18 + 0.3
+            let len = size.height * 0.7
+            let width: CGFloat = 25 + CGFloat(i) * 8
+            rp.move(to: .zero)
+            rp.addLine(to: CGPoint(x: -cos(angle) * len - width / 2, y: -sin(angle) * len))
+            rp.addLine(to: CGPoint(x: -cos(angle) * len + width / 2, y: -sin(angle) * len))
+            rp.close()
+            ray.path = rp.cgPath
+            ray.fillColor = SKColor(red: 1.0, green: 0.95, blue: 0.70, alpha: CGFloat(0.06 - Double(i) * 0.005))
+            ray.strokeColor = .clear
+            ray.position = CGPoint(x: sunX, y: sunY)
+            ray.zPosition = -7
+            addChild(ray)
         }
 
         for i in 0..<5 {
@@ -277,7 +307,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let li = max(2.5, 5.0 - Double(distanceTraveled) * 0.0003)
         if logTimer >= li { logTimer = 0; spawnLog() }
         birdTimer += dt
-        let bi = max(2.0, 5.0 - Double(distanceTraveled) * 0.0004)
+        let bi = max(1.2, 3.5 - Double(distanceTraveled) * 0.0005)
         if birdTimer >= bi { birdTimer = 0; spawnBird() }
         envTimer += dt
         if envTimer >= 1.5 { envTimer = 0; spawnEnvironment() }
@@ -406,21 +436,35 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func spawnLog() {
         let log = Log(texture: logTexture)
-        log.position = CGPoint(x: size.width + 50, y: groundY + log.size.height / 2)
+        // Bottom of log sits exactly on ground line
+        log.position = CGPoint(x: size.width + 50, y: groundY + log.size.height * 0.42)
         log.setupPhysics()
         addChild(log)
     }
 
     private func spawnBird() {
         let bird = Bird(textures: birdTextures)
-        bird.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.55...0.85))
+        bird.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.50...0.88))
         bird.xScale = -1
         bird.setupPhysics()
         addChild(bird)
 
+        // Faster, more aggressive swoop — targets ladybug directly
         let targetY = ladybug.position.y
         bird.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                         targetY: targetY, duration: 2.0 + Double.random(in: 0...0.8))
+                         targetY: targetY, duration: 1.4 + Double.random(in: 0...0.6))
+
+        // Sometimes send a second bird right after
+        if distanceTraveled > 2000 && Bool.random() {
+            let bird2 = Bird(textures: birdTextures)
+            bird2.position = CGPoint(x: size.width + 120, y: size.height * CGFloat.random(in: 0.50...0.85))
+            bird2.xScale = -1
+            bird2.setupPhysics()
+            addChild(bird2)
+            bird2.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
+                             targetY: ladybug.position.y + CGFloat.random(in: -30...30),
+                             duration: 1.6 + Double.random(in: 0...0.5))
+        }
     }
 
     private func spawnEnvironment() {
@@ -515,6 +559,54 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ladybug.makeInvincible()
         SoundManager.shared.play("hit")
         if lives <= 0 { gameOver() }
+    }
+
+    private func showRainbow() {
+        let colors: [SKColor] = [
+            SKColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 0.25),
+            SKColor(red: 1.0, green: 0.5, blue: 0.0, alpha: 0.25),
+            SKColor(red: 1.0, green: 1.0, blue: 0.0, alpha: 0.25),
+            SKColor(red: 0.0, green: 0.8, blue: 0.0, alpha: 0.25),
+            SKColor(red: 0.0, green: 0.4, blue: 1.0, alpha: 0.25),
+            SKColor(red: 0.3, green: 0.0, blue: 0.8, alpha: 0.25),
+        ]
+        let arcCenterX = size.width * 0.5
+        let arcCenterY = groundY
+        let baseRadius = size.height * 0.55
+
+        for (i, color) in colors.enumerated() {
+            let radius = baseRadius - CGFloat(i) * 8
+            let arc = SKShapeNode()
+            let path = UIBezierPath(arcCenter: .zero, radius: radius,
+                                     startAngle: 0, endAngle: .pi, clockwise: true)
+            arc.path = path.cgPath
+            arc.strokeColor = color
+            arc.lineWidth = 6
+            arc.fillColor = .clear
+            arc.position = CGPoint(x: arcCenterX, y: arcCenterY)
+            arc.zPosition = -3
+            arc.alpha = 0
+            arc.name = "rainbow"
+            addChild(arc)
+
+            arc.run(SKAction.sequence([
+                SKAction.wait(forDuration: Double(i) * 0.15),
+                SKAction.fadeAlpha(to: 1.0, duration: 0.5)
+            ]))
+        }
+
+        // Flash notification
+        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        label.text = "1000 Points!"
+        label.fontSize = 28
+        label.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0)
+        label.position = CGPoint(x: size.width / 2, y: size.height * 0.65)
+        label.zPosition = 80
+        addChild(label)
+        label.run(SKAction.sequence([
+            SKAction.group([SKAction.moveBy(x: 0, y: 20, duration: 1.5), SKAction.fadeOut(withDuration: 1.5)]),
+            SKAction.removeFromParent()
+        ]))
     }
 
     private func gameOver() {

@@ -9,7 +9,7 @@ class Bird: SKSpriteNode {
         zPosition = 12
 
         if textures.count >= 2 {
-            let flap = SKAction.animate(with: textures, timePerFrame: 0.12)
+            let flap = SKAction.animate(with: textures, timePerFrame: 0.10)
             run(SKAction.repeatForever(flap), withKey: "flap")
         }
     }
@@ -19,27 +19,29 @@ class Bird: SKSpriteNode {
     }
 
     func setupPhysics() {
-        let body = SKPhysicsBody(rectangleOf: CGSize(width: size.width * 0.6, height: size.height * 0.5))
+        let body = SKPhysicsBody(rectangleOf: CGSize(width: size.width * 0.7, height: size.height * 0.6))
         body.isDynamic = false
         body.categoryBitMask = GameScene.PhysicsCategory.bird
         body.contactTestBitMask = GameScene.PhysicsCategory.ladybug
         physicsBody = body
     }
 
-    /// Swoop: fly in from right at altitude, dive to targetY at the ladybug's X, then fly away left
+    /// Aggressive swoop — dives straight at ladybug position then exits
     func swoopAcross(sceneWidth: CGFloat, ladybugX: CGFloat, targetY: CGFloat, duration: TimeInterval) {
-        // Flip sprite to face left
         xScale = -abs(xScale)
 
-        let exitX: CGFloat = -size.width * 2
-
-        // Path: enter high → dive at ladybug X → exit low-left
-        let path = UIBezierPath()
-        path.move(to: CGPoint(x: 0, y: 0)) // relative start
         let diveX = ladybugX - position.x
         let diveY = targetY - position.y
-        path.addQuadCurve(to: CGPoint(x: exitX - position.x, y: diveY - 20),
-                          controlPoint: CGPoint(x: diveX, y: diveY))
+        let exitX = -size.width * 3 - position.x
+
+        // Tighter curve — control point is BELOW the target for a steep dive
+        let path = UIBezierPath()
+        path.move(to: .zero)
+        // Dive point (at ladybug)
+        path.addLine(to: CGPoint(x: diveX, y: diveY))
+        // Exit low-left
+        path.addQuadCurve(to: CGPoint(x: exitX, y: diveY + 30),
+                          controlPoint: CGPoint(x: diveX - 80, y: diveY - 20))
 
         let followPath = SKAction.follow(path.cgPath, asOffset: true, orientToPath: false, duration: duration)
         followPath.timingMode = .easeIn
