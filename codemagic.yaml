@@ -15,20 +15,25 @@ workflows:
         script: |
           cd LadybugGame
           xcodegen generate
-      - name: Build iOS app
+      - name: Build for Simulator
         script: |
           cd LadybugGame
           xcodebuild build \
             -project LadybugGame.xcodeproj \
             -scheme LadybugGame \
-            -sdk iphoneos \
+            -sdk iphonesimulator \
             -configuration Release \
-            CODE_SIGN_IDENTITY="" \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY=- \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
+      - name: Package app
+        script: |
+          cd LadybugGame/build/Build/Products/Release-iphonesimulator
+          zip -r "$CM_BUILD_DIR/LadybugGame-simulator.zip" LadybugGame.app
     artifacts:
-      - LadybugGame/build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
+      - LadybugGame-simulator.zip
     publishing:
       email:
         recipients:
