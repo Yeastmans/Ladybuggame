@@ -13,6 +13,10 @@ enum TextureGenerator {
         return drawLadybugSide(size: size, eyesClosed: true, wingPhase: nil)
     }
 
+    static func generateLadybugDeadTexture(size: CGSize) -> SKTexture {
+        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, dead: true)
+    }
+
     /// Two frames: wings up and wings down, legs tucked
     static func generateLadybugFlyFrames(size: CGSize) -> [SKTexture] {
         return [drawLadybugSide(size: size, eyesClosed: false, wingPhase: 0),
@@ -20,7 +24,7 @@ enum TextureGenerator {
     }
 
     /// wingPhase: nil = walking (legs out), 0 = wings up, 1 = wings down
-    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingPhase: Int?) -> SKTexture {
+    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingPhase: Int?, dead: Bool = false) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
@@ -124,7 +128,28 @@ enum TextureGenerator {
             cg.fillEllipse(in: CGRect(x: w * 0.96, y: h * 0.15, width: 4, height: 4))
 
             // Eye
-            if eyesClosed {
+            if dead {
+                // X eyes
+                let exCX = headCX + headR * 0.40
+                let exCY = headCY - headR * 0.05
+                let exS = headR * 0.30
+                cg.setStrokeColor(UIColor.white.cgColor)
+                cg.setLineWidth(2.5)
+                cg.move(to: CGPoint(x: exCX - exS, y: exCY - exS))
+                cg.addLine(to: CGPoint(x: exCX + exS, y: exCY + exS))
+                cg.strokePath()
+                cg.move(to: CGPoint(x: exCX - exS, y: exCY + exS))
+                cg.addLine(to: CGPoint(x: exCX + exS, y: exCY - exS))
+                cg.strokePath()
+                // Tongue sticking out
+                cg.setStrokeColor(UIColor(red: 0.90, green: 0.30, blue: 0.35, alpha: 1.0).cgColor)
+                cg.setLineWidth(2.0)
+                cg.setLineCap(.round)
+                cg.move(to: CGPoint(x: headCX + headR * 0.5, y: headCY + headR * 0.5))
+                cg.addQuadCurve(to: CGPoint(x: headCX + headR * 1.0, y: headCY + headR * 0.8),
+                                control: CGPoint(x: headCX + headR * 0.8, y: headCY + headR * 0.3))
+                cg.strokePath()
+            } else if eyesClosed {
                 cg.setStrokeColor(UIColor.white.cgColor)
                 cg.setLineWidth(1.2)
                 cg.move(to: CGPoint(x: headCX + headR * 0.1, y: headCY - 1))

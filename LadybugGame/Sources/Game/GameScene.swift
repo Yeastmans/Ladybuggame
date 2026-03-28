@@ -59,6 +59,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
+    private var deadTexture: SKTexture!
     private var frogTimer: TimeInterval = 0
     private var dragonflyTimer: TimeInterval = 0
     private var fireflyTimer: TimeInterval = 0
@@ -76,6 +77,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
         logTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 70, height: 45))
         frogTexture = TextureGenerator.generateFrogTexture(size: CGSize(width: 36, height: 32))
+        deadTexture = TextureGenerator.generateLadybugDeadTexture(size: CGSize(width: 48, height: 48))
         dragonflyFrames = TextureGenerator.generateDragonflyFrames(size: CGSize(width: 48, height: 28))
         fireflyFrames = TextureGenerator.generateFireflyFrames(size: CGSize(width: 24, height: 24))
         heartBugFrames = TextureGenerator.generateHeartBugFrames(size: CGSize(width: 36, height: 36))
@@ -317,6 +319,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ladybug.updatePhysics(dt: dt, groundY: bugGroundY, ceilingY: ceilingY)
 
         pushEntitiesFromLogs()
+        checkPondDamage()
 
         // Scrolling
         distanceTraveled += scrollSpeed * CGFloat(dt)
@@ -398,6 +401,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ladybug.isInsideLog = insideAny
     }
 
+    private func checkPondDamage() {
+        guard ladybug.isOnGround, !ladybug.isInvincible else { return }
+        enumerateChildNodes(withName: "pond") { [weak self] node, stop in
+            guard let self = self else { return }
+            let pondHalfW = node.frame.width / 2
+            if abs(node.position.x - self.ladybug.position.x) < pondHalfW {
+                self.takeDamage()
+                stop.pointee = true
+            }
+        }
+    }
+
     private func pushEntitiesFromLogs() {
         for child in children {
             guard let log = child as? Log else { continue }
@@ -447,6 +462,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         enumerateChildNodes(withName: "envDecor") { node, _ in
             node.position.x -= delta
             if node.position.x < -50 { node.removeFromParent() }
+        }
+        enumerateChildNodes(withName: "pond") { node, _ in
+            node.position.x -= delta
+            if node.position.x < -80 { node.removeFromParent() }
         }
     }
 
@@ -582,7 +601,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         pond.lineWidth = 1
         pond.position = CGPoint(x: spawnX, y: groundY + 2)
         pond.zPosition = 2
-        pond.name = "envDecor"
+        pond.name = "pond"
         addChild(pond)
 
         for i in 0..<Int.random(in: 1...3) {
@@ -1035,6 +1054,17 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         SoundManager.shared.play("gameOver")
         if score > MenuScene.highScore { MenuScene.highScore = score }
 
+        // Death animation — flip over with X eyes, fall to ground
+        let bugGroundY = groundY + ladybug.size.height / 2
+        ladybug.playDeathAnimation(groundY: bugGroundY, deadTexture: deadTexture)
+
+        // Delay game over UI to let death animation play
+        run(SKAction.sequence([SKAction.wait(forDuration: 1.2), SKAction.run { [weak self] in
+            self?.showGameOverUI()
+        }]))
+    }
+
+    private func showGameOverUI() {
         let overlay = SKShapeNode(rectOf: size)
         overlay.fillColor = SKColor(white: 0.0, alpha: 0.5)
         overlay.strokeColor = .clear

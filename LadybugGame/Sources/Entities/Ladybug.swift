@@ -150,4 +150,33 @@ class Ladybug: SKSpriteNode {
         let blink = SKAction.sequence([SKAction.fadeAlpha(to: 0.3, duration: 0.08), SKAction.fadeAlpha(to: 1.0, duration: 0.08)])
         run(SKAction.repeat(blink, count: 4))
     }
+
+    func playDeathAnimation(groundY: CGFloat, deadTexture: SKTexture) {
+        removeAllActions()
+        texture = deadTexture
+        isFlying = false
+        isOnGround = false
+        physicsBody = nil
+
+        // Flip upside down
+        let flipOver = SKAction.rotate(byAngle: .pi, duration: 0.3)
+        flipOver.timingMode = .easeOut
+
+        // Fall to ground
+        let fallDist = position.y - groundY
+        let fallDuration = max(0.3, Double(fallDist / 300))
+        let fall = SKAction.moveTo(y: groundY, duration: fallDuration)
+        fall.timingMode = .easeIn
+
+        // Small bounce on impact
+        let bounceUp = SKAction.moveBy(x: 0, y: 8, duration: 0.1)
+        let bounceDown = SKAction.moveBy(x: 0, y: -8, duration: 0.1)
+
+        run(SKAction.sequence([
+            flipOver,
+            fall,
+            bounceUp,
+            bounceDown
+        ]))
+    }
 }
