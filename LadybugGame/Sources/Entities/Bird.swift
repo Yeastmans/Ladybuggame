@@ -31,7 +31,6 @@ class Bird: SKSpriteNode {
         // Flip sprite to face left
         xScale = -abs(xScale)
 
-        let enterX = sceneWidth + size.width
         let exitX: CGFloat = -size.width * 2
 
         // Path: enter high → dive at ladybug X → exit low-left

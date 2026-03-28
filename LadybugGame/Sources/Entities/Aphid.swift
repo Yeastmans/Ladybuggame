@@ -29,15 +29,15 @@ class Aphid: SKSpriteNode {
     func startMoving() {
         if isFlying {
             // Bob up and down gently
-            let bobUp = SKAction.moveBy(x: 0, y: CGFloat.random(in: 12...25), duration: Double.random(in: 0.6...1.0))
-            bobUp.timingMode = .easeInEaseOut
-            let bobDown = SKAction.moveBy(x: 0, y: CGFloat.random(in: -25...-12), duration: Double.random(in: 0.6...1.0))
-            bobDown.timingMode = .easeInEaseOut
+            let bobDist = CGFloat.random(in: 12...25)
+            let bobUp = SKAction.moveBy(x: 0, y: bobDist, duration: Double.random(in: 0.6...1.0))
+            let bobDown = SKAction.moveBy(x: 0, y: -bobDist, duration: Double.random(in: 0.6...1.0))
             run(SKAction.repeatForever(SKAction.sequence([bobUp, bobDown])), withKey: "bob")
         } else {
             // Scurry back and forth on the ground
-            let scurryRight = SKAction.moveBy(x: CGFloat.random(in: 8...20), y: 0, duration: Double.random(in: 0.3...0.6))
-            let scurryLeft = SKAction.moveBy(x: CGFloat.random(in: -20...-8), y: 0, duration: Double.random(in: 0.3...0.6))
+            let scurryDist = CGFloat.random(in: 8...20)
+            let scurryRight = SKAction.moveBy(x: scurryDist, y: 0, duration: Double.random(in: 0.3...0.6))
+            let scurryLeft = SKAction.moveBy(x: -scurryDist, y: 0, duration: Double.random(in: 0.3...0.6))
             let pause = SKAction.wait(forDuration: Double.random(in: 0.2...0.5))
             run(SKAction.repeatForever(SKAction.sequence([scurryRight, pause, scurryLeft, pause])), withKey: "scurry")
         }
