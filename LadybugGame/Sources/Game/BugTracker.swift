@@ -2,7 +2,7 @@ import SpriteKit
 import UIKit
 
 /// Tracks which bugs the player has caught. Persists via UserDefaults.
-final class BugTracker {
+final class BugTracker: @unchecked Sendable {
     static let shared = BugTracker()
 
     enum BugType: String, CaseIterable {
