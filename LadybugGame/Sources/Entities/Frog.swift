@@ -19,69 +19,59 @@ class Frog: SKSpriteNode {
         guard !hasAttacked else { return }
         hasAttacked = true
 
-        let mouthX = size.width * 0.45
-        let mouthY = size.height * 0.1
+        // Direction from frog center to target
+        let dirX = sceneTarget.x - position.x
+        let dirY = sceneTarget.y - position.y
 
-        var dx = sceneTarget.x - position.x - mouthX
-        var dy = sceneTarget.y - position.y - mouthY
+        // Never aim down
+        let aimY = max(dirY, 0)
+        let aimX = dirX
 
-        // Never aim downward — clamp dy to 0 or above
-        if dy < 0 { dy = 0 }
+        let dist = hypot(aimX, aimY)
+        guard dist > 5 else { return }
 
-        // If target is directly above, add slight horizontal
-        if abs(dx) < 5 { dx = 20 }
+        let tongueLen = min(dist, 110.0)
+        let nx = aimX / dist
+        let ny = aimY / dist
 
-        let rawDist = hypot(dx, dy)
-        guard rawDist > 5 else { return }
-        let nx = dx / rawDist
-        let ny = dy / rawDist
+        // Tongue in scene coordinates (add as child of scene parent, not frog)
+        guard let parentNode = self.parent else { return }
 
-        // Tongue length — stop at max or where it would hit ground
-        var tongueLen = min(rawDist, 120.0)
-
-        // Check if tongue tip would go below ground
-        let tipSceneY = position.y + mouthY + ny * tongueLen
-        if tipSceneY < groundY {
-            // Shorten tongue to stop at ground
-            let availableY = position.y + mouthY - groundY
-            if ny < -0.01 {
-                tongueLen = min(tongueLen, abs(availableY / ny))
-            }
-        }
-
-        let tipX = mouthX + nx * tongueLen
-        let tipY = mouthY + ny * tongueLen
+        let startPt = CGPoint(x: position.x, y: position.y + size.height * 0.15)
+        let endPt = CGPoint(x: startPt.x + nx * tongueLen, y: max(groundY + 2, startPt.y + ny * tongueLen))
 
         let tongue = SKShapeNode()
         let path = UIBezierPath()
-        path.move(to: CGPoint(x: mouthX, y: mouthY))
-        path.addLine(to: CGPoint(x: tipX, y: tipY))
+        path.move(to: startPt)
+        path.addLine(to: endPt)
         tongue.path = path.cgPath
         tongue.strokeColor = SKColor(red: 0.90, green: 0.30, blue: 0.35, alpha: 1.0)
         tongue.lineWidth = 2.5
-        tongue.zPosition = -1
-        addChild(tongue)
+        tongue.zPosition = 6
+        parentNode.addChild(tongue)
         tongueNode = tongue
 
-        let tip = SKShapeNode(circleOfRadius: 6)
+        // Tip with hitbox
+        let tip = SKShapeNode(circleOfRadius: 7)
         tip.fillColor = SKColor(red: 0.95, green: 0.35, blue: 0.40, alpha: 1.0)
         tip.strokeColor = .clear
-        tip.position = CGPoint(x: tipX, y: tipY)
-        let tipBody = SKPhysicsBody(circleOfRadius: 6)
+        tip.position = endPt
+        tip.zPosition = 6
+        let tipBody = SKPhysicsBody(circleOfRadius: 7)
         tipBody.isDynamic = false
         tipBody.categoryBitMask = GameScene.PhysicsCategory.bird
         tipBody.contactTestBitMask = GameScene.PhysicsCategory.ladybug
         tip.physicsBody = tipBody
-        tongue.addChild(tip)
+        parentNode.addChild(tip)
 
-        tongue.setScale(0.01)
-        let extend = SKAction.scale(to: 1.0, duration: 0.08)
-        let hold = SKAction.wait(forDuration: 0.2)
-        let retract = SKAction.scale(to: 0.01, duration: 0.10)
-        let remove = SKAction.run { [weak self] in
-            tongue.removeFromParent()
-            self?.tongueNode = nil
-        }
-        tongue.run(SKAction.sequence([extend, hold, retract, remove]))
+        // Animate: appear, hold, retract
+        tongue.alpha = 0
+        tip.alpha = 0
+        let fadeIn = SKAction.fadeIn(withDuration: 0.06)
+        let hold = SKAction.wait(forDuration: 0.25)
+        let fadeOut = SKAction.fadeOut(withDuration: 0.10)
+        let removeTongue = SKAction.removeFromParent()
+        tongue.run(SKAction.sequence([fadeIn, hold, fadeOut, removeTongue]))
+        tip.run(SKAction.sequence([fadeIn, hold, fadeOut, SKAction.removeFromParent()]))
     }
 }

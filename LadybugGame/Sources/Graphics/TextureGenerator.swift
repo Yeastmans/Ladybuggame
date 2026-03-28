@@ -584,68 +584,79 @@ enum TextureGenerator {
             let w = size.width
             let h = size.height
 
-            let barkColor = UIColor(red: 0.50, green: 0.38, blue: 0.10, alpha: 1.0)
-            let barkDark = UIColor(red: 0.38, green: 0.28, blue: 0.06, alpha: 1.0)
+            let bark = UIColor(red: 0.545, green: 0.41, blue: 0.10, alpha: 1.0)
+            let barkDk = UIColor(red: 0.40, green: 0.30, blue: 0.06, alpha: 1.0)
 
-            // Dark hollow interior (full width, middle section)
-            cg.setFillColor(UIColor(red: 0.25, green: 0.16, blue: 0.04, alpha: 1.0).cgColor)
-            cg.fill(CGRect(x: 0, y: h * 0.30, width: w, height: h * 0.40))
+            // Dark hollow interior — bottom flush with bottom edge
+            cg.setFillColor(UIColor(red: 0.12, green: 0.08, blue: 0.02, alpha: 1.0).cgColor)
+            cg.fill(CGRect(x: w * 0.06, y: h * 0.40, width: w * 0.88, height: h * 0.60))
 
-            // Top bark — arch from left to right, peak at center
+            // Top bark — half-pipe arch
             let top = UIBezierPath()
-            top.move(to: CGPoint(x: 0, y: h * 0.30))
-            top.addQuadCurve(to: CGPoint(x: w, y: h * 0.30),
-                              controlPoint: CGPoint(x: w * 0.5, y: -h * 0.05))
-            top.addLine(to: CGPoint(x: w, y: h * 0.30))
+            top.move(to: CGPoint(x: 0, y: h * 0.40))
+            top.addQuadCurve(to: CGPoint(x: w, y: h * 0.40),
+                              controlPoint: CGPoint(x: w * 0.5, y: -h * 0.10))
+            top.addLine(to: CGPoint(x: w, y: h * 0.40))
             top.close()
-            cg.setFillColor(barkColor.cgColor)
+            cg.setFillColor(bark.cgColor)
             cg.addPath(top.cgPath)
             cg.fillPath()
-            cg.setStrokeColor(barkDark.cgColor)
+            // Arch outline
+            let archLine = UIBezierPath()
+            archLine.move(to: CGPoint(x: 0, y: h * 0.40))
+            archLine.addQuadCurve(to: CGPoint(x: w, y: h * 0.40),
+                                   controlPoint: CGPoint(x: w * 0.5, y: -h * 0.10))
+            cg.setStrokeColor(barkDk.cgColor)
             cg.setLineWidth(1.0)
-            let topCurve = UIBezierPath()
-            topCurve.move(to: CGPoint(x: 0, y: h * 0.30))
-            topCurve.addQuadCurve(to: CGPoint(x: w, y: h * 0.30),
-                                   controlPoint: CGPoint(x: w * 0.5, y: -h * 0.05))
-            cg.addPath(topCurve.cgPath)
+            cg.addPath(archLine.cgPath)
             cg.strokePath()
 
-            // Bottom bark — FLAT bottom, fills to bottom edge
-            cg.setFillColor(barkColor.cgColor)
-            cg.fill(CGRect(x: 0, y: h * 0.70, width: w, height: h * 0.30))
-            // Inner curve line on top of bottom bark
-            cg.setStrokeColor(barkDark.cgColor)
-            cg.setLineWidth(0.8)
-            cg.move(to: CGPoint(x: 0, y: h * 0.72))
-            cg.addQuadCurve(to: CGPoint(x: w, y: h * 0.72),
-                             control: CGPoint(x: w * 0.5, y: h * 0.78))
-            cg.strokePath()
-
-            // Bark lines
-            cg.setStrokeColor(UIColor(red: 0.42, green: 0.31, blue: 0.08, alpha: 0.3).cgColor)
+            // Bark texture
+            cg.setStrokeColor(UIColor(red: 0.42, green: 0.31, blue: 0.08, alpha: 0.25).cgColor)
             cg.setLineWidth(0.5)
-            for lx in [0.2, 0.4, 0.6, 0.8] as [CGFloat] {
+            for lx in [0.20, 0.38, 0.55, 0.72, 0.88] as [CGFloat] {
                 cg.move(to: CGPoint(x: w * lx, y: h * 0.02))
-                cg.addLine(to: CGPoint(x: w * lx, y: h * 0.28))
+                cg.addLine(to: CGPoint(x: w * lx, y: h * 0.38))
                 cg.strokePath()
             }
 
-            // Moss
-            cg.setFillColor(UIColor(red: 0.29, green: 0.55, blue: 0.16, alpha: 0.5).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.18, y: 0, width: w * 0.15, height: h * 0.08))
-            cg.fillEllipse(in: CGRect(x: w * 0.52, y: 0, width: w * 0.20, height: h * 0.06))
+            // Wood grain
+            cg.setStrokeColor(UIColor(red: 0.65, green: 0.50, blue: 0.20, alpha: 0.3).cgColor)
+            cg.setLineWidth(0.5)
+            cg.move(to: CGPoint(x: w * 0.10, y: h * 0.18))
+            cg.addLine(to: CGPoint(x: w * 0.35, y: h * 0.18))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.50, y: h * 0.12))
+            cg.addLine(to: CGPoint(x: w * 0.80, y: h * 0.12))
+            cg.strokePath()
 
-            // Right opening (cross-section)
-            cg.setFillColor(UIColor(red: 0.58, green: 0.44, blue: 0.14, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.87, y: h * 0.05, width: w * 0.14, height: h * 0.90))
-            cg.setStrokeColor(barkDark.cgColor)
-            cg.setLineWidth(1.0)
-            cg.strokeEllipse(in: CGRect(x: w * 0.87, y: h * 0.05, width: w * 0.14, height: h * 0.90))
+            // Moss on top
+            cg.setFillColor(UIColor(red: 0.29, green: 0.55, blue: 0.16, alpha: 0.50).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.22, y: h * 0.01, width: w * 0.14, height: h * 0.08))
+            cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * -0.01, width: w * 0.18, height: h * 0.07))
+
+            // Right end — half-circle cross section (top half only since bottom is ground)
+            let endPath = UIBezierPath()
+            endPath.move(to: CGPoint(x: w, y: h))
+            endPath.addArc(withCenter: CGPoint(x: w * 0.94, y: h * 0.70),
+                           radius: h * 0.42,
+                           startAngle: .pi / 2,
+                           endAngle: -.pi / 2,
+                           clockwise: true)
+            endPath.addLine(to: CGPoint(x: w, y: h * 0.28))
+            endPath.close()
+            cg.setFillColor(UIColor(red: 0.60, green: 0.47, blue: 0.16, alpha: 1.0).cgColor)
+            cg.addPath(endPath.cgPath)
+            cg.fillPath()
+            cg.setStrokeColor(barkDk.cgColor)
+            cg.setLineWidth(0.8)
+            cg.addPath(endPath.cgPath)
+            cg.strokePath()
             // Rings
-            cg.setStrokeColor(UIColor(red: 0.68, green: 0.55, blue: 0.25, alpha: 0.35).cgColor)
+            cg.setStrokeColor(UIColor(red: 0.72, green: 0.58, blue: 0.28, alpha: 0.35).cgColor)
             cg.setLineWidth(0.4)
-            cg.strokeEllipse(in: CGRect(x: w * 0.89, y: h * 0.20, width: w * 0.10, height: h * 0.60))
-            cg.strokeEllipse(in: CGRect(x: w * 0.91, y: h * 0.35, width: w * 0.06, height: h * 0.30))
+            cg.strokeEllipse(in: CGRect(x: w * 0.88, y: h * 0.45, width: w * 0.10, height: h * 0.30))
+            cg.strokeEllipse(in: CGRect(x: w * 0.90, y: h * 0.52, width: w * 0.06, height: h * 0.18))
         }
         return SKTexture(image: image)
     }

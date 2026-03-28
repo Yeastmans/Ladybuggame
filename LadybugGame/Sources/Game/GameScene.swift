@@ -72,6 +72,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             aphidFrames[color] = TextureGenerator.generateAphidWalkFrames(size: CGSize(width: 22, height: 22), color: color)
         }
         _ = SoundManager.shared
+        SoundManager.shared.startMusic()
 
         setupSky()
         setupGround()
@@ -419,8 +420,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func spawnAphid() {
         let spawnX = size.width + 30
-        // Don't spawn inside a log
-        if isInsideAnyLog(x: spawnX) { return }
+        if isInsideAnyLog(x: spawnX) || isNearGroundObject(x: spawnX, range: 60) { return }
 
         let roll = Int.random(in: 0..<100)
         let color: TextureGenerator.AphidColor
@@ -458,7 +458,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let y = groundY + CGFloat.random(in: 60...size.height * 0.55)
         df.position = CGPoint(x: size.width + 50, y: y)
         df.setupPhysics()
-        df.startHovering(minY: groundY + 40, maxY: size.height * 0.70)
+        df.startHovering(minY: groundY + 50, maxY: size.height * 0.70, playerX: ladybug.position.x)
         addChild(df)
     }
 
@@ -802,6 +802,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func gameOver() {
         isGameOver = true
+        SoundManager.shared.stopMusic()
         SoundManager.shared.play("gameOver")
         if score > MenuScene.highScore { MenuScene.highScore = score }
 
