@@ -226,7 +226,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let bugSize = CGSize(width: 48, height: 48)
         let walkTex = TextureGenerator.generateLadybugTexture(size: bugSize)
         let blinkTex = TextureGenerator.generateLadybugBlinkTexture(size: bugSize)
-        ladybug = Ladybug(walkTexture: walkTex, blinkTexture: blinkTex)
+        let flyFrames = TextureGenerator.generateLadybugFlyFrames(size: bugSize)
+        ladybug = Ladybug(walkTexture: walkTex, blinkTexture: blinkTex, flyFrames: flyFrames)
         ladybug.position = CGPoint(x: size.width * 0.18, y: groundY + bugSize.height / 2)
 
         let body = SKPhysicsBody(circleOfRadius: bugSize.width / 2 * 0.6)
@@ -308,14 +309,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let li = max(2.5, 5.0 - Double(distanceTraveled) * 0.0003)
         if logTimer >= li { logTimer = 0; spawnLog() }
         birdTimer += dt
-        let bi = max(1.2, 3.5 - Double(distanceTraveled) * 0.0005)
+        let bi = max(2.5, 5.5 - Double(distanceTraveled) * 0.0003)
         if birdTimer >= bi { birdTimer = 0; spawnBird() }
         frogTimer += dt
         let fi = max(4.0, 8.0 - Double(distanceTraveled) * 0.0003)
         if frogTimer >= fi { frogTimer = 0; spawnFrog() }
 
         envTimer += dt
-        if envTimer >= 1.5 { envTimer = 0; spawnEnvironment() }
+        if envTimer >= 0.6 { envTimer = 0; spawnEnvironment() }
     }
 
     // MARK: - Log Tube Mechanic
@@ -432,10 +433,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func spawnLog() {
-        let logWidth = CGFloat.random(in: 80...150) // Varied lengths
+        let logWidth = CGFloat.random(in: 80...160)
         let log = Log(texture: logTexture, width: logWidth)
-        // anchorPoint is (0.5, 0) so position.y = groundY puts bottom on ground
-        log.position = CGPoint(x: size.width + logWidth / 2 + 20, y: groundY)
+        // anchorPoint (0.5, 0) — y = groundY places bottom flush on ground
+        log.position = CGPoint(x: size.width + logWidth / 2 + 20, y: groundY - 1)
         log.setupPhysics()
         addChild(log)
     }
@@ -467,56 +468,143 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func spawnFrog() {
+        let spawnX = size.width + 50
+
+        // Pond behind the frog
+        let pondW = CGFloat.random(in: 50...80)
+        let pond = SKShapeNode(ellipseOf: CGSize(width: pondW, height: 14))
+        pond.fillColor = SKColor(red: 0.25, green: 0.50, blue: 0.70, alpha: 0.6)
+        pond.strokeColor = SKColor(red: 0.20, green: 0.40, blue: 0.55, alpha: 0.5)
+        pond.lineWidth = 1
+        pond.position = CGPoint(x: spawnX, y: groundY + 2)
+        pond.zPosition = 2
+        pond.name = "envDecor"
+        addChild(pond)
+
+        // Lily pads on pond
+        for i in 0..<Int.random(in: 1...3) {
+            let pad = SKShapeNode(circleOfRadius: CGFloat.random(in: 5...8))
+            pad.fillColor = SKColor(red: 0.30, green: 0.68, blue: 0.25, alpha: 0.7)
+            pad.strokeColor = SKColor(red: 0.22, green: 0.50, blue: 0.18, alpha: 0.5)
+            pad.lineWidth = 0.5
+            let padX = CGFloat(i - 1) * CGFloat.random(in: 10...18)
+            pad.position = CGPoint(x: spawnX + padX, y: groundY + CGFloat.random(in: 1...5))
+            pad.zPosition = 3
+            pad.name = "envDecor"
+            addChild(pad)
+        }
+
         let frog = Frog(texture: frogTexture)
-        frog.position = CGPoint(x: size.width + 40, y: groundY + frog.size.height / 2)
+        frog.position = CGPoint(x: spawnX + pondW * 0.3, y: groundY + frog.size.height / 2)
         addChild(frog)
 
-        // When frog gets close to ladybug X, shoot tongue
         let checkDistance = SKAction.run { [weak self, weak frog] in
             guard let self = self, let frog = frog else { return }
             let dist = abs(frog.position.x - self.ladybug.position.x)
             if dist < 130 {
                 SoundManager.shared.play("ribbit")
-                frog.attackToward(CGPoint(
-                    x: self.ladybug.position.x - frog.position.x,
-                    y: self.ladybug.position.y - frog.position.y
-                ))
+                frog.attackToward(sceneTarget: self.ladybug.position)
             }
         }
-        let wait = SKAction.wait(forDuration: 0.2)
+        let wait = SKAction.wait(forDuration: 0.3)
         frog.run(SKAction.repeatForever(SKAction.sequence([wait, checkDistance])), withKey: "checkAttack")
     }
 
     private func spawnEnvironment() {
-        let roll = Int.random(in: 0...3)
+        let roll = Int.random(in: 0...6)
         let x = size.width + 30
-        let node: SKShapeNode
 
         switch roll {
-        case 0:
-            node = SKShapeNode(circleOfRadius: CGFloat.random(in: 3...5))
-            node.fillColor = [SKColor.yellow, SKColor.magenta, SKColor.orange, SKColor.white].randomElement()!
-            node.strokeColor = .clear
-            node.position = CGPoint(x: x, y: groundY + CGFloat.random(in: 3...10))
-        case 1:
-            node = SKShapeNode(rectOf: CGSize(width: CGFloat.random(in: 6...14), height: CGFloat.random(in: 4...8)), cornerRadius: 2)
-            node.fillColor = SKColor(red: 0.55, green: 0.50, blue: 0.45, alpha: 0.6)
-            node.strokeColor = .clear
-            node.position = CGPoint(x: x, y: groundY + 2)
-        case 2:
-            node = SKShapeNode(circleOfRadius: CGFloat.random(in: 8...14))
-            node.fillColor = SKColor(red: 0.30, green: CGFloat.random(in: 0.55...0.70), blue: 0.20, alpha: 0.65)
-            node.strokeColor = .clear
-            node.position = CGPoint(x: x, y: groundY + CGFloat.random(in: 5...12))
-        default:
-            node = SKShapeNode(circleOfRadius: 4)
-            node.fillColor = SKColor(red: 0.85, green: 0.25, blue: 0.20, alpha: 0.7)
-            node.strokeColor = .clear
-            node.position = CGPoint(x: x, y: groundY + 7)
+        case 0: // Flower
+            let stem = SKShapeNode(rectOf: CGSize(width: 1.5, height: CGFloat.random(in: 8...16)))
+            stem.fillColor = SKColor(red: 0.30, green: 0.55, blue: 0.22, alpha: 0.7)
+            stem.strokeColor = .clear
+            let sh = stem.frame.height
+            stem.position = CGPoint(x: x, y: groundY + sh / 2)
+            stem.zPosition = 1
+            stem.name = "envDecor"
+            addChild(stem)
+            let petal = SKShapeNode(circleOfRadius: CGFloat.random(in: 3...6))
+            petal.fillColor = [SKColor.yellow, SKColor.magenta, SKColor.orange, SKColor.white, SKColor.systemPink].randomElement()!
+            petal.strokeColor = .clear
+            petal.position = CGPoint(x: x, y: groundY + sh + 2)
+            petal.zPosition = 1
+            petal.name = "envDecor"
+            addChild(petal)
+        case 1: // Rock
+            let rock = SKShapeNode(rectOf: CGSize(width: CGFloat.random(in: 6...16), height: CGFloat.random(in: 4...9)), cornerRadius: 3)
+            rock.fillColor = SKColor(red: CGFloat.random(in: 0.45...0.60), green: CGFloat.random(in: 0.42...0.55), blue: CGFloat.random(in: 0.38...0.50), alpha: 0.7)
+            rock.strokeColor = .clear
+            rock.position = CGPoint(x: x, y: groundY + 2)
+            rock.zPosition = 1
+            rock.name = "envDecor"
+            addChild(rock)
+        case 2: // Bush
+            let bush = SKShapeNode(circleOfRadius: CGFloat.random(in: 8...16))
+            bush.fillColor = SKColor(red: 0.28, green: CGFloat.random(in: 0.52...0.70), blue: 0.18, alpha: 0.65)
+            bush.strokeColor = .clear
+            bush.position = CGPoint(x: x, y: groundY + CGFloat.random(in: 5...12))
+            bush.zPosition = 1
+            bush.name = "envDecor"
+            addChild(bush)
+        case 3: // Mushroom
+            let mStem = SKShapeNode(rectOf: CGSize(width: 3, height: 6))
+            mStem.fillColor = SKColor(white: 0.88, alpha: 0.8)
+            mStem.strokeColor = .clear
+            mStem.position = CGPoint(x: x, y: groundY + 3)
+            mStem.zPosition = 1
+            mStem.name = "envDecor"
+            addChild(mStem)
+            let cap = SKShapeNode(circleOfRadius: 5)
+            cap.fillColor = SKColor(red: 0.85, green: 0.22, blue: 0.18, alpha: 0.8)
+            cap.strokeColor = .clear
+            cap.position = CGPoint(x: x, y: groundY + 8)
+            cap.zPosition = 1
+            cap.name = "envDecor"
+            addChild(cap)
+        case 4: // Tall grass clump
+            for j in 0..<3 {
+                let blade = SKShapeNode(rectOf: CGSize(width: 1.5, height: CGFloat.random(in: 12...22)))
+                blade.fillColor = SKColor(red: 0.35, green: CGFloat.random(in: 0.60...0.75), blue: 0.22, alpha: 0.6)
+                blade.strokeColor = .clear
+                blade.position = CGPoint(x: x + CGFloat(j) * 3, y: groundY + blade.frame.height / 2)
+                blade.zRotation = CGFloat.random(in: -0.15...0.15)
+                blade.zPosition = 1
+                blade.name = "envDecor"
+                addChild(blade)
+            }
+        case 5: // Small dirt mound
+            let mound = SKShapeNode()
+            let mp = UIBezierPath()
+            let mw = CGFloat.random(in: 15...30)
+            let mh = CGFloat.random(in: 4...8)
+            mp.move(to: CGPoint(x: 0, y: 0))
+            mp.addQuadCurve(to: CGPoint(x: mw, y: 0), controlPoint: CGPoint(x: mw / 2, y: mh))
+            mp.close()
+            mound.path = mp.cgPath
+            mound.fillColor = SKColor(red: 0.48, green: 0.35, blue: 0.18, alpha: 0.5)
+            mound.strokeColor = .clear
+            mound.position = CGPoint(x: x - mw / 2, y: groundY)
+            mound.zPosition = 1
+            mound.name = "envDecor"
+            addChild(mound)
+        default: // Dandelion
+            let stem = SKShapeNode(rectOf: CGSize(width: 1, height: CGFloat.random(in: 10...18)))
+            stem.fillColor = SKColor(red: 0.35, green: 0.55, blue: 0.25, alpha: 0.5)
+            stem.strokeColor = .clear
+            let sh = stem.frame.height
+            stem.position = CGPoint(x: x, y: groundY + sh / 2)
+            stem.zPosition = 1
+            stem.name = "envDecor"
+            addChild(stem)
+            let puff = SKShapeNode(circleOfRadius: 4)
+            puff.fillColor = SKColor(white: 1.0, alpha: 0.5)
+            puff.strokeColor = .clear
+            puff.position = CGPoint(x: x, y: groundY + sh + 3)
+            puff.zPosition = 1
+            puff.name = "envDecor"
+            addChild(puff)
         }
-        node.zPosition = 1
-        node.name = "envDecor"
-        addChild(node)
     }
 
     // MARK: - Contact

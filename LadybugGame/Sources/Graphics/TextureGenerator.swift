@@ -6,70 +6,86 @@ enum TextureGenerator {
     // MARK: - Ladybug SIDE VIEW (facing right)
 
     static func generateLadybugTexture(size: CGSize) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: false, wingsOpen: false)
+        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil)
     }
 
     static func generateLadybugBlinkTexture(size: CGSize) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: true, wingsOpen: false)
+        return drawLadybugSide(size: size, eyesClosed: true, wingPhase: nil)
     }
 
-    static func generateLadybugGlideTexture(size: CGSize) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: false, wingsOpen: true)
+    /// Two frames: wings up and wings down, legs tucked
+    static func generateLadybugFlyFrames(size: CGSize) -> [SKTexture] {
+        return [drawLadybugSide(size: size, eyesClosed: false, wingPhase: 0),
+                drawLadybugSide(size: size, eyesClosed: false, wingPhase: 1)]
     }
 
-    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingsOpen: Bool) -> SKTexture {
+    /// wingPhase: nil = walking (legs out), 0 = wings up, 1 = wings down
+    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingPhase: Int?) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
             let w = size.width
             let h = size.height
 
-            // === Legs (3 visible, underneath body) ===
             let legColor = UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor
+            let isFlying = wingPhase != nil
+
+            // === Legs ===
             cg.setStrokeColor(legColor)
             cg.setLineWidth(1.5)
             cg.setLineCap(.round)
 
-            let legXs: [CGFloat] = [0.35, 0.52, 0.70]
-            for lx in legXs {
-                cg.move(to: CGPoint(x: w * lx, y: h * 0.72))
-                cg.addLine(to: CGPoint(x: w * (lx - 0.03), y: h * 0.88))
-                cg.addLine(to: CGPoint(x: w * (lx + 0.02), y: h * 0.95))
-                cg.strokePath()
+            if isFlying {
+                // Tucked legs — shorter, angled back
+                let legXs: [CGFloat] = [0.38, 0.52, 0.66]
+                for lx in legXs {
+                    cg.move(to: CGPoint(x: w * lx, y: h * 0.72))
+                    cg.addLine(to: CGPoint(x: w * (lx - 0.04), y: h * 0.80))
+                    cg.strokePath()
+                }
+            } else {
+                // Normal walking legs
+                let legXs: [CGFloat] = [0.35, 0.52, 0.70]
+                for lx in legXs {
+                    cg.move(to: CGPoint(x: w * lx, y: h * 0.72))
+                    cg.addLine(to: CGPoint(x: w * (lx - 0.03), y: h * 0.88))
+                    cg.addLine(to: CGPoint(x: w * (lx + 0.02), y: h * 0.95))
+                    cg.strokePath()
+                }
             }
 
-            if wingsOpen {
-                // === Wing (translucent, raised above body) ===
-                cg.setFillColor(UIColor(red: 0.78, green: 0.85, blue: 0.91, alpha: 0.35).cgColor)
+            if let phase = wingPhase {
+                // === Translucent flight wing ===
+                let wingAngle: CGFloat = phase == 0 ? -0.35 : 0.1
+                cg.setFillColor(UIColor(red: 0.78, green: 0.85, blue: 0.91, alpha: 0.4).cgColor)
                 cg.saveGState()
-                cg.translateBy(x: w * 0.50, y: h * 0.15)
-                cg.rotate(by: -0.15)
-                cg.fillEllipse(in: CGRect(x: -w * 0.22, y: -h * 0.12, width: w * 0.44, height: h * 0.24))
-                cg.restoreGState()
-
+                cg.translateBy(x: w * 0.48, y: h * 0.40)
+                cg.rotate(by: wingAngle)
+                cg.fillEllipse(in: CGRect(x: -w * 0.20, y: -h * 0.25, width: w * 0.40, height: h * 0.28))
                 // Wing vein
-                cg.setStrokeColor(UIColor(red: 0.63, green: 0.69, blue: 0.75, alpha: 0.4).cgColor)
+                cg.setStrokeColor(UIColor(red: 0.63, green: 0.69, blue: 0.75, alpha: 0.3).cgColor)
                 cg.setLineWidth(0.4)
-                cg.move(to: CGPoint(x: w * 0.35, y: h * 0.15))
-                cg.addLine(to: CGPoint(x: w * 0.65, y: h * 0.10))
+                cg.move(to: CGPoint(x: 0, y: 0))
+                cg.addLine(to: CGPoint(x: w * 0.12, y: -h * 0.18))
                 cg.strokePath()
-
-                // Red elytra (raised/tilted)
-                cg.setFillColor(UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0).cgColor)
-                cg.saveGState()
-                cg.translateBy(x: w * 0.50, y: h * 0.30)
-                cg.rotate(by: -0.2)
-                let elytraRect = CGRect(x: -w * 0.28, y: -h * 0.10, width: w * 0.56, height: h * 0.20)
-                cg.fillEllipse(in: elytraRect)
-                cg.setStrokeColor(UIColor(red: 0.55, green: 0.05, blue: 0.05, alpha: 1.0).cgColor)
-                cg.setLineWidth(1.0)
-                cg.strokeEllipse(in: elytraRect)
-                // Spots on elytra
-                cg.setFillColor(UIColor(red: 0.10, green: 0.05, blue: 0.05, alpha: 1.0).cgColor)
-                cg.fillEllipse(in: CGRect(x: -w * 0.18, y: -h * 0.05, width: w * 0.10, height: w * 0.10))
-                cg.fillEllipse(in: CGRect(x: w * 0.02, y: -h * 0.06, width: w * 0.12, height: w * 0.12))
-                cg.fillEllipse(in: CGRect(x: w * 0.16, y: -h * 0.03, width: w * 0.08, height: w * 0.08))
                 cg.restoreGState()
+
+                // Body dome (same as walking but drawn over wing)
+                let bodyRect = CGRect(x: w * 0.18, y: h * 0.25, width: w * 0.65, height: h * 0.48)
+                cg.setFillColor(UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0).cgColor)
+                cg.fillEllipse(in: bodyRect)
+                cg.setStrokeColor(UIColor(red: 0.55, green: 0.05, blue: 0.05, alpha: 1.0).cgColor)
+                cg.setLineWidth(1.2)
+                cg.strokeEllipse(in: bodyRect)
+
+                // Spots
+                let spotColor = UIColor(red: 0.10, green: 0.05, blue: 0.05, alpha: 1.0).cgColor
+                cg.setFillColor(spotColor)
+                cg.fillEllipse(in: CGRect(x: w * 0.30, y: h * 0.32, width: w * 0.11, height: w * 0.11))
+                cg.fillEllipse(in: CGRect(x: w * 0.50, y: h * 0.30, width: w * 0.14, height: w * 0.14))
+                cg.fillEllipse(in: CGRect(x: w * 0.42, y: h * 0.48, width: w * 0.09, height: w * 0.09))
+                cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.38, width: w * 0.10, height: w * 0.10))
+                cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * 0.48, width: w * 0.07, height: w * 0.07))
             } else {
                 // === Body dome (red, side profile) ===
                 let bodyRect = CGRect(x: w * 0.18, y: h * 0.22, width: w * 0.65, height: h * 0.52)
@@ -432,78 +448,72 @@ enum TextureGenerator {
 
             let barkColor = UIColor(red: 0.50, green: 0.38, blue: 0.10, alpha: 1.0)
             let barkDark = UIColor(red: 0.38, green: 0.28, blue: 0.06, alpha: 1.0)
-            let innerColor = UIColor(red: 0.30, green: 0.20, blue: 0.05, alpha: 1.0)
 
-            // Inner dark hollow (visible through the opening)
-            let innerRect = CGRect(x: 0, y: h * 0.25, width: w, height: h * 0.50)
-            cg.setFillColor(innerColor.cgColor)
-            cg.fill(innerRect)
+            // Dark hollow interior (full width, middle section)
+            cg.setFillColor(UIColor(red: 0.25, green: 0.16, blue: 0.04, alpha: 1.0).cgColor)
+            cg.fill(CGRect(x: 0, y: h * 0.30, width: w, height: h * 0.40))
 
-            // Top bark (curved top of log)
-            let topBark = UIBezierPath()
-            topBark.move(to: CGPoint(x: 0, y: h * 0.25))
-            topBark.addQuadCurve(to: CGPoint(x: w, y: h * 0.25),
-                                  controlPoint: CGPoint(x: w * 0.5, y: 0))
-            topBark.addLine(to: CGPoint(x: w, y: h * 0.25))
-            topBark.close()
+            // Top bark — arch from left to right, peak at center
+            let top = UIBezierPath()
+            top.move(to: CGPoint(x: 0, y: h * 0.30))
+            top.addQuadCurve(to: CGPoint(x: w, y: h * 0.30),
+                              controlPoint: CGPoint(x: w * 0.5, y: -h * 0.05))
+            top.addLine(to: CGPoint(x: w, y: h * 0.30))
+            top.close()
             cg.setFillColor(barkColor.cgColor)
-            cg.addPath(topBark.cgPath)
+            cg.addPath(top.cgPath)
             cg.fillPath()
-
-            // Top bark outline
-            let topLine = UIBezierPath()
-            topLine.move(to: CGPoint(x: 0, y: h * 0.25))
-            topLine.addQuadCurve(to: CGPoint(x: w, y: h * 0.25),
-                                  controlPoint: CGPoint(x: w * 0.5, y: 0))
             cg.setStrokeColor(barkDark.cgColor)
             cg.setLineWidth(1.0)
-            cg.addPath(topLine.cgPath)
+            let topCurve = UIBezierPath()
+            topCurve.move(to: CGPoint(x: 0, y: h * 0.30))
+            topCurve.addQuadCurve(to: CGPoint(x: w, y: h * 0.30),
+                                   controlPoint: CGPoint(x: w * 0.5, y: -h * 0.05))
+            cg.addPath(topCurve.cgPath)
             cg.strokePath()
 
-            // Bottom bark (curved bottom of log)
-            let botBark = UIBezierPath()
-            botBark.move(to: CGPoint(x: 0, y: h * 0.75))
-            botBark.addQuadCurve(to: CGPoint(x: w, y: h * 0.75),
-                                  controlPoint: CGPoint(x: w * 0.5, y: h))
-            botBark.addLine(to: CGPoint(x: w, y: h * 0.75))
-            botBark.close()
+            // Bottom bark — arch from left to right, goes to very bottom
+            let bot = UIBezierPath()
+            bot.move(to: CGPoint(x: 0, y: h * 0.70))
+            bot.addQuadCurve(to: CGPoint(x: w, y: h * 0.70),
+                              controlPoint: CGPoint(x: w * 0.5, y: h * 1.05))
+            bot.addLine(to: CGPoint(x: w, y: h * 0.70))
+            bot.close()
             cg.setFillColor(barkColor.cgColor)
-            cg.addPath(botBark.cgPath)
+            cg.addPath(bot.cgPath)
             cg.fillPath()
-
-            // Bottom bark outline
-            let botLine = UIBezierPath()
-            botLine.move(to: CGPoint(x: 0, y: h * 0.75))
-            botLine.addQuadCurve(to: CGPoint(x: w, y: h * 0.75),
-                                  controlPoint: CGPoint(x: w * 0.5, y: h))
-            cg.addPath(botLine.cgPath)
+            let botCurve = UIBezierPath()
+            botCurve.move(to: CGPoint(x: 0, y: h * 0.70))
+            botCurve.addQuadCurve(to: CGPoint(x: w, y: h * 0.70),
+                                   controlPoint: CGPoint(x: w * 0.5, y: h * 1.05))
+            cg.addPath(botCurve.cgPath)
             cg.strokePath()
 
-            // Bark texture lines on top
-            cg.setStrokeColor(UIColor(red: 0.42, green: 0.31, blue: 0.08, alpha: 0.35).cgColor)
+            // Bark lines
+            cg.setStrokeColor(UIColor(red: 0.42, green: 0.31, blue: 0.08, alpha: 0.3).cgColor)
             cg.setLineWidth(0.5)
             for lx in [0.2, 0.4, 0.6, 0.8] as [CGFloat] {
-                cg.move(to: CGPoint(x: w * lx, y: h * 0.05))
-                cg.addLine(to: CGPoint(x: w * lx, y: h * 0.23))
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.02))
+                cg.addLine(to: CGPoint(x: w * lx, y: h * 0.28))
                 cg.strokePath()
             }
 
-            // Moss on top
-            cg.setFillColor(UIColor(red: 0.29, green: 0.55, blue: 0.16, alpha: 0.55).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.20, y: h * 0.02, width: w * 0.15, height: h * 0.10))
-            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.01, width: w * 0.20, height: h * 0.08))
+            // Moss
+            cg.setFillColor(UIColor(red: 0.29, green: 0.55, blue: 0.16, alpha: 0.5).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.18, y: 0, width: w * 0.15, height: h * 0.08))
+            cg.fillEllipse(in: CGRect(x: w * 0.52, y: 0, width: w * 0.20, height: h * 0.06))
 
-            // Right-side opening rim (elliptical cross-section)
-            cg.setStrokeColor(barkDark.cgColor)
-            cg.setLineWidth(1.2)
-            cg.strokeEllipse(in: CGRect(x: w * 0.88, y: h * 0.15, width: w * 0.14, height: h * 0.70))
+            // Right opening (cross-section)
             cg.setFillColor(UIColor(red: 0.58, green: 0.44, blue: 0.14, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.89, y: h * 0.17, width: w * 0.12, height: h * 0.66))
+            cg.fillEllipse(in: CGRect(x: w * 0.87, y: h * 0.05, width: w * 0.14, height: h * 0.90))
+            cg.setStrokeColor(barkDark.cgColor)
+            cg.setLineWidth(1.0)
+            cg.strokeEllipse(in: CGRect(x: w * 0.87, y: h * 0.05, width: w * 0.14, height: h * 0.90))
             // Rings
-            cg.setStrokeColor(UIColor(red: 0.68, green: 0.55, blue: 0.25, alpha: 0.4).cgColor)
+            cg.setStrokeColor(UIColor(red: 0.68, green: 0.55, blue: 0.25, alpha: 0.35).cgColor)
             cg.setLineWidth(0.4)
-            cg.strokeEllipse(in: CGRect(x: w * 0.91, y: h * 0.28, width: w * 0.08, height: h * 0.44))
-            cg.strokeEllipse(in: CGRect(x: w * 0.93, y: h * 0.36, width: w * 0.04, height: h * 0.28))
+            cg.strokeEllipse(in: CGRect(x: w * 0.89, y: h * 0.20, width: w * 0.10, height: h * 0.60))
+            cg.strokeEllipse(in: CGRect(x: w * 0.91, y: h * 0.35, width: w * 0.06, height: h * 0.30))
         }
         return SKTexture(image: image)
     }

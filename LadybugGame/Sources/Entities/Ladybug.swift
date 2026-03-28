@@ -4,6 +4,7 @@ class Ladybug: SKSpriteNode {
 
     private let walkTexture: SKTexture
     private let blinkTexture: SKTexture
+    private let flyFrames: [SKTexture]
 
     private(set) var isFlying = false
     private(set) var isOnGround = true
@@ -14,15 +15,16 @@ class Ladybug: SKSpriteNode {
     private var walkBobTime: CGFloat = 0
 
     let gravity: CGFloat = -500
-    let followStrength: CGFloat = 2.2   // Gentle pull toward finger
-    let damping: CGFloat = 0.95         // Heavy damping — very smooth, no bounce
+    let followStrength: CGFloat = 2.2
+    let damping: CGFloat = 0.95
 
     var isInvincible: Bool { invincibleTimer > 0 }
     var isSheltered: Bool { isInsideLog && isOnGround }
 
-    init(walkTexture: SKTexture, blinkTexture: SKTexture) {
+    init(walkTexture: SKTexture, blinkTexture: SKTexture, flyFrames: [SKTexture]) {
         self.walkTexture = walkTexture
         self.blinkTexture = blinkTexture
+        self.flyFrames = flyFrames
         super.init(texture: walkTexture, color: .clear, size: walkTexture.size())
         zPosition = 10
         startBlinking()
@@ -31,8 +33,6 @@ class Ladybug: SKSpriteNode {
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
-    // MARK: - Blinking
 
     private func startBlinking() {
         let wait = SKAction.wait(forDuration: 3.0, withRange: 3.0)
@@ -48,19 +48,27 @@ class Ladybug: SKSpriteNode {
         run(SKAction.repeatForever(SKAction.sequence([wait, close, holdClosed, open])), withKey: "blink")
     }
 
-    // MARK: - Physics
+    private func startFlapAnimation() {
+        guard flyFrames.count >= 2 else { return }
+        removeAction(forKey: "flap")
+        let flap = SKAction.animate(with: flyFrames, timePerFrame: 0.08)
+        run(SKAction.repeatForever(flap), withKey: "flap")
+    }
+
+    private func stopFlapAnimation() {
+        removeAction(forKey: "flap")
+        texture = walkTexture
+    }
 
     func updatePhysics(dt: TimeInterval, groundY: CGFloat, ceilingY: CGFloat) {
         if invincibleTimer > 0 { invincibleTimer -= dt }
 
         if let ty = targetY, !isInsideLog {
-            // Finger is on screen — follow it smoothly
             if isOnGround && ty > groundY + 10 {
-                // Lift off — finger is above ground
                 isOnGround = false
                 isFlying = true
                 velocityY = 0
-                texture = walkTexture
+                startFlapAnimation()
                 SoundManager.shared.play("jump")
             }
 
@@ -69,20 +77,16 @@ class Ladybug: SKSpriteNode {
                 let diff = ty - position.y
                 velocityY += diff * followStrength
                 velocityY *= damping
-
-                // Gentle tilt
                 let tilt = max(-0.15, min(0.15, velocityY * 0.0003))
                 zRotation = -tilt
             }
         } else if !isOnGround {
-            // No finger — fall with gravity
             isFlying = false
             velocityY += gravity * CGFloat(dt)
             let tilt = max(-0.2, min(0, velocityY * 0.0004))
             zRotation = -tilt
         }
 
-        // Walk bob when on ground
         if isOnGround {
             walkBobTime += CGFloat(dt) * 6
             let bob = sin(walkBobTime) * 1.2
@@ -93,13 +97,11 @@ class Ladybug: SKSpriteNode {
 
         position.y += velocityY * CGFloat(dt)
 
-        // Ceiling clamp
         if position.y > ceilingY {
             position.y = ceilingY
             velocityY = min(velocityY, 0)
         }
 
-        // Hit ground
         if position.y <= groundY {
             position.y = groundY
             velocityY = 0
@@ -107,14 +109,12 @@ class Ladybug: SKSpriteNode {
             isFlying = false
             zRotation = 0
             walkBobTime = 0
-            texture = walkTexture
+            stopFlapAnimation()
             SoundManager.shared.play("land")
         }
     }
 
-    func makeInvincible(duration: TimeInterval = 1.5) {
-        invincibleTimer = duration
-    }
+    func makeInvincible(duration: TimeInterval = 1.5) { invincibleTimer = duration }
 
     func pulse() {
         run(SKAction.sequence([SKAction.scale(to: 1.15, duration: 0.06), SKAction.scale(to: 1.0, duration: 0.06)]))

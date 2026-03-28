@@ -1,4 +1,5 @@
 import SpriteKit
+import UIKit
 
 class Frog: SKSpriteNode {
 
@@ -14,28 +15,30 @@ class Frog: SKSpriteNode {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setupPhysics() {
-        // Tongue tip acts as the contact body — created during attack
-    }
-
-    /// Shoot tongue toward a target point
-    func attackToward(_ target: CGPoint) {
+    /// Shoot tongue toward a target in SCENE coordinates
+    func attackToward(sceneTarget: CGPoint) {
         guard !hasAttacked else { return }
         hasAttacked = true
 
-        let dx = target.x - position.x
-        let dy = target.y - position.y
-        let dist = min(hypot(dx, dy), 120) // Max tongue length
+        // Convert scene target to local coordinates
+        let localTarget = CGPoint(x: sceneTarget.x - position.x, y: sceneTarget.y - position.y)
+
+        // Tongue starts from mouth (right side of frog, upper area)
+        let mouthX = size.width * 0.45
+        let mouthY = size.height * 0.1
+
+        let dx = localTarget.x - mouthX
+        let dy = localTarget.y - mouthY
+        let dist = min(hypot(dx, dy), 120)
         guard dist > 10 else { return }
         let nx = dx / hypot(dx, dy)
         let ny = dy / hypot(dx, dy)
-        let tipX = nx * dist
-        let tipY = ny * dist
+        let tipX = mouthX + nx * dist
+        let tipY = mouthY + ny * dist
 
-        // Tongue line
         let tongue = SKShapeNode()
         let path = UIBezierPath()
-        path.move(to: CGPoint(x: size.width * 0.4, y: size.height * 0.3))
+        path.move(to: CGPoint(x: mouthX, y: mouthY))
         path.addLine(to: CGPoint(x: tipX, y: tipY))
         tongue.path = path.cgPath
         tongue.strokeColor = SKColor(red: 0.90, green: 0.30, blue: 0.35, alpha: 1.0)
@@ -44,25 +47,23 @@ class Frog: SKSpriteNode {
         addChild(tongue)
         tongueNode = tongue
 
-        // Tongue tip (hitbox)
-        let tip = SKShapeNode(circleOfRadius: 5)
-        tip.fillColor = SKColor(red: 0.90, green: 0.30, blue: 0.35, alpha: 1.0)
+        // Tip hitbox
+        let tip = SKShapeNode(circleOfRadius: 6)
+        tip.fillColor = SKColor(red: 0.95, green: 0.35, blue: 0.40, alpha: 1.0)
         tip.strokeColor = .clear
         tip.position = CGPoint(x: tipX, y: tipY)
-        tip.zPosition = -1
-        tongue.addChild(tip)
-
-        let tipBody = SKPhysicsBody(circleOfRadius: 5)
+        let tipBody = SKPhysicsBody(circleOfRadius: 6)
         tipBody.isDynamic = false
-        tipBody.categoryBitMask = GameScene.PhysicsCategory.bird // Reuse bird category for damage
+        tipBody.categoryBitMask = GameScene.PhysicsCategory.bird
         tipBody.contactTestBitMask = GameScene.PhysicsCategory.ladybug
         tip.physicsBody = tipBody
+        tongue.addChild(tip)
 
-        // Animate: extend then retract
-        tongue.alpha = 0
-        let extend = SKAction.fadeIn(withDuration: 0.08)
-        let hold = SKAction.wait(forDuration: 0.25)
-        let retract = SKAction.fadeOut(withDuration: 0.12)
+        // Extend, hold, retract
+        tongue.setScale(0.01)
+        let extend = SKAction.scale(to: 1.0, duration: 0.08)
+        let hold = SKAction.wait(forDuration: 0.2)
+        let retract = SKAction.scale(to: 0.01, duration: 0.10)
         let remove = SKAction.run { [weak self] in
             tongue.removeFromParent()
             self?.tongueNode = nil
