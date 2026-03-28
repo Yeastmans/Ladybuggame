@@ -92,7 +92,7 @@ enum TextureGenerator {
                 cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * 0.48, width: w * 0.07, height: w * 0.07))
             } else {
                 // === Body dome (red, side profile) ===
-                let bodyRect = CGRect(x: w * 0.18, y: h * 0.22, width: w * 0.65, height: h * 0.52)
+                let bodyRect = CGRect(x: w * 0.12, y: h * 0.22, width: w * 0.60, height: h * 0.52)
                 cg.setFillColor(UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0).cgColor)
                 cg.fillEllipse(in: bodyRect)
                 cg.setStrokeColor(UIColor(red: 0.55, green: 0.05, blue: 0.05, alpha: 1.0).cgColor)
@@ -111,8 +111,8 @@ enum TextureGenerator {
             }
 
             // === Head (black, on the right) ===
-            let headR = w * 0.16
-            let headCX = w * 0.88
+            let headR = w * 0.14
+            let headCX = w * 0.82
             let headCY = h * 0.50
             cg.setFillColor(UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor)
             cg.fillEllipse(in: CGRect(x: headCX - headR, y: headCY - headR, width: headR * 2, height: headR * 2))

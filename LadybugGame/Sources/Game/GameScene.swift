@@ -27,16 +27,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 hasShownRainbow = true
                 showRainbow()
             }
-            // Biome transitions
+            // Biome transitions + checkpoint save
             let newBiome = Biome.biome(for: score)
             if newBiome != currentBiome {
                 transitionToBiome(newBiome)
                 currentBiome = newBiome
-            }
-            // Checkpoint every 1000 points
-            if score > 0 && score % 1000 == 0 {
+                // Save checkpoint at every biome transition
                 GameScene.hasNightCheckpoint = true
-                GameScene.checkpointScore = score
+                GameScene.checkpointScore = newBiome.scoreThreshold
             }
         }
     }

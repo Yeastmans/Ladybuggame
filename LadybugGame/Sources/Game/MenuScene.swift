@@ -94,7 +94,12 @@ class MenuScene: SKScene {
                 return
             }
             if node.name == "leaderboard" { showLeaderboard(); return }
-            if node.name == "bugTracker" { showBugTracker(); return }
+            if node.name == "bugTracker" {
+                let bugopedia = BugopediaScene(size: size)
+                bugopedia.scaleMode = scaleMode
+                view?.presentScene(bugopedia, transition: .fade(withDuration: 0.3))
+                return
+            }
             if node.name == "checkpoint" {
                 let game = GameScene(size: size)
                 game.scaleMode = scaleMode
