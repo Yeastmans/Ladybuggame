@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- LADYBUG — walking state (wings closed, no mouth, no legs) -->
+
+  <!-- Body (red oval) -->
+  <ellipse cx="24" cy="25.5" rx="19" ry="17.5" fill="#d91e1a" stroke="#8c0d0d" stroke-width="1.5"/>
+
+  <!-- Wing line (closed) -->
+  <line x1="24" y1="10" x2="24" y2="41" stroke="#330505" stroke-width="2"/>
+
+  <!-- CHAOTIC SPOTS — left wing -->
+  <circle cx="14" cy="17" r="4.2" fill="#1a0d0d"/>
+  <circle cx="10" cy="27" r="2.8" fill="#1a0d0d"/>
+  <circle cx="16" cy="33" r="3.5" fill="#1a0d0d"/>
+  <circle cx="11" cy="37" r="1.8" fill="#1a0d0d"/>
+  <circle cx="18" cy="23" r="1.5" fill="#1a0d0d"/>
+  <circle cx="8" cy="20" r="2.0" fill="#1a0d0d"/>
+
+  <!-- CHAOTIC SPOTS — right wing -->
+  <circle cx="34" cy="15" r="3.0" fill="#1a0d0d"/>
+  <circle cx="38" cy="22" r="4.5" fill="#1a0d0d"/>
+  <circle cx="31" cy="30" r="2.2" fill="#1a0d0d"/>
+  <circle cx="36" cy="35" r="3.8" fill="#1a0d0d"/>
+  <circle cx="29" cy="38" r="1.6" fill="#1a0d0d"/>
+  <circle cx="33" cy="26" r="1.3" fill="#1a0d0d"/>
+  <circle cx="39" cy="31" r="1.9" fill="#1a0d0d"/>
+
+  <!-- Head (black circle) -->
+  <circle cx="24" cy="7" r="8" fill="#1a1414"/>
+
+  <!-- Antennae (curvy) -->
+  <path d="M 19 4.5 Q 13 1 10 -1" stroke="#1a1414" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <path d="M 29 4.5 Q 35 1 38 -1" stroke="#1a1414" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <circle cx="10" cy="-1" r="2.2" fill="#1a1414"/>
+  <circle cx="38" cy="-1" r="2.2" fill="#1a1414"/>
+
+  <!-- Eyes (big, friendly with shine) -->
+  <circle cx="19.5" cy="5.5" r="2.5" fill="white"/>
+  <circle cx="28.5" cy="5.5" r="2.5" fill="white"/>
+  <circle cx="20.2" cy="5.8" r="1.2" fill="black"/>
+  <circle cx="29.2" cy="5.8" r="1.2" fill="black"/>
+  <circle cx="19.2" cy="4.8" r="0.5" fill="white"/>
+  <circle cx="28.2" cy="4.8" r="0.5" fill="white"/>
+
+  <!-- Cheek blush (no mouth) -->
+  <ellipse cx="17.5" cy="9" rx="2" ry="1" fill="#ff6b6b" opacity="0.4"/>
+  <ellipse cx="30.5" cy="9" rx="2" ry="1" fill="#ff6b6b" opacity="0.4"/>
+</svg>

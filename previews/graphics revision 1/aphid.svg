@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 20 20">
+  <!-- Antennae -->
+  <line x1="8" y1="3" x2="6" y2="0.4" stroke="#4d7326" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="12" y1="3" x2="14" y2="0.4" stroke="#4d7326" stroke-width="0.8" stroke-linecap="round"/>
+
+  <!-- Body (pale green oval) -->
+  <ellipse cx="10" cy="11.5" rx="7" ry="6.5" fill="#a6d166" stroke="#668c40" stroke-width="1"/>
+
+  <!-- Head (darker green circle) -->
+  <circle cx="10" cy="4.5" r="3.5" fill="#80b34d"/>
+
+  <!-- Eyes -->
+  <circle cx="8.5" cy="4" r="0.8" fill="black"/>
+  <circle cx="11.5" cy="4" r="0.8" fill="black"/>
+</svg>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="80" viewBox="0 0 80 28">
+  <!-- Shadow -->
+  <ellipse cx="40" cy="26" rx="36" ry="2.5" fill="black" opacity="0.1"/>
+
+  <!-- Main log body -->
+  <rect x="4" y="8" rx="6" ry="6" width="72" height="14" fill="#8B6914"/>
+  <rect x="4" y="8" rx="6" ry="6" width="72" height="14" fill="none" stroke="#6b4f0e" stroke-width="0.8"/>
+
+  <!-- Bark texture lines -->
+  <line x1="12" y1="9" x2="12" y2="21" stroke="#6b4f0e" stroke-width="0.5" opacity="0.4"/>
+  <line x1="25" y1="9" x2="25" y2="21" stroke="#6b4f0e" stroke-width="0.5" opacity="0.4"/>
+  <line x1="38" y1="9" x2="38" y2="21" stroke="#6b4f0e" stroke-width="0.5" opacity="0.4"/>
+  <line x1="52" y1="9" x2="52" y2="21" stroke="#6b4f0e" stroke-width="0.5" opacity="0.4"/>
+  <line x1="65" y1="9" x2="65" y2="21" stroke="#6b4f0e" stroke-width="0.5" opacity="0.4"/>
+
+  <!-- Wood grain highlights -->
+  <line x1="8" y1="12" x2="20" y2="12" stroke="#a08030" stroke-width="0.6" opacity="0.5"/>
+  <line x1="30" y1="17" x2="48" y2="17" stroke="#a08030" stroke-width="0.6" opacity="0.5"/>
+  <line x1="55" y1="13" x2="70" y2="13" stroke="#a08030" stroke-width="0.6" opacity="0.5"/>
+
+  <!-- Log end (left circle) -->
+  <ellipse cx="6" cy="15" rx="4" ry="7" fill="#a07828"/>
+  <ellipse cx="6" cy="15" rx="4" ry="7" fill="none" stroke="#6b4f0e" stroke-width="0.8"/>
+  <!-- Tree rings -->
+  <ellipse cx="6" cy="15" rx="2.5" ry="4.5" fill="none" stroke="#c8a050" stroke-width="0.4"/>
+  <ellipse cx="6" cy="15" rx="1" ry="2" fill="none" stroke="#c8a050" stroke-width="0.4"/>
+  <circle cx="6" cy="15" r="0.5" fill="#6b4f0e"/>
+
+  <!-- Log end (right circle) -->
+  <ellipse cx="74" cy="15" rx="4" ry="7" fill="#a07828"/>
+  <ellipse cx="74" cy="15" rx="4" ry="7" fill="none" stroke="#6b4f0e" stroke-width="0.8"/>
+  <ellipse cx="74" cy="15" rx="2.5" ry="4.5" fill="none" stroke="#c8a050" stroke-width="0.4"/>
+  <ellipse cx="74" cy="15" rx="1" ry="2" fill="none" stroke="#c8a050" stroke-width="0.4"/>
+  <circle cx="74" cy="15" r="0.5" fill="#6b4f0e"/>
+
+  <!-- Small leaf on top -->
+  <path d="M 45 8 Q 47 3 50 4 Q 48 7 45 8" fill="#5a9933"/>
+  <line x1="45" y1="8" x2="48" y2="5" stroke="#3d7322" stroke-width="0.4"/>
+</svg>
