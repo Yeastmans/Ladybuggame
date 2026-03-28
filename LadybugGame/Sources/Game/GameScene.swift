@@ -119,11 +119,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         if startFromCheckpoint {
             let cpScore = GameScene.checkpointScore
-            // Start at exact biome threshold
             let biome = Biome.biome(for: cpScore)
-            score = biome.scoreThreshold
+            hasShownRainbow = true // Don't show rainbow on resume
+            hasTransitionedToNight = true // Don't re-trigger night transition
             currentBiome = biome
-            // Apply biome visuals immediately
+            score = biome.scoreThreshold
             if biome != .meadowDay {
                 transitionToBiome(biome)
             }
@@ -901,9 +901,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 ladybug.pulse()
                 SoundManager.shared.play("munch")
                 switch aphid.colorType {
-                case .green: BugTracker.shared.unlock(.greenAphid)
-                case .yellow: BugTracker.shared.unlock(.yellowAphid)
-                case .red: BugTracker.shared.unlock(.redAphid)
+                case .green: unlockBug(.greenAphid)
+                case .yellow: unlockBug(.yellowAphid)
+                case .red: unlockBug(.redAphid)
                 }
             }
         }
@@ -926,7 +926,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 hb.removeFromParent()
                 ladybug.pulse()
                 SoundManager.shared.play("eatRare")
-                BugTracker.shared.unlock(.heartBug)
+                unlockBug(.heartBug)
                 return
             }
             // Check firefly
@@ -937,7 +937,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 ladybug.makeInvincible(duration: 10.0)
                 ladybug.pulse()
                 SoundManager.shared.play("eatRare")
-                BugTracker.shared.unlock(.firefly)
+                unlockBug(.firefly)
 
                 // Visual: golden glow while invincible
                 let glow = SKShapeNode(circleOfRadius: 30)
@@ -963,9 +963,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 ladybug.pulse()
                 SoundManager.shared.play("eatRare")
                 switch fly.colorType {
-                case .brown: BugTracker.shared.unlock(.brownFly)
-                case .blue: BugTracker.shared.unlock(.blueFly)
-                case .purple: BugTracker.shared.unlock(.purpleFly)
+                case .brown: unlockBug(.brownFly)
+                case .blue: unlockBug(.blueFly)
+                case .purple: unlockBug(.purpleFly)
                 }
             }
         }
@@ -974,11 +974,29 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if ladybug.isSheltered { return }
             if !ladybug.isInvincible {
                 let enemyNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird) ? contact.bodyA.node : contact.bodyB.node
-                if enemyNode is Bird { BugTracker.shared.unlock(.bird) }
-                else if enemyNode is Dragonfly { BugTracker.shared.unlock(.dragonfly) }
-                else if enemyNode is Ant { BugTracker.shared.unlock(.ant) }
-                else if enemyNode is Spider { BugTracker.shared.unlock(.spider) }
-                else if enemyNode?.parent is Frog { BugTracker.shared.unlock(.frog) }
+                if enemyNode is Bird { unlockBug(.bird) }
+                else if enemyNode is Dragonfly { unlockBug(.dragonfly) }
+                else if enemyNode is Ant { unlockBug(.ant) }
+                else if enemyNode is Spider { unlockBug(.spider) }
+                else if enemyNode?.parent is Frog { unlockBug(.frog) }
+                else if let swooper = enemyNode as? BiomeSwooper {
+                    switch swooper.biomeName {
+                    case "Bat": unlockBug(.bat)
+                    case "Hawk": unlockBug(.hawk)
+                    case "Snow Owl": unlockBug(.snowOwl)
+                    case "Toucan": unlockBug(.toucan)
+                    default: break
+                    }
+                }
+                else if let enemy = enemyNode as? BiomeEnemy {
+                    switch enemy.biomeName {
+                    case "Scorpion": unlockBug(.scorpion)
+                    case "Rattlesnake": unlockBug(.rattlesnake)
+                    case "Ice Spider": unlockBug(.iceSpider)
+                    case "Jungle Spider": unlockBug(.jungleSpider)
+                    default: break
+                    }
+                }
                 enemyNode?.removeFromParent()
                 takeDamage()
             }
@@ -997,6 +1015,26 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             SKAction.group([SKAction.moveBy(x: 0, y: 30, duration: 0.5), SKAction.fadeOut(withDuration: 0.5)]),
             SKAction.removeFromParent()
         ]))
+    }
+
+    private func unlockBug(_ bug: BugTracker.BugType) {
+        let wasNew = !BugTracker.shared.isUnlocked(bug)
+        BugTracker.shared.unlock(bug)
+        if wasNew {
+            SoundManager.shared.play("newBug")
+            let banner = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            banner.text = "New Discovery: \(bug.rawValue)!"
+            banner.fontSize = 14
+            banner.fontColor = SKColor(red: 1.0, green: 0.90, blue: 0.30, alpha: 1.0)
+            banner.position = CGPoint(x: size.width / 2, y: size.height - 55)
+            banner.zPosition = 120
+            addChild(banner)
+            banner.run(SKAction.sequence([
+                SKAction.wait(forDuration: 1.5),
+                SKAction.fadeOut(withDuration: 0.5),
+                SKAction.removeFromParent()
+            ]))
+        }
     }
 
     private func takeDamage() {
@@ -1116,7 +1154,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         swooper.color = tint
         swooper.setupPhysics()
         addChild(swooper)
-        SoundManager.shared.play("caw")
+        // Biome-specific swooper sound
+        switch name {
+        case "Bat": SoundManager.shared.play("screech")
+        case "Hawk": SoundManager.shared.play("screech")
+        case "Snow Owl": SoundManager.shared.play("hoot")
+        case "Toucan": SoundManager.shared.play("squawk")
+        default: SoundManager.shared.play("caw")
+        }
         let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...15)
         swooper.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
                             targetY: targetY, startY: swooper.position.y,

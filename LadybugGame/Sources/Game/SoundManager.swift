@@ -22,6 +22,14 @@ final class SoundManager: @unchecked Sendable {
         prepareSound("gameOver", frequency: 400, duration: 0.4, volume: 0.35, sweep: 120)
         prepareSound("caw", frequency: 600, duration: 0.18, volume: 0.25, sweep: 350)
         prepareSound("ribbit", frequency: 250, duration: 0.15, volume: 0.3, sweep: 450)
+        prepareSound("hiss", frequency: 300, duration: 0.25, volume: 0.3, sweep: 150) // snake/scorpion
+        prepareSound("screech", frequency: 800, duration: 0.15, volume: 0.2, sweep: 500) // bat/hawk
+        prepareSound("buzz", frequency: 350, duration: 0.10, volume: 0.15, sweep: 400) // flies/gnats
+        prepareSound("chirp", frequency: 1000, duration: 0.06, volume: 0.2) // cricket/beetle
+        prepareSound("hoot", frequency: 350, duration: 0.20, volume: 0.25, sweep: 250) // owl
+        prepareSound("squawk", frequency: 700, duration: 0.15, volume: 0.25, sweep: 450) // toucan
+        prepareSound("crunch", frequency: 500, duration: 0.08, volume: 0.3, sweep: 200) // spider
+        prepareSound("newBug", frequency: 600, duration: 0.15, volume: 0.35, sweep: 1000) // bugopedia unlock
         prepareMusic()
     }
 
