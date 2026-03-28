@@ -205,14 +205,46 @@ enum TextureGenerator {
         return SKTexture(image: image)
     }
 
-    // MARK: - Fruit Fly (two wing frames)
+    // MARK: - Fruit Fly (colored variants)
 
-    static func generateFruitFlyFrames(size: CGSize) -> [SKTexture] {
-        return [drawFruitFly(size: size, wingsUp: true),
-                drawFruitFly(size: size, wingsUp: false)]
+    enum FlyColor {
+        case brown, blue, purple
+        var body: UIColor {
+            switch self {
+            case .brown: return UIColor(red: 0.55, green: 0.38, blue: 0.18, alpha: 1.0)
+            case .blue: return UIColor(red: 0.20, green: 0.45, blue: 0.75, alpha: 1.0)
+            case .purple: return UIColor(red: 0.55, green: 0.25, blue: 0.70, alpha: 1.0)
+            }
+        }
+        var head: UIColor {
+            switch self {
+            case .brown: return UIColor(red: 0.50, green: 0.35, blue: 0.15, alpha: 1.0)
+            case .blue: return UIColor(red: 0.15, green: 0.35, blue: 0.60, alpha: 1.0)
+            case .purple: return UIColor(red: 0.42, green: 0.18, blue: 0.55, alpha: 1.0)
+            }
+        }
+        var eye: UIColor {
+            switch self {
+            case .brown: return UIColor(red: 0.85, green: 0.15, blue: 0.10, alpha: 1.0)
+            case .blue: return UIColor(red: 0.20, green: 0.70, blue: 0.90, alpha: 1.0)
+            case .purple: return UIColor(red: 0.80, green: 0.30, blue: 0.85, alpha: 1.0)
+            }
+        }
+        var points: Int {
+            switch self {
+            case .brown: return 15
+            case .blue: return 30
+            case .purple: return 50
+            }
+        }
     }
 
-    private static func drawFruitFly(size: CGSize, wingsUp: Bool) -> SKTexture {
+    static func generateFruitFlyFrames(size: CGSize, color: FlyColor = .brown) -> [SKTexture] {
+        return [drawFruitFly(size: size, wingsUp: true, color: color),
+                drawFruitFly(size: size, wingsUp: false, color: color)]
+    }
+
+    private static func drawFruitFly(size: CGSize, wingsUp: Bool, color: FlyColor) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
@@ -222,14 +254,12 @@ enum TextureGenerator {
             // Wings
             cg.setFillColor(UIColor(red: 0.85, green: 0.88, blue: 0.92, alpha: 0.45).cgColor)
             if wingsUp {
-                // Wings angled up
                 cg.saveGState()
                 cg.translateBy(x: w * 0.45, y: h * 0.30)
                 cg.rotate(by: -0.4)
                 cg.fillEllipse(in: CGRect(x: -w * 0.18, y: -h * 0.22, width: w * 0.36, height: h * 0.28))
                 cg.restoreGState()
             } else {
-                // Wings level/down
                 cg.saveGState()
                 cg.translateBy(x: w * 0.45, y: h * 0.45)
                 cg.rotate(by: 0.2)
@@ -237,32 +267,29 @@ enum TextureGenerator {
                 cg.restoreGState()
             }
 
-            // Body (small, dark tan)
-            cg.setFillColor(UIColor(red: 0.55, green: 0.38, blue: 0.18, alpha: 1.0).cgColor)
+            // Body
+            cg.setFillColor(color.body.cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.20, y: h * 0.38, width: w * 0.50, height: h * 0.35))
 
-            // Abdomen stripes
-            cg.setStrokeColor(UIColor(red: 0.40, green: 0.28, blue: 0.12, alpha: 0.5).cgColor)
+            // Stripes
+            cg.setStrokeColor(UIColor(white: 0.0, alpha: 0.15).cgColor)
             cg.setLineWidth(0.5)
             cg.move(to: CGPoint(x: w * 0.30, y: h * 0.52))
             cg.addLine(to: CGPoint(x: w * 0.55, y: h * 0.52))
             cg.strokePath()
-            cg.move(to: CGPoint(x: w * 0.32, y: h * 0.58))
-            cg.addLine(to: CGPoint(x: w * 0.53, y: h * 0.58))
-            cg.strokePath()
 
-            // Head (right side)
-            cg.setFillColor(UIColor(red: 0.50, green: 0.35, blue: 0.15, alpha: 1.0).cgColor)
+            // Head
+            cg.setFillColor(color.head.cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.35, width: w * 0.28, height: h * 0.32))
 
-            // Big red eye
-            cg.setFillColor(UIColor(red: 0.85, green: 0.15, blue: 0.10, alpha: 1.0).cgColor)
+            // Eye
+            cg.setFillColor(color.eye.cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.74, y: h * 0.38, width: w * 0.16, height: w * 0.16))
             cg.setFillColor(UIColor.black.cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.80, y: h * 0.42, width: w * 0.06, height: w * 0.06))
 
-            // Legs (tiny, dangling)
-            cg.setStrokeColor(UIColor(red: 0.35, green: 0.25, blue: 0.10, alpha: 0.7).cgColor)
+            // Legs
+            cg.setStrokeColor(UIColor(white: 0.2, alpha: 0.5).cgColor)
             cg.setLineWidth(0.5)
             for lx in [0.35, 0.45, 0.55] as [CGFloat] {
                 cg.move(to: CGPoint(x: w * lx, y: h * 0.72))
@@ -306,6 +333,117 @@ enum TextureGenerator {
             case .red: return 50
             }
         }
+    }
+
+    // MARK: - Dragonfly (side view, two wing frames)
+
+    static func generateDragonflyFrames(size: CGSize) -> [SKTexture] {
+        return [drawDragonfly(size: size, wingsUp: true),
+                drawDragonfly(size: size, wingsUp: false)]
+    }
+
+    private static func drawDragonfly(size: CGSize, wingsUp: Bool) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            // Long thin abdomen
+            cg.setFillColor(UIColor(red: 0.15, green: 0.40, blue: 0.60, alpha: 1.0).cgColor)
+            cg.fill(CGRect(x: w * 0.02, y: h * 0.42, width: w * 0.55, height: h * 0.16))
+            // Abdomen segments
+            cg.setStrokeColor(UIColor(red: 0.10, green: 0.30, blue: 0.45, alpha: 0.4).cgColor)
+            cg.setLineWidth(0.4)
+            for sx in stride(from: 0.10, through: 0.50, by: 0.08) {
+                cg.move(to: CGPoint(x: w * CGFloat(sx), y: h * 0.42))
+                cg.addLine(to: CGPoint(x: w * CGFloat(sx), y: h * 0.58))
+                cg.strokePath()
+            }
+
+            // Wings (long, narrow)
+            let wingAlpha: CGFloat = 0.35
+            cg.setFillColor(UIColor(red: 0.80, green: 0.88, blue: 0.95, alpha: wingAlpha).cgColor)
+            let wingAngle: CGFloat = wingsUp ? -0.3 : 0.2
+            // Top wing
+            cg.saveGState()
+            cg.translateBy(x: w * 0.55, y: h * 0.42)
+            cg.rotate(by: wingAngle)
+            cg.fillEllipse(in: CGRect(x: -w * 0.30, y: -h * 0.15, width: w * 0.55, height: h * 0.18))
+            cg.restoreGState()
+
+            // Thorax
+            cg.setFillColor(UIColor(red: 0.18, green: 0.48, blue: 0.65, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.50, y: h * 0.32, width: w * 0.22, height: h * 0.36))
+
+            // Head
+            cg.setFillColor(UIColor(red: 0.20, green: 0.50, blue: 0.68, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.30, width: w * 0.22, height: h * 0.35))
+
+            // Huge compound eye
+            cg.setFillColor(UIColor(red: 0.30, green: 0.80, blue: 0.50, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.78, y: h * 0.32, width: w * 0.15, height: w * 0.15))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.83, y: h * 0.37, width: w * 0.06, height: w * 0.06))
+
+            // Legs
+            cg.setStrokeColor(UIColor(red: 0.12, green: 0.30, blue: 0.42, alpha: 0.6).cgColor)
+            cg.setLineWidth(0.5)
+            cg.setLineCap(.round)
+            for lx in [0.55, 0.62, 0.68] as [CGFloat] {
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.62))
+                cg.addLine(to: CGPoint(x: w * (lx - 0.02), y: h * 0.78))
+                cg.strokePath()
+            }
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Firefly (glowing)
+
+    static func generateFireflyFrames(size: CGSize) -> [SKTexture] {
+        return [drawFirefly(size: size, glowBright: true),
+                drawFirefly(size: size, glowBright: false)]
+    }
+
+    private static func drawFirefly(size: CGSize, glowBright: Bool) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            // Glow aura
+            let glowAlpha: CGFloat = glowBright ? 0.4 : 0.2
+            cg.setFillColor(UIColor(red: 1.0, green: 0.95, blue: 0.30, alpha: glowAlpha).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.05, y: h * 0.10, width: w * 0.90, height: h * 0.80))
+
+            // Wings
+            cg.setFillColor(UIColor(red: 0.85, green: 0.88, blue: 0.92, alpha: 0.35).cgColor)
+            cg.saveGState()
+            cg.translateBy(x: w * 0.45, y: h * 0.32)
+            cg.rotate(by: glowBright ? -0.3 : 0.15)
+            cg.fillEllipse(in: CGRect(x: -w * 0.15, y: -h * 0.18, width: w * 0.30, height: h * 0.22))
+            cg.restoreGState()
+
+            // Body (dark)
+            cg.setFillColor(UIColor(red: 0.20, green: 0.18, blue: 0.15, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.22, y: h * 0.38, width: w * 0.42, height: h * 0.30))
+
+            // Glowing tail
+            let tailAlpha: CGFloat = glowBright ? 0.9 : 0.5
+            cg.setFillColor(UIColor(red: 0.95, green: 0.95, blue: 0.20, alpha: tailAlpha).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.12, y: h * 0.42, width: w * 0.20, height: h * 0.22))
+
+            // Head
+            cg.setFillColor(UIColor(red: 0.22, green: 0.20, blue: 0.16, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * 0.38, width: w * 0.22, height: h * 0.26))
+
+            // Eyes
+            cg.setFillColor(UIColor(red: 1.0, green: 0.90, blue: 0.30, alpha: 0.8).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.42, width: w * 0.10, height: w * 0.10))
+        }
+        return SKTexture(image: image)
     }
 
     // MARK: - Bird (two flap frames)
@@ -472,21 +610,15 @@ enum TextureGenerator {
             cg.addPath(topCurve.cgPath)
             cg.strokePath()
 
-            // Bottom bark — arch from left to right, goes to very bottom
-            let bot = UIBezierPath()
-            bot.move(to: CGPoint(x: 0, y: h * 0.70))
-            bot.addQuadCurve(to: CGPoint(x: w, y: h * 0.70),
-                              controlPoint: CGPoint(x: w * 0.5, y: h * 1.05))
-            bot.addLine(to: CGPoint(x: w, y: h * 0.70))
-            bot.close()
+            // Bottom bark — FLAT bottom, fills to bottom edge
             cg.setFillColor(barkColor.cgColor)
-            cg.addPath(bot.cgPath)
-            cg.fillPath()
-            let botCurve = UIBezierPath()
-            botCurve.move(to: CGPoint(x: 0, y: h * 0.70))
-            botCurve.addQuadCurve(to: CGPoint(x: w, y: h * 0.70),
-                                   controlPoint: CGPoint(x: w * 0.5, y: h * 1.05))
-            cg.addPath(botCurve.cgPath)
+            cg.fill(CGRect(x: 0, y: h * 0.70, width: w, height: h * 0.30))
+            // Inner curve line on top of bottom bark
+            cg.setStrokeColor(barkDark.cgColor)
+            cg.setLineWidth(0.8)
+            cg.move(to: CGPoint(x: 0, y: h * 0.72))
+            cg.addQuadCurve(to: CGPoint(x: w, y: h * 0.72),
+                             controlPoint: CGPoint(x: w * 0.5, y: h * 0.78))
             cg.strokePath()
 
             // Bark lines

@@ -15,26 +15,42 @@ class Frog: SKSpriteNode {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Shoot tongue toward a target in SCENE coordinates
-    func attackToward(sceneTarget: CGPoint) {
+    func attackToward(sceneTarget: CGPoint, groundY: CGFloat) {
         guard !hasAttacked else { return }
         hasAttacked = true
 
-        // Convert scene target to local coordinates
-        let localTarget = CGPoint(x: sceneTarget.x - position.x, y: sceneTarget.y - position.y)
-
-        // Tongue starts from mouth (right side of frog, upper area)
         let mouthX = size.width * 0.45
         let mouthY = size.height * 0.1
 
-        let dx = localTarget.x - mouthX
-        let dy = localTarget.y - mouthY
-        let dist = min(hypot(dx, dy), 120)
-        guard dist > 10 else { return }
-        let nx = dx / hypot(dx, dy)
-        let ny = dy / hypot(dx, dy)
-        let tipX = mouthX + nx * dist
-        let tipY = mouthY + ny * dist
+        var dx = sceneTarget.x - position.x - mouthX
+        var dy = sceneTarget.y - position.y - mouthY
+
+        // Never aim downward — clamp dy to 0 or above
+        if dy < 0 { dy = 0 }
+
+        // If target is directly above, add slight horizontal
+        if abs(dx) < 5 { dx = 20 }
+
+        let rawDist = hypot(dx, dy)
+        guard rawDist > 5 else { return }
+        let nx = dx / rawDist
+        let ny = dy / rawDist
+
+        // Tongue length — stop at max or where it would hit ground
+        var tongueLen = min(rawDist, 120.0)
+
+        // Check if tongue tip would go below ground
+        let tipSceneY = position.y + mouthY + ny * tongueLen
+        if tipSceneY < groundY {
+            // Shorten tongue to stop at ground
+            let availableY = position.y + mouthY - groundY
+            if ny < -0.01 {
+                tongueLen = min(tongueLen, abs(availableY / ny))
+            }
+        }
+
+        let tipX = mouthX + nx * tongueLen
+        let tipY = mouthY + ny * tongueLen
 
         let tongue = SKShapeNode()
         let path = UIBezierPath()
@@ -47,7 +63,6 @@ class Frog: SKSpriteNode {
         addChild(tongue)
         tongueNode = tongue
 
-        // Tip hitbox
         let tip = SKShapeNode(circleOfRadius: 6)
         tip.fillColor = SKColor(red: 0.95, green: 0.35, blue: 0.40, alpha: 1.0)
         tip.strokeColor = .clear
@@ -59,7 +74,6 @@ class Frog: SKSpriteNode {
         tip.physicsBody = tipBody
         tongue.addChild(tip)
 
-        // Extend, hold, retract
         tongue.setScale(0.01)
         let extend = SKAction.scale(to: 1.0, duration: 0.08)
         let hold = SKAction.wait(forDuration: 0.2)

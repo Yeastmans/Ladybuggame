@@ -3,14 +3,16 @@ import SpriteKit
 class FruitFly: SKSpriteNode {
 
     let points: Int
+    let colorType: TextureGenerator.FlyColor
+    var minY: CGFloat = 0
 
-    init(textures: [SKTexture], points: Int) {
-        self.points = points
+    init(textures: [SKTexture], colorType: TextureGenerator.FlyColor) {
+        self.points = colorType.points
+        self.colorType = colorType
         let first = textures.first ?? SKTexture()
         super.init(texture: first, color: .clear, size: first.size())
         zPosition = 5
 
-        // Wing flap animation
         if textures.count >= 2 {
             let flap = SKAction.animate(with: textures, timePerFrame: 0.06)
             run(SKAction.repeatForever(flap), withKey: "flap")
@@ -29,14 +31,11 @@ class FruitFly: SKSpriteNode {
         physicsBody = body
     }
 
-    var minY: CGFloat = 0
-
     func startMoving() {
         let bob = SKAction.run { [weak self] in
             guard let self = self else { return }
             let dy = CGFloat.random(in: 10...30) * (Bool.random() ? 1.0 : -1.0)
             let dx = CGFloat.random(in: 5...15) * (Bool.random() ? 1.0 : -1.0)
-            // Flip based on horizontal direction
             if dx > 0 { self.xScale = abs(self.xScale) }
             else { self.xScale = -abs(self.xScale) }
             let move = SKAction.moveBy(x: dx, y: dy, duration: Double.random(in: 0.3...0.6))

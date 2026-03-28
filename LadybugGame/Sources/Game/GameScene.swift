@@ -43,11 +43,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var envTimer: TimeInterval = 0
 
     private var birdTextures: [SKTexture] = []
-    private var fruitFlyFrames: [SKTexture] = []
+    private var flyFrames: [TextureGenerator.FlyColor: [SKTexture]] = [:]
+    private var dragonflyFrames: [SKTexture] = []
+    private var fireflyFrames: [SKTexture] = []
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
     private var frogTimer: TimeInterval = 0
+    private var dragonflyTimer: TimeInterval = 0
+    private var fireflyTimer: TimeInterval = 0
     private var groundTiles: [SKSpriteNode] = []
 
     override func didMove(to view: SKView) {
@@ -59,7 +63,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
         logTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 100, height: 55))
         frogTexture = TextureGenerator.generateFrogTexture(size: CGSize(width: 36, height: 32))
-        fruitFlyFrames = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22))
+        dragonflyFrames = TextureGenerator.generateDragonflyFrames(size: CGSize(width: 48, height: 28))
+        fireflyFrames = TextureGenerator.generateFireflyFrames(size: CGSize(width: 24, height: 24))
+        for fc in [TextureGenerator.FlyColor.brown, .blue, .purple] {
+            flyFrames[fc] = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: fc)
+        }
         for color in [TextureGenerator.AphidColor.green, .yellow, .red] {
             aphidFrames[color] = TextureGenerator.generateAphidWalkFrames(size: CGSize(width: 22, height: 22), color: color)
         }
@@ -316,6 +324,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if frogTimer >= fi { frogTimer = 0; spawnFrog() }
 
         envTimer += dt
+        dragonflyTimer += dt
+        let dfi = max(5.0, 10.0 - Double(distanceTraveled) * 0.0003)
+        if dragonflyTimer >= dfi { dragonflyTimer = 0; spawnDragonfly() }
+
+        fireflyTimer += dt
+        if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
+
         if envTimer >= 0.6 { envTimer = 0; spawnEnvironment() }
     }
 
@@ -383,7 +398,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func scrollWorldObjects(delta: CGFloat) {
         for child in children {
-            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog {
+            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly {
                 child.position.x -= delta
                 if child.position.x < -120 { child.removeFromParent() }
             }
@@ -422,9 +437,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func spawnFruitFly() {
-        let pts = [15, 20, 30].randomElement() ?? 15
-        let fly = FruitFly(textures: fruitFlyFrames, points: pts)
-        let y = groundY + CGFloat.random(in: 50...size.height * 0.55)
+        let roll = Int.random(in: 0..<100)
+        let fc: TextureGenerator.FlyColor
+        if roll < 50 { fc = .brown }
+        else if roll < 80 { fc = .blue }
+        else { fc = .purple }
+
+        guard let frames = flyFrames[fc] else { return }
+        let fly = FruitFly(textures: frames, colorType: fc)
+        let y = groundY + CGFloat.random(in: 50...size.height * 0.50)
         fly.position = CGPoint(x: size.width + 30, y: y)
         fly.minY = groundY
         fly.setupPhysics()
@@ -432,13 +453,41 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(fly)
     }
 
+    private func spawnDragonfly() {
+        let df = Dragonfly(textures: dragonflyFrames)
+        let y = groundY + CGFloat.random(in: 60...size.height * 0.55)
+        df.position = CGPoint(x: size.width + 50, y: y)
+        df.setupPhysics()
+        df.startHovering(minY: groundY + 40, maxY: size.height * 0.70)
+        addChild(df)
+    }
+
+    private func spawnFirefly() {
+        let ff = Firefly(textures: fireflyFrames)
+        let y = groundY + CGFloat.random(in: 40...size.height * 0.50)
+        ff.position = CGPoint(x: size.width + 30, y: y)
+        ff.setupPhysics()
+        ff.startMoving(minY: groundY + 30, maxY: size.height * 0.65)
+        addChild(ff)
+    }
+
     private func spawnLog() {
+        let spawnX = size.width + 80
+        if isNearGroundObject(x: spawnX, range: 100) { return }
         let logWidth = CGFloat.random(in: 80...160)
         let log = Log(texture: logTexture, width: logWidth)
-        // anchorPoint (0.5, 0) — y = groundY places bottom flush on ground
-        log.position = CGPoint(x: size.width + logWidth / 2 + 20, y: groundY - 1)
+        log.position = CGPoint(x: spawnX, y: groundY - 1)
         log.setupPhysics()
         addChild(log)
+    }
+
+    private func isNearGroundObject(x: CGFloat, range: CGFloat) -> Bool {
+        for child in children {
+            if child is Log || child is Frog {
+                if abs(child.position.x - x) < range { return true }
+            }
+        }
+        return false
     }
 
     private func spawnBird() {
@@ -469,9 +518,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func spawnFrog() {
         let spawnX = size.width + 50
+        if isNearGroundObject(x: spawnX, range: 120) { return }
 
         // Pond behind the frog
-        let pondW = CGFloat.random(in: 50...80)
+        let pondW = CGFloat.random(in: 70...120)
         let pond = SKShapeNode(ellipseOf: CGSize(width: pondW, height: 14))
         pond.fillColor = SKColor(red: 0.25, green: 0.50, blue: 0.70, alpha: 0.6)
         pond.strokeColor = SKColor(red: 0.20, green: 0.40, blue: 0.55, alpha: 0.5)
@@ -503,7 +553,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             let dist = abs(frog.position.x - self.ladybug.position.x)
             if dist < 130 {
                 SoundManager.shared.play("ribbit")
-                frog.attackToward(sceneTarget: self.ladybug.position)
+                frog.attackToward(sceneTarget: self.ladybug.position, groundY: self.groundY)
             }
         }
         let wait = SKAction.wait(forDuration: 0.3)
@@ -625,9 +675,35 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         if collision == PhysicsCategory.ladybug | PhysicsCategory.fruitfly {
-            if let fly = (contact.bodyA.node as? FruitFly) ?? (contact.bodyB.node as? FruitFly) {
+            // Check firefly first
+            if let ff = (contact.bodyA.node as? Firefly) ?? (contact.bodyB.node as? Firefly) {
+                score += 100
+                showFloatingScore(100, at: ff.position, color: SKColor(red: 1.0, green: 0.95, blue: 0.3, alpha: 1.0))
+                ff.removeFromParent()
+                ladybug.makeInvincible(duration: 10.0)
+                ladybug.pulse()
+                SoundManager.shared.play("eatRare")
+
+                // Visual: golden glow while invincible
+                let glow = SKShapeNode(circleOfRadius: 30)
+                glow.fillColor = SKColor(red: 1.0, green: 0.92, blue: 0.30, alpha: 0.2)
+                glow.strokeColor = SKColor(red: 1.0, green: 0.90, blue: 0.20, alpha: 0.4)
+                glow.lineWidth = 1.5
+                glow.zPosition = -1
+                glow.name = "fireflyGlow"
+                ladybug.addChild(glow)
+                glow.run(SKAction.sequence([
+                    SKAction.wait(forDuration: 9.0),
+                    SKAction.repeat(SKAction.sequence([
+                        SKAction.fadeAlpha(to: 0.1, duration: 0.2),
+                        SKAction.fadeAlpha(to: 0.5, duration: 0.2)
+                    ]), count: 5),
+                    SKAction.removeFromParent()
+                ]))
+            } else if let fly = (contact.bodyA.node as? FruitFly) ?? (contact.bodyB.node as? FruitFly) {
                 score += fly.points
-                showFloatingScore(fly.points, at: fly.position, color: .cyan)
+                let c: SKColor = fly.colorType == .purple ? .purple : (fly.colorType == .blue ? .cyan : .orange)
+                showFloatingScore(fly.points, at: fly.position, color: c)
                 fly.removeFromParent()
                 ladybug.pulse()
                 SoundManager.shared.play("eatRare")
