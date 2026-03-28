@@ -40,20 +40,18 @@ enum TextureGenerator {
             cg.setLineCap(.round)
 
             if isFlying {
-                // Tucked legs — shorter, angled back
-                let legXs: [CGFloat] = [0.38, 0.52, 0.66]
+                let legXs: [CGFloat] = [0.30, 0.45, 0.60]
                 for lx in legXs {
-                    cg.move(to: CGPoint(x: w * lx, y: h * 0.72))
-                    cg.addLine(to: CGPoint(x: w * (lx - 0.04), y: h * 0.80))
+                    cg.move(to: CGPoint(x: w * lx, y: h * 0.70))
+                    cg.addLine(to: CGPoint(x: w * (lx - 0.03), y: h * 0.78))
                     cg.strokePath()
                 }
             } else {
-                // Normal walking legs
-                let legXs: [CGFloat] = [0.35, 0.52, 0.70]
+                let legXs: [CGFloat] = [0.25, 0.42, 0.60]
                 for lx in legXs {
-                    cg.move(to: CGPoint(x: w * lx, y: h * 0.72))
-                    cg.addLine(to: CGPoint(x: w * (lx - 0.03), y: h * 0.88))
-                    cg.addLine(to: CGPoint(x: w * (lx + 0.02), y: h * 0.95))
+                    cg.move(to: CGPoint(x: w * lx, y: h * 0.70))
+                    cg.addLine(to: CGPoint(x: w * (lx - 0.02), y: h * 0.86))
+                    cg.addLine(to: CGPoint(x: w * (lx + 0.02), y: h * 0.94))
                     cg.strokePath()
                 }
             }
@@ -117,15 +115,23 @@ enum TextureGenerator {
             cg.setFillColor(UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor)
             cg.fillEllipse(in: CGRect(x: headCX - headR, y: headCY - headR, width: headR * 2, height: headR * 2))
 
-            // Antenna
+            // Antennae (2 visible — front and back)
             cg.setStrokeColor(UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor)
             cg.setLineWidth(1.4)
-            cg.move(to: CGPoint(x: headCX + headR * 0.3, y: headCY - headR * 0.5))
-            cg.addQuadCurve(to: CGPoint(x: w * 0.98, y: h * 0.18),
-                            control: CGPoint(x: w * 0.96, y: h * 0.30))
+            // Front antenna (upper)
+            cg.move(to: CGPoint(x: headCX + headR * 0.2, y: headCY - headR * 0.6))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.95, y: h * 0.15),
+                            control: CGPoint(x: w * 0.92, y: h * 0.25))
             cg.strokePath()
+            // Back antenna (lower, slightly behind)
+            cg.move(to: CGPoint(x: headCX + headR * 0.1, y: headCY - headR * 0.3))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.92, y: h * 0.22),
+                            control: CGPoint(x: w * 0.90, y: h * 0.32))
+            cg.strokePath()
+            // Antenna tips
             cg.setFillColor(UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.96, y: h * 0.15, width: 4, height: 4))
+            cg.fillEllipse(in: CGRect(x: w * 0.93, y: h * 0.13, width: 4, height: 4))
+            cg.fillEllipse(in: CGRect(x: w * 0.90, y: h * 0.20, width: 3, height: 3))
 
             // Eye
             if dead {

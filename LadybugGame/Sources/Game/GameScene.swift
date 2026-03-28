@@ -1048,8 +1048,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Biome Spawning
 
     private func spawnForBiome(dt: TimeInterval) {
-        // Universal spawns (bushes not in desert)
-        if currentBiome != .desert {
+        // Bushes only in meadow biomes
+        if currentBiome == .meadowDay || currentBiome == .meadowNight {
             logTimer += dt
             let li = max(2.5, 5.0 - Double(distanceTraveled) * 0.0003)
             if logTimer >= li { logTimer = 0; spawnLog() }
@@ -1171,6 +1171,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Biome Transitions
 
     private func transitionToBiome(_ biome: Biome) {
+        // Stop previous biome effects
+        removeAction(forKey: "snowfall")
+        removeAction(forKey: "shootingStars")
+
         // Notification
         let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
         label.text = biome.name

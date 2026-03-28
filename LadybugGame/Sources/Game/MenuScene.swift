@@ -41,18 +41,20 @@ class MenuScene: SKScene {
                   color: SKColor(red: 0.25, green: 0.50, blue: 0.75, alpha: 1.0),
                   y: size.height * 0.28)
 
+        // Per-biome checkpoint buttons
         if GameScene.hasNightCheckpoint {
             let cpScore = GameScene.checkpointScore
-            addButton("Resume (\(cpScore)pts)", name: "checkpoint",
+            let biome = Biome.biome(for: cpScore)
+            addButton("Resume: \(biome.name)", name: "checkpoint",
                       color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
                       y: size.height * 0.16)
         }
 
         let hsLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
         hsLabel.text = "Best: \(MenuScene.highScore)"
-        hsLabel.fontSize = 16
+        hsLabel.fontSize = 14
         hsLabel.fontColor = SKColor(white: 1.0, alpha: 0.7)
-        hsLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.18)
+        hsLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.08)
         hsLabel.zPosition = 20
         addChild(hsLabel)
     }
