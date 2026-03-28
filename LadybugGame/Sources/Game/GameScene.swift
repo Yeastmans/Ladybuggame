@@ -22,13 +22,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var score: Int = 0 {
         didSet {
             scoreLabel.text = "\(score)"
-            if score >= 1000 && !hasShownRainbow {
+            if score >= 500 && !hasShownRainbow {
                 hasShownRainbow = true
                 showRainbow()
             }
-            if score >= 2000 && !hasTransitionedToNight {
+            if score >= 1000 && !hasTransitionedToNight {
                 hasTransitionedToNight = true
                 transitionToNight()
+            }
+            // Save checkpoint every 1000 points
+            if score > 0 && score % 1000 == 0 {
+                GameScene.hasNightCheckpoint = true
+                GameScene.checkpointScore = score
             }
         }
     }
@@ -39,6 +44,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     static var hasNightCheckpoint: Bool {
         get { UserDefaults.standard.bool(forKey: nightCheckpointKey) }
         set { UserDefaults.standard.set(newValue, forKey: nightCheckpointKey) }
+    }
+    private static let checkpointScoreKey = "CheckpointScore"
+    static var checkpointScore: Int {
+        get { UserDefaults.standard.integer(forKey: checkpointScoreKey) }
+        set { UserDefaults.standard.set(newValue, forKey: checkpointScoreKey) }
     }
     var startFromCheckpoint = false
 
@@ -105,8 +115,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         spawnLadybug()
 
         if startFromCheckpoint {
-            score = 2000
-            // Trigger night immediately
+            score = GameScene.checkpointScore
         }
     }
 
@@ -598,13 +607,19 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         bird.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.50...0.85))
         bird.xScale = -1
         bird.setupPhysics()
+
+        // At night: bat coloring (dark purple/black)
+        if isNight {
+            bird.colorBlendFactor = 0.6
+            bird.color = SKColor(red: 0.15, green: 0.08, blue: 0.25, alpha: 1.0)
+        }
+
         addChild(bird)
 
-        // Single bird swoops down toward player then back up and off screen
         let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...15)
         SoundManager.shared.play("caw")
         bird.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                         targetY: targetY, duration: 2.2 + Double.random(in: 0...0.8))
+                         targetY: targetY, duration: isNight ? 1.8 + Double.random(in: 0...0.6) : 2.2 + Double.random(in: 0...0.8))
     }
 
     /// Spawns a pond with either a frog or dragonfly (never both)
@@ -952,7 +967,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Flash notification
         let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        label.text = "1000 Points!"
+        label.text = "500 Points!"
         label.fontSize = 28
         label.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0)
         label.position = CGPoint(x: size.width / 2, y: size.height * 0.65)

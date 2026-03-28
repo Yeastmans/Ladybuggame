@@ -42,7 +42,8 @@ class MenuScene: SKScene {
                   y: size.height * 0.28)
 
         if GameScene.hasNightCheckpoint {
-            addButton("Resume Night", name: "checkpoint",
+            let cpScore = GameScene.checkpointScore
+            addButton("Resume (\(cpScore)pts)", name: "checkpoint",
                       color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
                       y: size.height * 0.16)
         }
