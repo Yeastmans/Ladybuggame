@@ -3,11 +3,11 @@ import SpriteKit
 class Log: SKSpriteNode {
 
     var isLadybugInside = false
-    private let normalAlpha: CGFloat = 1.0
-    private let seeThruAlpha: CGFloat = 0.4
 
-    init(texture: SKTexture) {
-        super.init(texture: texture, color: .clear, size: texture.size())
+    init(texture: SKTexture, width: CGFloat) {
+        let scaledSize = CGSize(width: width, height: texture.size().height * (width / texture.size().width))
+        super.init(texture: texture, color: .clear, size: scaledSize)
+        anchorPoint = CGPoint(x: 0.5, y: 0.0) // Bottom-anchored — sits on ground
         zPosition = 4
     }
 
@@ -15,31 +15,29 @@ class Log: SKSpriteNode {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setupPhysics() {
-        // No physics body — collision is handled manually in GameScene
-    }
+    func setupPhysics() {}
 
-    /// The rect the ladybug can walk through (slightly inset)
+    /// The tube rect the ladybug walks through
     var tubeRect: CGRect {
         CGRect(
-            x: position.x - size.width * 0.42,
-            y: position.y - size.height * 0.3,
-            width: size.width * 0.84,
-            height: size.height * 0.6
+            x: position.x - size.width * 0.45,
+            y: position.y,
+            width: size.width * 0.90,
+            height: size.height
         )
     }
 
     func showSeeThrough() {
         guard !isLadybugInside else { return }
         isLadybugInside = true
-        run(SKAction.fadeAlpha(to: seeThruAlpha, duration: 0.15), withKey: "fade")
-        zPosition = 15 // Draw above ladybug so you see it as a tunnel
+        run(SKAction.fadeAlpha(to: 0.35, duration: 0.15), withKey: "fade")
+        zPosition = 15
     }
 
     func showOpaque() {
         guard isLadybugInside else { return }
         isLadybugInside = false
-        run(SKAction.fadeAlpha(to: normalAlpha, duration: 0.15), withKey: "fade")
+        run(SKAction.fadeAlpha(to: 1.0, duration: 0.15), withKey: "fade")
         zPosition = 4
     }
 }

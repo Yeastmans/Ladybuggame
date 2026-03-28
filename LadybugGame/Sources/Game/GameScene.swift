@@ -46,6 +46,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var fruitFlyFrames: [SKTexture] = []
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
+    private var frogTexture: SKTexture!
+    private var frogTimer: TimeInterval = 0
     private var groundTiles: [SKSpriteNode] = []
 
     override func didMove(to view: SKView) {
@@ -55,7 +57,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         groundY = size.height * 0.28
 
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
-        logTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 60, height: 50))
+        logTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 100, height: 55))
+        frogTexture = TextureGenerator.generateFrogTexture(size: CGSize(width: 36, height: 32))
         fruitFlyFrames = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22))
         for color in [TextureGenerator.AphidColor.green, .yellow, .red] {
             aphidFrames[color] = TextureGenerator.generateAphidWalkFrames(size: CGSize(width: 22, height: 22), color: color)
@@ -307,6 +310,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         birdTimer += dt
         let bi = max(1.2, 3.5 - Double(distanceTraveled) * 0.0005)
         if birdTimer >= bi { birdTimer = 0; spawnBird() }
+        frogTimer += dt
+        let fi = max(4.0, 8.0 - Double(distanceTraveled) * 0.0003)
+        if frogTimer >= fi { frogTimer = 0; spawnFrog() }
+
         envTimer += dt
         if envTimer >= 1.5 { envTimer = 0; spawnEnvironment() }
     }
@@ -327,19 +334,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             let bugLeft = bugCenter.x - bugHalfW
 
             if bugRight > tube.minX && bugLeft < tube.maxX {
-                if ladybug.isOnGround {
-                    // Walking through the log — sheltered!
+                let logTopY = log.position.y + log.size.height
+                if ladybug.isOnGround || bugCenter.y < logTopY {
                     insideAny = true
                     log.showSeeThrough()
-
-                    // Clamp ceiling so can't fly out the top
-                    let logTopY = log.position.y + log.size.height * 0.3
-                    ceilingY = min(ceilingY, logTopY)
-                } else if bugCenter.y < log.position.y + log.size.height * 0.4 {
-                    // Flying low through log area
-                    insideAny = true
-                    log.showSeeThrough()
-                    let logTopY = log.position.y + log.size.height * 0.3
                     ceilingY = min(ceilingY, logTopY)
                 } else {
                     log.showOpaque()
@@ -384,7 +382,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func scrollWorldObjects(delta: CGFloat) {
         for child in children {
-            if child is Aphid || child is FruitFly || child is Log || child is Bird {
+            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog {
                 child.position.x -= delta
                 if child.position.x < -120 { child.removeFromParent() }
             }
@@ -433,9 +431,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func spawnLog() {
-        let log = Log(texture: logTexture)
-        // Bottom of log sits exactly on ground line
-        log.position = CGPoint(x: size.width + 50, y: groundY + log.size.height * 0.42)
+        let logWidth = CGFloat.random(in: 80...150) // Varied lengths
+        let log = Log(texture: logTexture, width: logWidth)
+        // anchorPoint is (0.5, 0) so position.y = groundY puts bottom on ground
+        log.position = CGPoint(x: size.width + logWidth / 2 + 20, y: groundY)
         log.setupPhysics()
         addChild(log)
     }
@@ -463,6 +462,26 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                              targetY: ladybug.position.y + CGFloat.random(in: -30...30),
                              duration: 1.6 + Double.random(in: 0...0.5))
         }
+    }
+
+    private func spawnFrog() {
+        let frog = Frog(texture: frogTexture)
+        frog.position = CGPoint(x: size.width + 40, y: groundY + frog.size.height / 2)
+        addChild(frog)
+
+        // When frog gets close to ladybug X, shoot tongue
+        let checkDistance = SKAction.run { [weak self, weak frog] in
+            guard let self = self, let frog = frog else { return }
+            let dist = abs(frog.position.x - self.ladybug.position.x)
+            if dist < 130 {
+                frog.attackToward(CGPoint(
+                    x: self.ladybug.position.x - frog.position.x,
+                    y: self.ladybug.position.y - frog.position.y
+                ))
+            }
+        }
+        let wait = SKAction.wait(forDuration: 0.2)
+        frog.run(SKAction.repeatForever(SKAction.sequence([wait, checkDistance])), withKey: "checkAttack")
     }
 
     private func spawnEnvironment() {

@@ -363,7 +363,65 @@ enum TextureGenerator {
         return SKTexture(image: image)
     }
 
-    // MARK: - Log
+    // MARK: - Log (hollow tube, side view — open ends for walking through)
+
+    // MARK: - Frog (side view, sitting on ground)
+
+    static func generateFrogTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            // Back leg (behind body)
+            cg.setFillColor(UIColor(red: 0.25, green: 0.55, blue: 0.15, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.05, y: h * 0.55, width: w * 0.30, height: h * 0.35))
+
+            // Body
+            cg.setFillColor(UIColor(red: 0.30, green: 0.65, blue: 0.20, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.20, width: w * 0.60, height: h * 0.55))
+
+            // Belly
+            cg.setFillColor(UIColor(red: 0.70, green: 0.85, blue: 0.50, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.22, y: h * 0.45, width: w * 0.35, height: h * 0.28))
+
+            // Head
+            cg.setFillColor(UIColor(red: 0.32, green: 0.68, blue: 0.22, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.12, width: w * 0.40, height: h * 0.45))
+
+            // Big eye (bulging on top)
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.05, width: w * 0.22, height: w * 0.22))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.78, y: h * 0.10, width: w * 0.12, height: w * 0.12))
+
+            // Mouth line
+            cg.setStrokeColor(UIColor(red: 0.20, green: 0.45, blue: 0.12, alpha: 1.0).cgColor)
+            cg.setLineWidth(1.2)
+            cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.80, y: h * 0.40))
+            cg.addLine(to: CGPoint(x: w * 0.98, y: h * 0.38))
+            cg.strokePath()
+
+            // Front leg
+            cg.setFillColor(UIColor(red: 0.28, green: 0.60, blue: 0.18, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.60, width: w * 0.18, height: h * 0.32))
+            // Foot
+            cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * 0.82, width: w * 0.20, height: h * 0.12))
+
+            // Back foot
+            cg.fillEllipse(in: CGRect(x: w * 0.02, y: h * 0.82, width: w * 0.22, height: h * 0.12))
+
+            // Spots
+            cg.setFillColor(UIColor(red: 0.22, green: 0.50, blue: 0.12, alpha: 0.4).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * 0.28, width: w * 0.10, height: w * 0.10))
+            cg.fillEllipse(in: CGRect(x: w * 0.42, y: h * 0.22, width: w * 0.08, height: w * 0.08))
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Log (hollow tube, side view — open ends for walking through)
 
     static func generateLogTexture(size: CGSize) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
@@ -372,38 +430,80 @@ enum TextureGenerator {
             let w = size.width
             let h = size.height
 
-            cg.setFillColor(UIColor(white: 0.0, alpha: 0.1).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.05, y: h * 0.82, width: w * 0.9, height: h * 0.18))
+            let barkColor = UIColor(red: 0.50, green: 0.38, blue: 0.10, alpha: 1.0)
+            let barkDark = UIColor(red: 0.38, green: 0.28, blue: 0.06, alpha: 1.0)
+            let innerColor = UIColor(red: 0.30, green: 0.20, blue: 0.05, alpha: 1.0)
 
-            let logRect = CGRect(x: w * 0.06, y: h * 0.15, width: w * 0.88, height: h * 0.65)
-            cg.setFillColor(UIColor(red: 0.545, green: 0.41, blue: 0.08, alpha: 1.0).cgColor)
-            let logPath = UIBezierPath(roundedRect: logRect, cornerRadius: h * 0.2)
-            cg.addPath(logPath.cgPath)
+            // Inner dark hollow (visible through the opening)
+            let innerRect = CGRect(x: 0, y: h * 0.25, width: w, height: h * 0.50)
+            cg.setFillColor(innerColor.cgColor)
+            cg.fill(innerRect)
+
+            // Top bark (curved top of log)
+            let topBark = UIBezierPath()
+            topBark.move(to: CGPoint(x: 0, y: h * 0.25))
+            topBark.addQuadCurve(to: CGPoint(x: w, y: h * 0.25),
+                                  controlPoint: CGPoint(x: w * 0.5, y: 0))
+            topBark.addLine(to: CGPoint(x: w, y: h * 0.25))
+            topBark.close()
+            cg.setFillColor(barkColor.cgColor)
+            cg.addPath(topBark.cgPath)
             cg.fillPath()
-            cg.setStrokeColor(UIColor(red: 0.42, green: 0.31, blue: 0.06, alpha: 1.0).cgColor)
-            cg.setLineWidth(0.8)
-            cg.addPath(logPath.cgPath)
+
+            // Top bark outline
+            let topLine = UIBezierPath()
+            topLine.move(to: CGPoint(x: 0, y: h * 0.25))
+            topLine.addQuadCurve(to: CGPoint(x: w, y: h * 0.25),
+                                  controlPoint: CGPoint(x: w * 0.5, y: 0))
+            cg.setStrokeColor(barkDark.cgColor)
+            cg.setLineWidth(1.0)
+            cg.addPath(topLine.cgPath)
             cg.strokePath()
 
-            for lx in [0.25, 0.50, 0.75] as [CGFloat] {
-                cg.setStrokeColor(UIColor(red: 0.42, green: 0.31, blue: 0.06, alpha: 0.3).cgColor)
-                cg.setLineWidth(0.5)
-                cg.move(to: CGPoint(x: w * lx, y: h * 0.18))
-                cg.addLine(to: CGPoint(x: w * lx, y: h * 0.78))
+            // Bottom bark (curved bottom of log)
+            let botBark = UIBezierPath()
+            botBark.move(to: CGPoint(x: 0, y: h * 0.75))
+            botBark.addQuadCurve(to: CGPoint(x: w, y: h * 0.75),
+                                  controlPoint: CGPoint(x: w * 0.5, y: h))
+            botBark.addLine(to: CGPoint(x: w, y: h * 0.75))
+            botBark.close()
+            cg.setFillColor(barkColor.cgColor)
+            cg.addPath(botBark.cgPath)
+            cg.fillPath()
+
+            // Bottom bark outline
+            let botLine = UIBezierPath()
+            botLine.move(to: CGPoint(x: 0, y: h * 0.75))
+            botLine.addQuadCurve(to: CGPoint(x: w, y: h * 0.75),
+                                  controlPoint: CGPoint(x: w * 0.5, y: h))
+            cg.addPath(botLine.cgPath)
+            cg.strokePath()
+
+            // Bark texture lines on top
+            cg.setStrokeColor(UIColor(red: 0.42, green: 0.31, blue: 0.08, alpha: 0.35).cgColor)
+            cg.setLineWidth(0.5)
+            for lx in [0.2, 0.4, 0.6, 0.8] as [CGFloat] {
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.05))
+                cg.addLine(to: CGPoint(x: w * lx, y: h * 0.23))
                 cg.strokePath()
             }
 
-            // Log end
-            cg.setFillColor(UIColor(red: 0.63, green: 0.47, blue: 0.16, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.88, y: h * 0.18, width: w * 0.12, height: h * 0.62))
-            cg.setStrokeColor(UIColor(red: 0.78, green: 0.63, blue: 0.31, alpha: 0.5).cgColor)
-            cg.setLineWidth(0.4)
-            cg.strokeEllipse(in: CGRect(x: w * 0.90, y: h * 0.28, width: w * 0.08, height: h * 0.42))
+            // Moss on top
+            cg.setFillColor(UIColor(red: 0.29, green: 0.55, blue: 0.16, alpha: 0.55).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.20, y: h * 0.02, width: w * 0.15, height: h * 0.10))
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.01, width: w * 0.20, height: h * 0.08))
 
-            // Moss
-            cg.setFillColor(UIColor(red: 0.29, green: 0.55, blue: 0.16, alpha: 0.65).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.15, y: h * 0.08, width: w * 0.14, height: h * 0.12))
-            cg.fillEllipse(in: CGRect(x: w * 0.45, y: h * 0.06, width: w * 0.18, height: h * 0.14))
+            // Right-side opening rim (elliptical cross-section)
+            cg.setStrokeColor(barkDark.cgColor)
+            cg.setLineWidth(1.2)
+            cg.strokeEllipse(in: CGRect(x: w * 0.88, y: h * 0.15, width: w * 0.14, height: h * 0.70))
+            cg.setFillColor(UIColor(red: 0.58, green: 0.44, blue: 0.14, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.89, y: h * 0.17, width: w * 0.12, height: h * 0.66))
+            // Rings
+            cg.setStrokeColor(UIColor(red: 0.68, green: 0.55, blue: 0.25, alpha: 0.4).cgColor)
+            cg.setLineWidth(0.4)
+            cg.strokeEllipse(in: CGRect(x: w * 0.91, y: h * 0.28, width: w * 0.08, height: h * 0.44))
+            cg.strokeEllipse(in: CGRect(x: w * 0.93, y: h * 0.36, width: w * 0.04, height: h * 0.28))
         }
         return SKTexture(image: image)
     }

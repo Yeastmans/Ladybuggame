@@ -13,9 +13,9 @@ class Ladybug: SKSpriteNode {
     private var invincibleTimer: TimeInterval = 0
     private var walkBobTime: CGFloat = 0
 
-    let gravity: CGFloat = -600
-    let followStrength: CGFloat = 3.5
-    let damping: CGFloat = 0.93
+    let gravity: CGFloat = -500
+    let followStrength: CGFloat = 2.2   // Gentle pull toward finger
+    let damping: CGFloat = 0.95         // Heavy damping — very smooth, no bounce
 
     var isInvincible: Bool { invincibleTimer > 0 }
     var isSheltered: Bool { isInsideLog && isOnGround }
