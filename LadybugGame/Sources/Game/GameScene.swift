@@ -63,11 +63,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         groundY = size.height * 0.28
 
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
-        logTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 80, height: 60))
+        logTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 70, height: 45))
         frogTexture = TextureGenerator.generateFrogTexture(size: CGSize(width: 36, height: 32))
         dragonflyFrames = TextureGenerator.generateDragonflyFrames(size: CGSize(width: 48, height: 28))
         fireflyFrames = TextureGenerator.generateFireflyFrames(size: CGSize(width: 24, height: 24))
-        heartBugFrames = TextureGenerator.generateHeartBugFrames(size: CGSize(width: 24, height: 24))
+        heartBugFrames = TextureGenerator.generateHeartBugFrames(size: CGSize(width: 36, height: 36))
         for fc in [TextureGenerator.FlyColor.brown, .blue, .purple] {
             flyFrames[fc] = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: fc)
         }
@@ -513,9 +513,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnLog() {
         let spawnX = size.width + 80
         if isNearGroundObject(x: spawnX, range: 100) { return }
-        let logWidth = CGFloat.random(in: 80...160)
+        let logWidth = CGFloat.random(in: 60...110)
         let log = Log(texture: logTexture, width: logWidth)
-        log.position = CGPoint(x: spawnX, y: groundY - 1)
+        log.position = CGPoint(x: spawnX, y: groundY - 3)
         log.setupPhysics()
         addChild(log)
     }
@@ -599,7 +599,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             let dist = abs(frog.position.x - self.ladybug.position.x)
             if dist < 130 {
                 SoundManager.shared.play("ribbit")
-                frog.attackToward(sceneTarget: self.ladybug.position, groundY: self.groundY)
+                frog.attackToward(playerPos: self.ladybug.position)
             }
         }
         let wait = SKAction.wait(forDuration: 0.3)

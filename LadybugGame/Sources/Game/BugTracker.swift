@@ -14,6 +14,32 @@ final class BugTracker: @unchecked Sendable {
         case purpleFly = "Purple Fly"
         case firefly = "Firefly"
         case heartBug = "Heart Bug"
+
+        var description: String {
+            switch self {
+            case .greenAphid: return "Common garden pest. Worth 10 points. Scurries along the ground."
+            case .yellowAphid: return "Rarer yellow variant. Worth 25 points. Faster than green."
+            case .redAphid: return "Elusive red aphid. Worth 50 points. Hard to spot!"
+            case .brownFly: return "Common fruit fly. Worth 15 points. Bobs erratically in the air."
+            case .blueFly: return "Rare blue fruit fly. Worth 30 points. Quick and agile."
+            case .purpleFly: return "Mythical purple fly. Worth 50 points. Very rare spawn."
+            case .firefly: return "Magical firefly. Worth 100 points. Grants 10s invincibility!"
+            case .heartBug: return "Heart-shaped healer. Worth 50 points. Restores one life!"
+            }
+        }
+
+        var points: String {
+            switch self {
+            case .greenAphid: return "10 pts"
+            case .yellowAphid: return "25 pts"
+            case .redAphid: return "50 pts"
+            case .brownFly: return "15 pts"
+            case .blueFly: return "30 pts"
+            case .purpleFly: return "50 pts"
+            case .firefly: return "100 pts"
+            case .heartBug: return "50 pts + ♥"
+            }
+        }
     }
 
     private let key = "BugTrackerUnlocked"

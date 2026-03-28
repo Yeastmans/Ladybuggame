@@ -73,6 +73,12 @@ class MenuScene: SKScene {
         guard let touch = touches.first else { return }
         let nodes = self.nodes(at: touch.location(in: self))
 
+        // Close bug detail first if open
+        if childNode(withName: "bugDetail") != nil {
+            childNode(withName: "bugDetail")?.removeFromParent()
+            return
+        }
+
         for node in nodes {
             if node.name == "startButton" {
                 let game = GameScene(size: size)
@@ -82,6 +88,16 @@ class MenuScene: SKScene {
             }
             if node.name == "leaderboard" { showLeaderboard(); return }
             if node.name == "bugTracker" { showBugTracker(); return }
+
+            // Click on a bug in the tracker
+            if let name = node.name, name.hasPrefix("bug_") {
+                let bugName = String(name.dropFirst(4))
+                if let bugType = BugTracker.BugType.allCases.first(where: { $0.rawValue == bugName }) {
+                    showBugDetail(bugType)
+                    return
+                }
+            }
+
             if node.name == "overlay" || node.name == "closeOverlay" {
                 childNode(withName: "overlay")?.removeFromParent()
                 return
@@ -142,6 +158,8 @@ class MenuScene: SKScene {
             let tex = tracker.texture(for: bug, size: CGSize(width: 32, height: 32))
             let sprite = SKSpriteNode(texture: tex, size: CGSize(width: 32, height: 32))
             sprite.position = CGPoint(x: x, y: y)
+            sprite.name = "bug_\(bug.rawValue)"
+            sprite.isUserInteractionEnabled = false
             overlay.addChild(sprite)
 
             let label = SKLabelNode(fontNamed: "AvenirNext-Medium")
@@ -149,6 +167,7 @@ class MenuScene: SKScene {
             label.fontSize = 8
             label.fontColor = tracker.isUnlocked(bug) ? .white : SKColor(white: 0.5, alpha: 1)
             label.position = CGPoint(x: x, y: y - 22)
+            label.name = "bug_\(bug.rawValue)"
             overlay.addChild(label)
         }
 
@@ -160,7 +179,73 @@ class MenuScene: SKScene {
         countLabel.position = CGPoint(x: 0, y: -size.height * 0.28)
         overlay.addChild(countLabel)
 
-        addTapToClose(overlay)
+        let hint = SKLabelNode(fontNamed: "AvenirNext-Regular")
+        hint.text = "Tap a bug for details  |  Tap outside to close"
+        hint.fontSize = 10
+        hint.fontColor = SKColor(white: 1.0, alpha: 0.4)
+        hint.position = CGPoint(x: 0, y: -size.height * 0.33)
+        overlay.addChild(hint)
+    }
+
+    private func showBugDetail(_ bugType: BugTracker.BugType) {
+        childNode(withName: "bugDetail")?.removeFromParent()
+
+        let detail = SKShapeNode(rectOf: CGSize(width: size.width * 0.45, height: size.height * 0.50), cornerRadius: 12)
+        detail.fillColor = SKColor(white: 0.05, alpha: 0.95)
+        detail.strokeColor = SKColor(white: 1.0, alpha: 0.3)
+        detail.lineWidth = 1.5
+        detail.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        detail.zPosition = 200
+        detail.name = "bugDetail"
+        addChild(detail)
+
+        let tracker = BugTracker.shared
+        let isFound = tracker.isUnlocked(bugType)
+
+        let tex = tracker.texture(for: bugType, size: CGSize(width: 48, height: 48))
+        let sprite = SKSpriteNode(texture: tex, size: CGSize(width: 48, height: 48))
+        sprite.position = CGPoint(x: 0, y: size.height * 0.12)
+        detail.addChild(sprite)
+
+        let nameLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        nameLabel.text = isFound ? bugType.rawValue : "???"
+        nameLabel.fontSize = 18
+        nameLabel.fontColor = .white
+        nameLabel.position = CGPoint(x: 0, y: size.height * 0.04)
+        detail.addChild(nameLabel)
+
+        if isFound {
+            let ptsLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            ptsLabel.text = bugType.points
+            ptsLabel.fontSize = 14
+            ptsLabel.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0)
+            ptsLabel.position = CGPoint(x: 0, y: -size.height * 0.02)
+            detail.addChild(ptsLabel)
+
+            let descLabel = SKLabelNode(fontNamed: "AvenirNext-Regular")
+            descLabel.text = bugType.description
+            descLabel.fontSize = 10
+            descLabel.fontColor = SKColor(white: 0.8, alpha: 1)
+            descLabel.preferredMaxLayoutWidth = size.width * 0.38
+            descLabel.numberOfLines = 3
+            descLabel.position = CGPoint(x: 0, y: -size.height * 0.10)
+            detail.addChild(descLabel)
+        } else {
+            let unkLabel = SKLabelNode(fontNamed: "AvenirNext-Regular")
+            unkLabel.text = "Not yet discovered!"
+            unkLabel.fontSize = 12
+            unkLabel.fontColor = SKColor(white: 0.5, alpha: 1)
+            unkLabel.position = CGPoint(x: 0, y: -size.height * 0.04)
+            detail.addChild(unkLabel)
+        }
+
+        let close = SKLabelNode(fontNamed: "AvenirNext-Regular")
+        close.text = "Tap to close"
+        close.fontSize = 10
+        close.fontColor = SKColor(white: 1.0, alpha: 0.4)
+        close.position = CGPoint(x: 0, y: -size.height * 0.18)
+        close.name = "closeBugDetail"
+        detail.addChild(close)
     }
 
     private func makeOverlay() -> SKShapeNode {

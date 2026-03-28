@@ -7,6 +7,12 @@ final class SoundManager: @unchecked Sendable {
     private var musicPlayer: AVAudioPlayer?
 
     private init() {
+        // Configure audio session
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: .mixWithOthers)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {}
+
         prepareSound("eat", frequency: 880, duration: 0.08, volume: 0.3)
         prepareSound("eatRare", frequency: 1200, duration: 0.12, volume: 0.35)
         prepareSound("munch", frequency: 660, duration: 0.10, volume: 0.3)
