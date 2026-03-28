@@ -1,6 +1,6 @@
 import SpriteKit
 
-class GameScene: SKScene, SKPhysicsContactDelegate {
+class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     // MARK: - Physics Categories
     struct PhysicsCategory {
