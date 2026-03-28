@@ -874,6 +874,66 @@ enum TextureGenerator {
         return SKTexture(image: image)
     }
 
+    // MARK: - Rattlesnake (coiled, detailed)
+
+    static func generateRattlesnakeTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+
+            // Coiled body (S-curve)
+            cg.setStrokeColor(UIColor(red: 0.60, green: 0.45, blue: 0.22, alpha: 1.0).cgColor)
+            cg.setLineWidth(w * 0.12)
+            cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.08, y: h * 0.70))
+            cg.addCurve(to: CGPoint(x: w * 0.55, y: h * 0.65),
+                        control1: CGPoint(x: w * 0.20, y: h * 0.30),
+                        control2: CGPoint(x: w * 0.40, y: h * 0.90))
+            cg.addCurve(to: CGPoint(x: w * 0.78, y: h * 0.40),
+                        control1: CGPoint(x: w * 0.65, y: h * 0.45),
+                        control2: CGPoint(x: w * 0.72, y: h * 0.55))
+            cg.strokePath()
+
+            // Diamond pattern on body
+            cg.setFillColor(UIColor(red: 0.45, green: 0.32, blue: 0.15, alpha: 0.6).cgColor)
+            for pos in [(0.20, 0.52), (0.35, 0.72), (0.50, 0.62), (0.62, 0.55)] as [(CGFloat, CGFloat)] {
+                cg.fillEllipse(in: CGRect(x: w * pos.0 - 3, y: h * pos.1 - 3, width: 6, height: 6))
+            }
+
+            // Head (triangular, raised)
+            cg.setFillColor(UIColor(red: 0.55, green: 0.40, blue: 0.18, alpha: 1.0).cgColor)
+            cg.move(to: CGPoint(x: w * 0.75, y: h * 0.35))
+            cg.addLine(to: CGPoint(x: w * 0.95, y: h * 0.42))
+            cg.addLine(to: CGPoint(x: w * 0.95, y: h * 0.50))
+            cg.addLine(to: CGPoint(x: w * 0.75, y: h * 0.52))
+            cg.closePath()
+            cg.fillPath()
+
+            // Eye (slit pupil)
+            cg.setFillColor(UIColor(red: 0.95, green: 0.85, blue: 0.20, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.85, y: h * 0.38, width: w * 0.06, height: w * 0.06))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fill(CGRect(x: w * 0.875, y: h * 0.38, width: w * 0.015, height: w * 0.06))
+
+            // Forked tongue
+            cg.setStrokeColor(UIColor(red: 0.85, green: 0.20, blue: 0.25, alpha: 1.0).cgColor)
+            cg.setLineWidth(1.0)
+            cg.move(to: CGPoint(x: w * 0.95, y: h * 0.45))
+            cg.addLine(to: CGPoint(x: w * 1.0, y: h * 0.42))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.95, y: h * 0.45))
+            cg.addLine(to: CGPoint(x: w * 1.0, y: h * 0.48))
+            cg.strokePath()
+
+            // Rattle on tail
+            cg.setFillColor(UIColor(red: 0.70, green: 0.58, blue: 0.35, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.02, y: h * 0.65, width: w * 0.08, height: h * 0.12))
+            cg.fillEllipse(in: CGRect(x: w * 0.0, y: h * 0.68, width: w * 0.06, height: h * 0.08))
+        }
+        return SKTexture(image: image)
+    }
+
     // MARK: - Biome Creature Textures
 
     static func generateSimpleCreature(size: CGSize, bodyColor: UIColor, eyeColor: UIColor, legCount: Int = 3) -> SKTexture {

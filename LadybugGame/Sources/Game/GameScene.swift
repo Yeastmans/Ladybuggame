@@ -1048,10 +1048,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Biome Spawning
 
     private func spawnForBiome(dt: TimeInterval) {
-        // Universal spawns
-        logTimer += dt
-        let li = max(2.5, 5.0 - Double(distanceTraveled) * 0.0003)
-        if logTimer >= li { logTimer = 0; spawnLog() }
+        // Universal spawns (bushes not in desert)
+        if currentBiome != .desert {
+            logTimer += dt
+            let li = max(2.5, 5.0 - Double(distanceTraveled) * 0.0003)
+            if logTimer >= li { logTimer = 0; spawnLog() }
+        }
 
         heartBugTimer += dt
         if heartBugTimer >= 20.0 && lives < 3 { heartBugTimer = 0; spawnHeartBug() }
@@ -1092,7 +1094,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             dragonflyTimer += dt // Scorpions
             if dragonflyTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateScorpionTexture(size: CGSize(width: 36, height: 28)), name: "Scorpion") }
             spiderTimer += dt // Rattlesnake
-            if spiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 40, height: 16), bodyColor: UIColor(red: 0.55, green: 0.42, blue: 0.20, alpha: 1.0), eyeColor: UIColor(red: 0.90, green: 0.80, blue: 0.10, alpha: 1.0), legCount: 0), name: "Rattlesnake") }
+            if spiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateRattlesnakeTexture(size: CGSize(width: 44, height: 28)), name: "Rattlesnake") }
             birdTimer += dt // Hawks
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Hawk", tint: UIColor(red: 0.55, green: 0.35, blue: 0.15, alpha: 1.0)) }
 
@@ -1222,15 +1224,25 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             run(SKAction.repeatForever(SKAction.sequence([snowfall, SKAction.wait(forDuration: 0.15)])), withKey: "snowfall")
         }
 
-        // Desert: heat shimmer (subtle)
+        // Desert: orange-to-purple gradient sky
         if biome == .desert {
-            // Warm tint
-            let warmOverlay = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height * 0.3))
-            warmOverlay.fillColor = SKColor(red: 1.0, green: 0.90, blue: 0.60, alpha: 0.08)
-            warmOverlay.strokeColor = .clear
-            warmOverlay.position = CGPoint(x: size.width / 2, y: size.height * 0.15)
-            warmOverlay.zPosition = 49
-            addChild(warmOverlay)
+            let bands: [(y: CGFloat, h: CGFloat, r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat)] = [
+                (0.95, 0.15, 0.40, 0.15, 0.50, 0.7),  // Top — deep purple
+                (0.80, 0.15, 0.55, 0.20, 0.45, 0.6),  // Upper — purple
+                (0.65, 0.15, 0.75, 0.30, 0.35, 0.5),  // Mid — warm magenta
+                (0.50, 0.15, 0.90, 0.45, 0.20, 0.4),  // Lower — orange
+                (0.38, 0.10, 0.95, 0.60, 0.15, 0.3),  // Horizon — golden
+            ]
+            for band in bands {
+                let stripe = SKShapeNode(rectOf: CGSize(width: size.width + 10, height: size.height * band.h))
+                stripe.fillColor = SKColor(red: band.r, green: band.g, blue: band.b, alpha: band.a)
+                stripe.strokeColor = .clear
+                stripe.position = CGPoint(x: size.width / 2, y: size.height * band.y)
+                stripe.zPosition = -0.5
+                stripe.alpha = 0
+                addChild(stripe)
+                stripe.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
+            }
         }
 
         // Jungle: mist

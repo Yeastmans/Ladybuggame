@@ -167,7 +167,7 @@ final class BugTracker: @unchecked Sendable {
         case .bat: return TextureGenerator.generateBirdTextures(size: size).first!
         case .toad: return TextureGenerator.generateFrogTexture(size: size)
         case .scorpion: return TextureGenerator.generateScorpionTexture(size: size)
-        case .rattlesnake: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.55, green: 0.42, blue: 0.20, alpha: 1), eyeColor: UIColor(red: 0.90, green: 0.80, blue: 0.10, alpha: 1), legCount: 0)
+        case .rattlesnake: return TextureGenerator.generateRattlesnakeTexture(size: size)
         case .hawk: return TextureGenerator.generateBirdTextures(size: size).first!
         case .iceSpider: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.50, green: 0.60, blue: 0.80, alpha: 1), eyeColor: UIColor(red: 0.20, green: 0.80, blue: 1.0, alpha: 1), legCount: 4)
         case .snowOwl: return TextureGenerator.generateBirdTextures(size: size).first!
