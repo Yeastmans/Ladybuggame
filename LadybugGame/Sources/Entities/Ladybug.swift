@@ -9,9 +9,17 @@ class Ladybug: SKSpriteNode {
     private(set) var isGliding = false
     private(set) var isOnGround = true
     var velocityY: CGFloat = 0
-    let jumpStrength: CGFloat = 420
-    let gravity: CGFloat = -900
-    let glideGravity: CGFloat = -180
+    private var flightTime: CGFloat = 0
+    let maxFlightTime: CGFloat = 2.0
+    var targetY: CGFloat?
+    private var invincibleTimer: TimeInterval = 0
+
+    let jumpStrength: CGFloat = 380
+    let gravity: CGFloat = -800
+    let glideGravity: CGFloat = -150
+    let flyUpForce: CGFloat = 600
+
+    var isInvincible: Bool { invincibleTimer > 0 }
 
     init(walkTexture: SKTexture, glideTexture: SKTexture, blinkTexture: SKTexture) {
         self.walkTexture = walkTexture
@@ -42,33 +50,63 @@ class Ladybug: SKSpriteNode {
         run(SKAction.repeatForever(SKAction.sequence([wait, close, holdClosed, open])), withKey: "blink")
     }
 
-    // MARK: - Jump / Glide
+    // MARK: - Flight
 
-    func jump() {
-        guard isOnGround else { return }
-        isOnGround = false
-        velocityY = jumpStrength
-        texture = glideTexture
-        let grow = SKAction.scale(to: 1.15, duration: 0.15)
-        run(grow, withKey: "jumpScale")
-    }
-
-    func startGlide() {
-        guard !isOnGround else { return }
+    func startFlying() {
+        guard flightTime < maxFlightTime else { return }
+        if isOnGround {
+            isOnGround = false
+            velocityY = jumpStrength
+        }
         isGliding = true
         texture = glideTexture
+        run(SKAction.scale(to: 1.12, duration: 0.1), withKey: "jumpScale")
     }
 
-    func stopGlide() {
+    func stopFlying() {
         isGliding = false
     }
 
-    func updatePhysics(dt: TimeInterval, groundY: CGFloat) {
-        guard !isOnGround else { return }
+    func updatePhysics(dt: TimeInterval, groundY: CGFloat, ceilingY: CGFloat) {
+        // Invincibility cooldown
+        if invincibleTimer > 0 {
+            invincibleTimer -= dt
+        }
 
-        let currentGravity = isGliding ? glideGravity : gravity
-        velocityY += currentGravity * CGFloat(dt)
+        guard !isOnGround else {
+            flightTime = 0
+            return
+        }
+
+        // Track flight time
+        flightTime += CGFloat(dt)
+
+        // Force landing if max flight exceeded
+        if flightTime >= maxFlightTime {
+            isGliding = false
+        }
+
+        // Apply gravity or fly force
+        if isGliding && flightTime < maxFlightTime {
+            // Follow finger Y — apply force toward target
+            if let ty = targetY {
+                let diff = ty - position.y
+                velocityY += diff * 8.0 * CGFloat(dt)
+                velocityY *= 0.92 // damping
+            } else {
+                velocityY += glideGravity * CGFloat(dt)
+            }
+        } else {
+            velocityY += gravity * CGFloat(dt)
+        }
+
         position.y += velocityY * CGFloat(dt)
+
+        // Ceiling clamp
+        if position.y > ceilingY {
+            position.y = ceilingY
+            velocityY = min(velocityY, 0)
+        }
 
         // Hit ground
         if position.y <= groundY {
@@ -76,19 +114,27 @@ class Ladybug: SKSpriteNode {
             velocityY = 0
             isOnGround = true
             isGliding = false
+            flightTime = 0
             texture = walkTexture
-            let shrink = SKAction.scale(to: 1.0, duration: 0.1)
-            run(shrink, withKey: "jumpScale")
+            run(SKAction.scale(to: 1.0, duration: 0.08), withKey: "jumpScale")
         }
     }
 
+    func makeInvincible(duration: TimeInterval = 1.5) {
+        invincibleTimer = duration
+    }
+
     func pulse() {
-        let s = SKAction.sequence([SKAction.scale(to: 1.2, duration: 0.08), SKAction.scale(to: 1.0, duration: 0.08)])
-        run(s)
+        run(SKAction.sequence([SKAction.scale(to: 1.2, duration: 0.06), SKAction.scale(to: 1.0, duration: 0.06)]))
     }
 
     func flash() {
-        let blink = SKAction.sequence([SKAction.fadeAlpha(to: 0.3, duration: 0.1), SKAction.fadeAlpha(to: 1.0, duration: 0.1)])
-        run(SKAction.repeat(blink, count: 3))
+        let blink = SKAction.sequence([SKAction.fadeAlpha(to: 0.3, duration: 0.08), SKAction.fadeAlpha(to: 1.0, duration: 0.08)])
+        run(SKAction.repeat(blink, count: 4))
+    }
+
+    /// Flight fuel ratio (0 = empty, 1 = full)
+    var flightFuelRatio: CGFloat {
+        return max(0, 1.0 - flightTime / maxFlightTime)
     }
 }
