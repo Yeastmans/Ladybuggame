@@ -170,12 +170,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func setupGround() {
-        let tileWidth = size.width
+        let tileWidth = size.width + 10 // Extra width to guarantee overlap
         for i in 0..<3 {
             let tile = SKSpriteNode(color: SKColor(red: 0.42, green: 0.68, blue: 0.28, alpha: 1.0),
-                                    size: CGSize(width: tileWidth, height: groundY))
+                                    size: CGSize(width: tileWidth, height: groundY + 2))
             tile.anchorPoint = CGPoint(x: 0, y: 0)
-            tile.position = CGPoint(x: CGFloat(i) * tileWidth, y: 0)
+            tile.position = CGPoint(x: CGFloat(i) * (tileWidth - 10), y: 0)
             tile.zPosition = -2
             tile.name = "groundTile"
             addChild(tile)
@@ -422,11 +422,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Scrolling
 
     private func scrollGround(delta: CGFloat) {
+        let tileStride = (groundTiles.first?.size.width ?? size.width) - 10
         for tile in groundTiles {
             tile.position.x -= delta
-            if tile.position.x + tile.size.width < -2 {
+            if tile.position.x + tile.size.width < 0 {
                 let maxX = groundTiles.map { $0.position.x }.max() ?? 0
-                tile.position.x = floor(maxX + tile.size.width - 2)
+                tile.position.x = maxX + tileStride
             }
         }
     }
