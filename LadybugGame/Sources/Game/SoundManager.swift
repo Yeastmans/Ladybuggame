@@ -12,6 +12,9 @@ final class SoundManager: @unchecked Sendable {
         prepareSound("hit", frequency: 180, duration: 0.2, volume: 0.4)
         prepareSound("land", frequency: 200, duration: 0.06, volume: 0.15)
         prepareSound("gameOver", frequency: 400, duration: 0.4, volume: 0.35, sweep: 120)
+        prepareSound("caw", frequency: 600, duration: 0.18, volume: 0.25, sweep: 350)
+        prepareSound("ribbit", frequency: 250, duration: 0.15, volume: 0.3, sweep: 450)
+        prepareSound("munch", frequency: 440, duration: 0.06, volume: 0.25)
     }
 
     func play(_ name: String) {

@@ -357,7 +357,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             tile.position.x -= delta
             if tile.position.x + tile.size.width < 0 {
                 let maxX = groundTiles.map { $0.position.x }.max() ?? 0
-                tile.position.x = maxX + tile.size.width
+                tile.position.x = maxX + tile.size.width - 1 // 1px overlap to prevent gaps
             }
         }
     }
@@ -425,6 +425,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let fly = FruitFly(textures: fruitFlyFrames, points: pts)
         let y = groundY + CGFloat.random(in: 50...size.height * 0.55)
         fly.position = CGPoint(x: size.width + 30, y: y)
+        fly.minY = groundY
         fly.setupPhysics()
         fly.startMoving()
         addChild(fly)
@@ -448,6 +449,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Faster, more aggressive swoop — targets ladybug directly
         let targetY = ladybug.position.y
+        SoundManager.shared.play("caw")
         bird.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
                          targetY: targetY, duration: 1.4 + Double.random(in: 0...0.6))
 
@@ -474,6 +476,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             guard let self = self, let frog = frog else { return }
             let dist = abs(frog.position.x - self.ladybug.position.x)
             if dist < 130 {
+                SoundManager.shared.play("ribbit")
                 frog.attackToward(CGPoint(
                     x: self.ladybug.position.x - frog.position.x,
                     y: self.ladybug.position.y - frog.position.y
@@ -529,7 +532,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     color: aphid.colorType == .red ? .red : (aphid.colorType == .yellow ? .yellow : .green))
                 aphid.removeFromParent()
                 ladybug.pulse()
-                SoundManager.shared.play("eat")
+                SoundManager.shared.play("munch")
             }
         }
 

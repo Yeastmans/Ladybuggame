@@ -29,17 +29,27 @@ class FruitFly: SKSpriteNode {
         physicsBody = body
     }
 
+    var minY: CGFloat = 0
+
     func startMoving() {
-        // Erratic bobbing and weaving
         let bob = SKAction.run { [weak self] in
             guard let self = self else { return }
             let dy = CGFloat.random(in: 10...30) * (Bool.random() ? 1.0 : -1.0)
             let dx = CGFloat.random(in: 5...15) * (Bool.random() ? 1.0 : -1.0)
+            // Flip based on horizontal direction
+            if dx > 0 { self.xScale = abs(self.xScale) }
+            else { self.xScale = -abs(self.xScale) }
             let move = SKAction.moveBy(x: dx, y: dy, duration: Double.random(in: 0.3...0.6))
             move.timingMode = .easeInEaseOut
             self.run(move, withKey: "bobMove")
         }
+        let clamp = SKAction.run { [weak self] in
+            guard let self = self else { return }
+            if self.position.y < self.minY + self.size.height / 2 {
+                self.position.y = self.minY + self.size.height / 2
+            }
+        }
         let wait = SKAction.wait(forDuration: 0.3, withRange: 0.3)
-        run(SKAction.repeatForever(SKAction.sequence([bob, wait])), withKey: "bob")
+        run(SKAction.repeatForever(SKAction.sequence([bob, wait, clamp])), withKey: "bob")
     }
 }

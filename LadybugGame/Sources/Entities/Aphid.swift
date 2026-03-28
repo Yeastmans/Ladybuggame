@@ -34,11 +34,13 @@ class Aphid: SKSpriteNode {
             run(SKAction.repeatForever(anim), withKey: "walk")
         }
 
-        // Scurry back and forth
+        // Scurry back and forth, flip based on direction
         let scurryDist = CGFloat.random(in: 8...20)
+        let flipRight = SKAction.run { [weak self] in self?.xScale = abs(self?.xScale ?? 1) }
         let scurryRight = SKAction.moveBy(x: scurryDist, y: 0, duration: Double.random(in: 0.3...0.6))
+        let flipLeft = SKAction.run { [weak self] in self?.xScale = -(abs(self?.xScale ?? 1)) }
         let scurryLeft = SKAction.moveBy(x: -scurryDist, y: 0, duration: Double.random(in: 0.3...0.6))
         let pause = SKAction.wait(forDuration: Double.random(in: 0.3...0.8))
-        run(SKAction.repeatForever(SKAction.sequence([scurryRight, pause, scurryLeft, pause])), withKey: "scurry")
+        run(SKAction.repeatForever(SKAction.sequence([flipRight, scurryRight, pause, flipLeft, scurryLeft, pause])), withKey: "scurry")
     }
 }
