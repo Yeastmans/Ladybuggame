@@ -335,6 +335,72 @@ enum TextureGenerator {
         }
     }
 
+    // MARK: - HeartBug (heart with wings and legs)
+
+    static func generateHeartBugFrames(size: CGSize) -> [SKTexture] {
+        return [drawHeartBug(size: size, wingsUp: true),
+                drawHeartBug(size: size, wingsUp: false)]
+    }
+
+    private static func drawHeartBug(size: CGSize, wingsUp: Bool) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            // Wings
+            let wingAngle: CGFloat = wingsUp ? -0.4 : 0.2
+            cg.setFillColor(UIColor(red: 1.0, green: 0.80, blue: 0.85, alpha: 0.4).cgColor)
+            cg.saveGState()
+            cg.translateBy(x: w * 0.50, y: h * 0.30)
+            cg.rotate(by: wingAngle)
+            cg.fillEllipse(in: CGRect(x: -w * 0.20, y: -h * 0.18, width: w * 0.40, height: h * 0.22))
+            cg.restoreGState()
+
+            // Heart body
+            let heartPath = UIBezierPath()
+            let cx = w * 0.50
+            let cy = h * 0.48
+            let hs = w * 0.30
+            heartPath.move(to: CGPoint(x: cx, y: cy + hs * 0.8))
+            heartPath.addCurve(to: CGPoint(x: cx - hs, y: cy - hs * 0.3),
+                               controlPoint1: CGPoint(x: cx - hs * 0.5, y: cy + hs * 0.5),
+                               controlPoint2: CGPoint(x: cx - hs * 1.1, y: cy + hs * 0.1))
+            heartPath.addArc(withCenter: CGPoint(x: cx - hs * 0.5, y: cy - hs * 0.3),
+                              radius: hs * 0.5, startAngle: .pi, endAngle: 0, clockwise: false)
+            heartPath.addArc(withCenter: CGPoint(x: cx + hs * 0.5, y: cy - hs * 0.3),
+                              radius: hs * 0.5, startAngle: .pi, endAngle: 0, clockwise: false)
+            heartPath.addCurve(to: CGPoint(x: cx, y: cy + hs * 0.8),
+                               controlPoint1: CGPoint(x: cx + hs * 1.1, y: cy + hs * 0.1),
+                               controlPoint2: CGPoint(x: cx + hs * 0.5, y: cy + hs * 0.5))
+            cg.setFillColor(UIColor(red: 0.95, green: 0.20, blue: 0.30, alpha: 1.0).cgColor)
+            cg.addPath(heartPath.cgPath)
+            cg.fillPath()
+
+            // Shine on heart
+            cg.setFillColor(UIColor(red: 1.0, green: 0.50, blue: 0.55, alpha: 0.5).cgColor)
+            cg.fillEllipse(in: CGRect(x: cx - hs * 0.4, y: cy - hs * 0.4, width: hs * 0.4, height: hs * 0.3))
+
+            // Eyes
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.35, width: w * 0.10, height: w * 0.10))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * 0.37, width: w * 0.05, height: w * 0.05))
+
+            // Tiny legs
+            cg.setStrokeColor(UIColor(red: 0.70, green: 0.15, blue: 0.20, alpha: 0.7).cgColor)
+            cg.setLineWidth(0.6)
+            cg.setLineCap(.round)
+            for lx in [0.38, 0.50, 0.62] as [CGFloat] {
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.72))
+                cg.addLine(to: CGPoint(x: w * (lx - 0.02), y: h * 0.85))
+                cg.strokePath()
+            }
+        }
+        return SKTexture(image: image)
+    }
+
     // MARK: - Dragonfly (side view, two wing frames)
 
     static func generateDragonflyFrames(size: CGSize) -> [SKTexture] {

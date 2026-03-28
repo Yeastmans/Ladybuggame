@@ -46,12 +46,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var flyFrames: [TextureGenerator.FlyColor: [SKTexture]] = [:]
     private var dragonflyFrames: [SKTexture] = []
     private var fireflyFrames: [SKTexture] = []
+    private var heartBugFrames: [SKTexture] = []
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
     private var frogTimer: TimeInterval = 0
     private var dragonflyTimer: TimeInterval = 0
     private var fireflyTimer: TimeInterval = 0
+    private var heartBugTimer: TimeInterval = 0
     private var groundTiles: [SKSpriteNode] = []
 
     override func didMove(to view: SKView) {
@@ -65,6 +67,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         frogTexture = TextureGenerator.generateFrogTexture(size: CGSize(width: 36, height: 32))
         dragonflyFrames = TextureGenerator.generateDragonflyFrames(size: CGSize(width: 48, height: 28))
         fireflyFrames = TextureGenerator.generateFireflyFrames(size: CGSize(width: 24, height: 24))
+        heartBugFrames = TextureGenerator.generateHeartBugFrames(size: CGSize(width: 24, height: 24))
         for fc in [TextureGenerator.FlyColor.brown, .blue, .purple] {
             flyFrames[fc] = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: fc)
         }
@@ -300,6 +303,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         ladybug.updatePhysics(dt: dt, groundY: bugGroundY, ceilingY: ceilingY)
 
+        pushEntitiesFromLogs()
+
         // Scrolling
         distanceTraveled += scrollSpeed * CGFloat(dt)
         scrollSpeed = min(300, 160 + distanceTraveled * 0.002)
@@ -331,6 +336,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         fireflyTimer += dt
         if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
+
+        heartBugTimer += dt
+        if heartBugTimer >= 20.0 && lives < 3 { heartBugTimer = 0; spawnHeartBug() }
 
         if envTimer >= 0.6 { envTimer = 0; spawnEnvironment() }
     }
@@ -367,6 +375,27 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ladybug.isInsideLog = insideAny
     }
 
+    private func pushEntitiesFromLogs() {
+        for child in children {
+            guard let log = child as? Log else { continue }
+            let logLeft = log.position.x - log.size.width * 0.5
+            let logRight = log.position.x + log.size.width * 0.5
+            let logTop = log.position.y + log.size.height
+
+            for entity in children {
+                let isFlyer = entity is FruitFly || entity is Dragonfly || entity is Firefly || entity is HeartBug || entity is Bird
+                guard isFlyer else { continue }
+                let ex = entity.position.x
+                let ey = entity.position.y
+
+                // If entity is inside the log's X range and below log top, push up
+                if ex > logLeft && ex < logRight && ey < logTop && ey > log.position.y {
+                    entity.position.y = logTop + 5
+                }
+            }
+        }
+    }
+
     // MARK: - Scrolling
 
     private func scrollGround(delta: CGFloat) {
@@ -399,7 +428,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func scrollWorldObjects(delta: CGFloat) {
         for child in children {
-            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly {
+            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug {
                 child.position.x -= delta
                 if child.position.x < -120 { child.removeFromParent() }
             }
@@ -451,6 +480,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         fly.setupPhysics()
         fly.startMoving()
         addChild(fly)
+    }
+
+    private func spawnHeartBug() {
+        let hb = HeartBug(textures: heartBugFrames)
+        let y = groundY + CGFloat.random(in: 40...size.height * 0.45)
+        hb.position = CGPoint(x: size.width + 30, y: y)
+        hb.minY = groundY
+        hb.setupPhysics()
+        hb.startMoving { [weak self] in self?.ladybug.position }
+        addChild(hb)
     }
 
     private func spawnDragonfly() {
@@ -678,11 +717,27 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 aphid.removeFromParent()
                 ladybug.pulse()
                 SoundManager.shared.play("munch")
+                switch aphid.colorType {
+                case .green: BugTracker.shared.unlock(.greenAphid)
+                case .yellow: BugTracker.shared.unlock(.yellowAphid)
+                case .red: BugTracker.shared.unlock(.redAphid)
+                }
             }
         }
 
         if collision == PhysicsCategory.ladybug | PhysicsCategory.fruitfly {
-            // Check firefly first
+            // HeartBug — restore a life
+            if let hb = (contact.bodyA.node as? HeartBug) ?? (contact.bodyB.node as? HeartBug) {
+                if lives < 3 { lives += 1; updateLivesDisplay() }
+                score += 50
+                showFloatingScore(50, at: hb.position, color: SKColor(red: 1.0, green: 0.3, blue: 0.4, alpha: 1.0))
+                hb.removeFromParent()
+                ladybug.pulse()
+                SoundManager.shared.play("eatRare")
+                BugTracker.shared.unlock(.heartBug)
+                return
+            }
+            // Check firefly
             if let ff = (contact.bodyA.node as? Firefly) ?? (contact.bodyB.node as? Firefly) {
                 score += 100
                 showFloatingScore(100, at: ff.position, color: SKColor(red: 1.0, green: 0.95, blue: 0.3, alpha: 1.0))
@@ -690,6 +745,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 ladybug.makeInvincible(duration: 10.0)
                 ladybug.pulse()
                 SoundManager.shared.play("eatRare")
+                BugTracker.shared.unlock(.firefly)
 
                 // Visual: golden glow while invincible
                 let glow = SKShapeNode(circleOfRadius: 30)
@@ -714,6 +770,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 fly.removeFromParent()
                 ladybug.pulse()
                 SoundManager.shared.play("eatRare")
+                switch fly.colorType {
+                case .brown: BugTracker.shared.unlock(.brownFly)
+                case .blue: BugTracker.shared.unlock(.blueFly)
+                case .purple: BugTracker.shared.unlock(.purpleFly)
+                }
             }
         }
 
