@@ -35,6 +35,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var lives: Int = 3
     private var livesLabel: SKLabelNode!
 
+    private static let nightCheckpointKey = "NightCheckpointReached"
+    static var hasNightCheckpoint: Bool {
+        get { UserDefaults.standard.bool(forKey: nightCheckpointKey) }
+        set { UserDefaults.standard.set(newValue, forKey: nightCheckpointKey) }
+    }
+    var startFromCheckpoint = false
+
     private var isGameOver = false
     private var isNight = false
     private var hasTransitionedToNight = false
@@ -96,6 +103,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         setupGround()
         setupHUD()
         spawnLadybug()
+
+        if startFromCheckpoint {
+            score = 2000
+            // Trigger night immediately
+        }
     }
 
     // MARK: - Setup
@@ -320,6 +332,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         pushEntitiesFromLogs()
         checkPondDamage()
+        checkSpiderJumps()
 
         // Scrolling
         distanceTraveled += scrollSpeed * CGFloat(dt)
@@ -409,6 +422,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if abs(node.position.x - self.ladybug.position.x) < pondHalfW {
                 self.takeDamage()
                 stop.pointee = true
+            }
+        }
+    }
+
+    private func checkSpiderJumps() {
+        for child in children {
+            if let spider = child as? Spider {
+                spider.jumpIfPlayerNear(playerX: ladybug.position.x)
             }
         }
     }
@@ -615,11 +636,17 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             addChild(pad)
         }
 
-        // 60% frog, 40% dragonfly
-        if Int.random(in: 0..<10) < 6 {
-            // Frog
+        // At night: always toad (darker frog), no dragonfly
+        // Day: 60% frog, 40% dragonfly
+        let spawnFrogHere = isNight || Int.random(in: 0..<10) < 6
+        if spawnFrogHere {
             let frog = Frog(texture: frogTexture)
             frog.position = CGPoint(x: spawnX + pondW * 0.3, y: groundY + frog.size.height / 2)
+            // Toad coloring at night
+            if isNight {
+                frog.colorBlendFactor = 0.4
+                frog.color = SKColor(red: 0.30, green: 0.25, blue: 0.15, alpha: 1.0)
+            }
             addChild(frog)
 
             let checkDistance = SKAction.run { [weak self, weak frog] in
@@ -941,6 +968,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func transitionToNight() {
         isNight = true
+        GameScene.hasNightCheckpoint = true
 
         // Darken sky
         let nightOverlay = SKShapeNode(rectOf: CGSize(width: size.width + 20, height: size.height))

@@ -41,6 +41,12 @@ class MenuScene: SKScene {
                   color: SKColor(red: 0.25, green: 0.50, blue: 0.75, alpha: 1.0),
                   y: size.height * 0.28)
 
+        if GameScene.hasNightCheckpoint {
+            addButton("Resume Night", name: "checkpoint",
+                      color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
+                      y: size.height * 0.16)
+        }
+
         let hsLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
         hsLabel.text = "Best: \(MenuScene.highScore)"
         hsLabel.fontSize = 16
@@ -88,6 +94,13 @@ class MenuScene: SKScene {
             }
             if node.name == "leaderboard" { showLeaderboard(); return }
             if node.name == "bugTracker" { showBugTracker(); return }
+            if node.name == "checkpoint" {
+                let game = GameScene(size: size)
+                game.scaleMode = scaleMode
+                game.startFromCheckpoint = true
+                view?.presentScene(game, transition: .fade(withDuration: 0.4))
+                return
+            }
 
             // Click on a bug in the tracker
             if let name = node.name, name.hasPrefix("bug_") {

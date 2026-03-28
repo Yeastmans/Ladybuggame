@@ -12,18 +12,18 @@ class GnatSwarm: SKSpriteNode {
         zPosition = 5
 
         // Create 4-6 tiny gnat dots
-        let count = Int.random(in: 4...6)
+        let count = Int.random(in: 5...8)
         for _ in 0..<count {
             let gnat = SKShapeNode(circleOfRadius: 1.5)
             gnat.fillColor = SKColor(white: 0.85, alpha: 0.7)
             gnat.strokeColor = .clear
-            gnat.position = CGPoint(x: CGFloat.random(in: -10...10), y: CGFloat.random(in: -10...10))
+            gnat.position = CGPoint(x: CGFloat.random(in: -6...6), y: CGFloat.random(in: -6...6))
             addChild(gnat)
 
             // Individual buzz
             let buzz = SKAction.run { [weak gnat] in
                 guard let g = gnat else { return }
-                let move = SKAction.moveBy(x: CGFloat.random(in: -5...5), y: CGFloat.random(in: -5...5), duration: 0.15)
+                let move = SKAction.moveBy(x: CGFloat.random(in: -3...3), y: CGFloat.random(in: -3...3), duration: 0.12)
                 g.run(move)
             }
             let wait = SKAction.wait(forDuration: 0.1, withRange: 0.1)
