@@ -1,0 +1,63 @@
+import SpriteKit
+
+/// Generic food entity used across biomes
+class BiomeFood: SKSpriteNode {
+
+    let points: Int
+    let biomeName: String
+    let isFlying: Bool
+    var minY: CGFloat = 0
+
+    init(texture: SKTexture, points: Int, biomeName: String, isFlying: Bool) {
+        self.points = points
+        self.biomeName = biomeName
+        self.isFlying = isFlying
+        super.init(texture: texture, color: .clear, size: texture.size())
+        zPosition = 5
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func setupPhysics() {
+        let body = SKPhysicsBody(circleOfRadius: size.width / 2 * 0.6)
+        body.isDynamic = false
+        body.categoryBitMask = GameScene.PhysicsCategory.aphid
+        body.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+        physicsBody = body
+    }
+
+    func startMoving() {
+        if isFlying {
+            let bob = SKAction.run { [weak self] in
+                guard let self = self else { return }
+                let dy = CGFloat.random(in: 8...22) * (Bool.random() ? 1.0 : -1.0)
+                let dx = CGFloat.random(in: 3...10) * (Bool.random() ? 1.0 : -1.0)
+                if dx > 0 { self.xScale = abs(self.xScale) } else { self.xScale = -abs(self.xScale) }
+                let move = SKAction.moveBy(x: dx, y: dy, duration: Double.random(in: 0.3...0.6))
+                move.timingMode = .easeInEaseOut
+                self.run(move, withKey: "flyMove")
+            }
+            let clamp = SKAction.run { [weak self] in
+                guard let self = self else { return }
+                if self.position.y < self.minY + self.size.height / 2 {
+                    self.position.y = self.minY + self.size.height / 2
+                }
+            }
+            run(SKAction.repeatForever(SKAction.sequence([bob, SKAction.wait(forDuration: 0.3), clamp])), withKey: "fly")
+        } else {
+            let dist = CGFloat.random(in: 8...18)
+            let right = SKAction.sequence([
+                SKAction.run { [weak self] in self?.xScale = abs(self?.xScale ?? 1) },
+                SKAction.moveBy(x: dist, y: 0, duration: Double.random(in: 0.4...0.7))
+            ])
+            let left = SKAction.sequence([
+                SKAction.run { [weak self] in self?.xScale = -(abs(self?.xScale ?? 1)) },
+                SKAction.moveBy(x: -dist, y: 0, duration: Double.random(in: 0.4...0.7))
+            ])
+            let pause = SKAction.wait(forDuration: Double.random(in: 0.3...0.6))
+            run(SKAction.repeatForever(SKAction.sequence([right, pause, left, pause])), withKey: "crawl")
+        }
+    }
+}

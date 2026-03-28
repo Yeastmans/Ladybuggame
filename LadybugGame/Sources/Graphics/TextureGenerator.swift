@@ -875,4 +875,79 @@ enum TextureGenerator {
         }
         return SKTexture(image: image)
     }
+
+    // MARK: - Biome Creature Textures
+
+    static func generateSimpleCreature(size: CGSize, bodyColor: UIColor, eyeColor: UIColor, legCount: Int = 3) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            cg.setStrokeColor(bodyColor.withAlphaComponent(0.7).cgColor)
+            cg.setLineWidth(0.8); cg.setLineCap(.round)
+            for i in 0..<legCount {
+                let lx = 0.25 + CGFloat(i) * (0.50 / CGFloat(max(1, legCount - 1)))
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.65))
+                cg.addLine(to: CGPoint(x: w * (lx - 0.02), y: h * 0.90))
+                cg.strokePath()
+            }
+            cg.setFillColor(bodyColor.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.20, width: w * 0.80, height: h * 0.55))
+            cg.setFillColor(eyeColor.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.65, y: h * 0.32, width: w * 0.12, height: w * 0.12))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.69, y: h * 0.36, width: w * 0.06, height: w * 0.06))
+        }
+        return SKTexture(image: image)
+    }
+
+    // Desert
+    static func generateScorpionTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            let body = UIColor(red: 0.65, green: 0.45, blue: 0.20, alpha: 1.0)
+            cg.setStrokeColor(body.cgColor); cg.setLineWidth(1.2); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.10, y: h * 0.50))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.18, y: h * 0.10), control: CGPoint(x: w * 0.02, y: h * 0.20))
+            cg.strokePath()
+            cg.setFillColor(UIColor(red: 0.20, green: 0.10, blue: 0.05, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.15, y: h * 0.05, width: 4, height: 4))
+            cg.setFillColor(body.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.15, y: h * 0.35, width: w * 0.55, height: h * 0.35))
+            cg.setStrokeColor(body.cgColor); cg.setLineWidth(1.5)
+            cg.move(to: CGPoint(x: w * 0.68, y: h * 0.42))
+            cg.addLine(to: CGPoint(x: w * 0.85, y: h * 0.30))
+            cg.addLine(to: CGPoint(x: w * 0.92, y: h * 0.38))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.68, y: h * 0.58))
+            cg.addLine(to: CGPoint(x: w * 0.85, y: h * 0.65))
+            cg.addLine(to: CGPoint(x: w * 0.92, y: h * 0.58))
+            cg.strokePath()
+            cg.setLineWidth(0.8)
+            for lx in [0.30, 0.42, 0.54, 0.64] as [CGFloat] {
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.68))
+                cg.addLine(to: CGPoint(x: w * (lx - 0.03), y: h * 0.88))
+                cg.strokePath()
+            }
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.42, width: 3, height: 3))
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateDesertBeetleTexture(size: CGSize) -> SKTexture {
+        generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.30, green: 0.22, blue: 0.10, alpha: 1.0), eyeColor: .white)
+    }
+
+    static func generateSnowFleaTexture(size: CGSize) -> SKTexture {
+        generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.15, green: 0.12, blue: 0.20, alpha: 1.0),
+                               eyeColor: UIColor(red: 0.60, green: 0.80, blue: 1.0, alpha: 1.0))
+    }
+
+    static func generateJungleBeetleTexture(size: CGSize) -> SKTexture {
+        generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.10, green: 0.55, blue: 0.25, alpha: 1.0),
+                               eyeColor: UIColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0))
+    }
 }

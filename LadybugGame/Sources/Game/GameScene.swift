@@ -19,6 +19,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private var scoreLabel: SKLabelNode!
     private var hasShownRainbow = false
+    private var currentBiome: Biome = .meadowDay
     private var score: Int = 0 {
         didSet {
             scoreLabel.text = "\(score)"
@@ -26,11 +27,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 hasShownRainbow = true
                 showRainbow()
             }
-            if score >= 1000 && !hasTransitionedToNight {
-                hasTransitionedToNight = true
-                transitionToNight()
+            // Biome transitions
+            let newBiome = Biome.biome(for: score)
+            if newBiome != currentBiome {
+                transitionToBiome(newBiome)
+                currentBiome = newBiome
             }
-            // Save checkpoint every 1000 points
+            // Checkpoint every 1000 points
             if score > 0 && score % 1000 == 0 {
                 GameScene.hasNightCheckpoint = true
                 GameScene.checkpointScore = score
@@ -116,6 +119,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         if startFromCheckpoint {
             score = GameScene.checkpointScore
+            currentBiome = Biome.biome(for: score)
         }
     }
 
@@ -352,41 +356,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         scrollParallax(delta: sd)
         scrollWorldObjects(delta: sd)
 
-        // Spawns — day vs night
-        if !isNight {
-            // DAY spawns
-            aphidTimer += dt
-            if aphidTimer >= 1.2 { aphidTimer = 0; spawnAphid() }
-            flyTimer += dt
-            if flyTimer >= 1.5 { flyTimer = 0; spawnFruitFly() }
-            antTimer += dt
-            let ai = max(3.0, 6.0 - Double(distanceTraveled) * 0.0003)
-            if antTimer >= ai { antTimer = 0; spawnAnt() }
-        } else {
-            // NIGHT spawns
-            gnatTimer += dt
-            if gnatTimer >= 1.0 { gnatTimer = 0; spawnGnatSwarm() }
-            fireflyTimer += dt
-            if fireflyTimer >= 12.0 { fireflyTimer = 0; spawnFirefly() }
-            spiderTimer += dt
-            let si = max(4.0, 8.0 - Double(distanceTraveled) * 0.0003)
-            if spiderTimer >= si { spiderTimer = 0; spawnSpider() }
-        }
-
-        // Both day and night
-        logTimer += dt
-        let li = max(2.5, 5.0 - Double(distanceTraveled) * 0.0003)
-        if logTimer >= li { logTimer = 0; spawnLog() }
-        birdTimer += dt
-        let bi = max(2.5, 5.5 - Double(distanceTraveled) * 0.0003)
-        if birdTimer >= bi { birdTimer = 0; spawnBird() }
-        // Frog or dragonfly at pond
-        frogTimer += dt
-        let fi = max(4.0, 8.0 - Double(distanceTraveled) * 0.0003)
-        if frogTimer >= fi { frogTimer = 0; spawnPondCreature() }
-
-        heartBugTimer += dt
-        if heartBugTimer >= 20.0 && lives < 3 { heartBugTimer = 0; spawnHeartBug() }
+        // Biome-aware spawning
+        spawnForBiome(dt: dt)
 
         if envTimer >= 0.6 { envTimer = 0; spawnEnvironment() }
     }
@@ -439,6 +410,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         for child in children {
             if let spider = child as? Spider {
                 spider.jumpIfPlayerNear(playerX: ladybug.position.x)
+            }
+            if let enemy = child as? BiomeEnemy {
+                enemy.lungeIfNear(playerX: ladybug.position.x)
             }
         }
     }
@@ -501,7 +475,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func scrollWorldObjects(delta: CGFloat) {
         for child in children {
-            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider || child is GnatSwarm {
+            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood || child is BiomeEnemy || child is BiomeSwooper {
                 child.position.x -= delta
                 if child.position.x < -120 { child.removeFromParent() }
             }
@@ -812,6 +786,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let collision = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
 
         if collision == PhysicsCategory.ladybug | PhysicsCategory.aphid {
+            // BiomeFood
+            if let food = (contact.bodyA.node as? BiomeFood) ?? (contact.bodyB.node as? BiomeFood) {
+                score += food.points
+                showFloatingScore(food.points, at: food.position, color: .cyan)
+                food.removeFromParent()
+                ladybug.pulse()
+                SoundManager.shared.play("munch")
+                return
+            }
             if let aphid = (contact.bodyA.node as? Aphid) ?? (contact.bodyB.node as? Aphid) {
                 score += aphid.points
                 showFloatingScore(aphid.points, at: aphid.position,
@@ -926,6 +909,195 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ladybug.makeInvincible()
         SoundManager.shared.play("hit")
         if lives <= 0 { gameOver() }
+    }
+
+    // MARK: - Biome Spawning
+
+    private func spawnForBiome(dt: TimeInterval) {
+        // Universal spawns
+        logTimer += dt
+        let li = max(2.5, 5.0 - Double(distanceTraveled) * 0.0003)
+        if logTimer >= li { logTimer = 0; spawnLog() }
+
+        heartBugTimer += dt
+        if heartBugTimer >= 20.0 && lives < 3 { heartBugTimer = 0; spawnHeartBug() }
+
+        envTimer += dt
+        if envTimer >= 0.6 { envTimer = 0; spawnEnvironment() }
+
+        switch currentBiome {
+        case .meadowDay:
+            aphidTimer += dt
+            if aphidTimer >= 1.2 { aphidTimer = 0; spawnAphid() }
+            flyTimer += dt
+            if flyTimer >= 1.5 { flyTimer = 0; spawnFruitFly() }
+            antTimer += dt
+            if antTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { antTimer = 0; spawnAnt() }
+            birdTimer += dt
+            if birdTimer >= max(2.5, 5.5 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBird() }
+            frogTimer += dt
+            if frogTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnPondCreature() }
+
+        case .meadowNight:
+            gnatTimer += dt
+            if gnatTimer >= 1.0 { gnatTimer = 0; spawnGnatSwarm() }
+            fireflyTimer += dt
+            if fireflyTimer >= 12.0 { fireflyTimer = 0; spawnFirefly() }
+            spiderTimer += dt
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnSpider() }
+            birdTimer += dt
+            if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBird() }
+            frogTimer += dt
+            if frogTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnPondCreature() }
+
+        case .desert:
+            aphidTimer += dt // Desert beetles
+            if aphidTimer >= 1.4 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateDesertBeetleTexture(size: CGSize(width: 20, height: 18)), pts: 15, flying: false, name: "Desert Beetle") }
+            flyTimer += dt // Desert flies
+            if flyTimer >= 1.8 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 18, height: 18), bodyColor: UIColor(red: 0.70, green: 0.55, blue: 0.25, alpha: 1.0), eyeColor: .white), pts: 20, flying: true, name: "Sand Fly") }
+            dragonflyTimer += dt // Scorpions
+            if dragonflyTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateScorpionTexture(size: CGSize(width: 36, height: 28)), name: "Scorpion") }
+            birdTimer += dt // Hawks
+            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Hawk", tint: UIColor(red: 0.55, green: 0.35, blue: 0.15, alpha: 1.0)) }
+
+        case .snow:
+            aphidTimer += dt // Snow fleas
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSnowFleaTexture(size: CGSize(width: 18, height: 16)), pts: 15, flying: false, name: "Snow Flea") }
+            flyTimer += dt // Ice moths
+            if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 20, height: 20), color: .blue).first!, pts: 25, flying: true, name: "Ice Moth") }
+            spiderTimer += dt // Ice spiders
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 32, height: 28), bodyColor: UIColor(red: 0.50, green: 0.60, blue: 0.80, alpha: 1.0), eyeColor: UIColor(red: 0.20, green: 0.80, blue: 1.0, alpha: 1.0), legCount: 4), name: "Ice Spider") }
+            birdTimer += dt // Snow owls
+            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Snow Owl", tint: UIColor(red: 0.92, green: 0.92, blue: 0.95, alpha: 1.0)) }
+            fireflyTimer += dt // Hot cocoa (rare power-up)
+            if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
+
+        case .jungle:
+            aphidTimer += dt // Jungle beetles
+            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateJungleBeetleTexture(size: CGSize(width: 22, height: 20)), pts: 30, flying: false, name: "Jungle Beetle") }
+            flyTimer += dt // Tropical butterflies
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: .purple).first!, pts: 20, flying: true, name: "Butterfly") }
+            dragonflyTimer += dt // Poison dart frogs at ponds
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnPondCreature() }
+            spiderTimer += dt // Jungle spiders
+            if spiderTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 36, height: 30), bodyColor: UIColor(red: 0.15, green: 0.40, blue: 0.10, alpha: 1.0), eyeColor: UIColor(red: 1.0, green: 0.20, blue: 0.10, alpha: 1.0), legCount: 4), name: "Jungle Spider") }
+            birdTimer += dt // Toucans
+            if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Toucan", tint: UIColor(red: 0.95, green: 0.55, blue: 0.10, alpha: 1.0)) }
+        }
+    }
+
+    private func spawnBiomeFood(texture: SKTexture, pts: Int, flying: Bool, name: String) {
+        let spawnX = size.width + 30
+        if !flying && isNearGroundObject(x: spawnX, range: 60) { return }
+        let food = BiomeFood(texture: texture, points: pts, biomeName: name, isFlying: flying)
+        let y: CGFloat = flying ? groundY + CGFloat.random(in: 40...size.height * 0.45) : groundY + food.size.height / 2
+        food.position = CGPoint(x: spawnX, y: y)
+        food.minY = groundY
+        food.setupPhysics()
+        food.startMoving()
+        addChild(food)
+    }
+
+    private func spawnBiomeGroundEnemy(texture: SKTexture, name: String) {
+        let spawnX = size.width + 40
+        if isNearGroundObject(x: spawnX, range: 80) { return }
+        let enemy = BiomeEnemy(texture: texture, biomeName: name)
+        enemy.position = CGPoint(x: spawnX, y: groundY + enemy.size.height / 2)
+        enemy.setupPhysics()
+        enemy.startPatrolling()
+        addChild(enemy)
+    }
+
+    private func spawnBiomeSwooper(name: String, tint: UIColor) {
+        let swooper = BiomeSwooper(textures: birdTextures, biomeName: name)
+        swooper.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.50...0.85))
+        swooper.xScale = -1
+        swooper.colorBlendFactor = 0.5
+        swooper.color = tint
+        swooper.setupPhysics()
+        addChild(swooper)
+        SoundManager.shared.play("caw")
+        let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...15)
+        swooper.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
+                            targetY: targetY, duration: 2.0 + Double.random(in: 0...0.8))
+    }
+
+    // MARK: - Biome Transitions
+
+    private func transitionToBiome(_ biome: Biome) {
+        // Notification
+        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        label.text = biome.name
+        label.fontSize = 30
+        label.fontColor = .white
+        label.position = CGPoint(x: size.width / 2, y: size.height * 0.65)
+        label.zPosition = 80
+        addChild(label)
+        label.run(SKAction.sequence([
+            SKAction.group([SKAction.moveBy(x: 0, y: 20, duration: 2.0), SKAction.fadeOut(withDuration: 2.0)]),
+            SKAction.removeFromParent()
+        ]))
+
+        // Transition ground color
+        for tile in groundTiles {
+            tile.run(SKAction.colorize(with: biome.groundColor, colorBlendFactor: 0.8, duration: 2.0))
+        }
+
+        // Sky color transition
+        let skyOverlay = SKShapeNode(rectOf: CGSize(width: size.width + 20, height: size.height))
+        skyOverlay.fillColor = biome.skyColor
+        skyOverlay.strokeColor = .clear
+        skyOverlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        skyOverlay.zPosition = -1
+        skyOverlay.alpha = 0
+        addChild(skyOverlay)
+        skyOverlay.run(SKAction.fadeAlpha(to: 0.7, duration: 2.5))
+
+        // Night-specific effects
+        if biome == .meadowNight {
+            isNight = true
+            hasTransitionedToNight = true
+            transitionToNight()
+        }
+
+        // Snow: falling snowflakes
+        if biome == .snow {
+            let snowfall = SKAction.run { [weak self] in
+                guard let self = self else { return }
+                let flake = SKShapeNode(circleOfRadius: CGFloat.random(in: 1...3))
+                flake.fillColor = .white
+                flake.strokeColor = .clear
+                flake.position = CGPoint(x: CGFloat.random(in: 0...self.size.width), y: self.size.height + 5)
+                flake.zPosition = 50
+                flake.alpha = CGFloat.random(in: 0.4...0.8)
+                self.addChild(flake)
+                let fall = SKAction.moveTo(y: -5, duration: Double.random(in: 2...4))
+                let drift = SKAction.moveBy(x: CGFloat.random(in: -30...10), y: 0, duration: Double.random(in: 2...4))
+                flake.run(SKAction.sequence([SKAction.group([fall, drift]), SKAction.removeFromParent()]))
+            }
+            run(SKAction.repeatForever(SKAction.sequence([snowfall, SKAction.wait(forDuration: 0.15)])), withKey: "snowfall")
+        }
+
+        // Desert: heat shimmer (subtle)
+        if biome == .desert {
+            // Warm tint
+            let warmOverlay = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height * 0.3))
+            warmOverlay.fillColor = SKColor(red: 1.0, green: 0.90, blue: 0.60, alpha: 0.08)
+            warmOverlay.strokeColor = .clear
+            warmOverlay.position = CGPoint(x: size.width / 2, y: size.height * 0.15)
+            warmOverlay.zPosition = 49
+            addChild(warmOverlay)
+        }
+
+        // Jungle: mist
+        if biome == .jungle {
+            let mist = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height * 0.2))
+            mist.fillColor = SKColor(red: 0.30, green: 0.60, blue: 0.35, alpha: 0.12)
+            mist.strokeColor = .clear
+            mist.position = CGPoint(x: size.width / 2, y: groundY + size.height * 0.1)
+            mist.zPosition = 48
+            addChild(mist)
+        }
     }
 
     private func showRainbow() {
