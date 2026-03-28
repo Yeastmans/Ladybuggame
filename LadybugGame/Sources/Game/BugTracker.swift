@@ -38,6 +38,7 @@ final class BugTracker: @unchecked Sendable {
         case toad = "Toad"
         // Desert enemies
         case scorpion = "Scorpion"
+        case rattlesnake = "Rattlesnake"
         case hawk = "Hawk"
         // Snow enemies
         case iceSpider = "Ice Spider"
@@ -53,7 +54,7 @@ final class BugTracker: @unchecked Sendable {
                  .snowFlea, .iceMoth, .jungleBeetle, .butterfly:
                 return .food
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
-                 .scorpion, .hawk, .iceSpider, .snowOwl, .jungleSpider, .toucan:
+                 .scorpion, .rattlesnake, .hawk, .iceSpider, .snowOwl, .jungleSpider, .toucan:
                 return .enemy
             }
         }
@@ -83,6 +84,7 @@ final class BugTracker: @unchecked Sendable {
             case .bat: return "Nocturnal swooper. Faster than birds!"
             case .toad: return "Night-time pond dweller. Sticky tongue!"
             case .scorpion: return "Desert predator. Lunges with its stinger!"
+            case .rattlesnake: return "Coiled danger. Strikes when you get close!"
             case .hawk: return "Desert raptor. Dives fast from above!"
             case .iceSpider: return "Frost-covered spider. Slides on ice!"
             case .snowOwl: return "Silent white hunter in the snow."
@@ -109,7 +111,7 @@ final class BugTracker: @unchecked Sendable {
             case .jungleBeetle: return "30 pts"
             case .butterfly: return "20 pts"
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
-                 .scorpion, .hawk, .iceSpider, .snowOwl, .jungleSpider, .toucan:
+                 .scorpion, .rattlesnake, .hawk, .iceSpider, .snowOwl, .jungleSpider, .toucan:
                 return "Danger!"
             }
         }
@@ -165,6 +167,7 @@ final class BugTracker: @unchecked Sendable {
         case .bat: return TextureGenerator.generateBirdTextures(size: size).first!
         case .toad: return TextureGenerator.generateFrogTexture(size: size)
         case .scorpion: return TextureGenerator.generateScorpionTexture(size: size)
+        case .rattlesnake: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.55, green: 0.42, blue: 0.20, alpha: 1), eyeColor: UIColor(red: 0.90, green: 0.80, blue: 0.10, alpha: 1), legCount: 0)
         case .hawk: return TextureGenerator.generateBirdTextures(size: size).first!
         case .iceSpider: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.50, green: 0.60, blue: 0.80, alpha: 1), eyeColor: UIColor(red: 0.20, green: 0.80, blue: 1.0, alpha: 1), legCount: 4)
         case .snowOwl: return TextureGenerator.generateBirdTextures(size: size).first!

@@ -690,99 +690,189 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func spawnEnvironment() {
-        let roll = Int.random(in: 0...6)
         let x = size.width + 30
 
+        switch currentBiome {
+        case .meadowDay:
+            spawnMeadowDecor(x: x)
+        case .meadowNight:
+            spawnNightDecor(x: x)
+        case .desert:
+            spawnDesertDecor(x: x)
+        case .snow:
+            spawnSnowDecor(x: x)
+        case .jungle:
+            spawnJungleDecor(x: x)
+        }
+    }
+
+    private func addDecor(_ node: SKShapeNode, x: CGFloat, y: CGFloat) {
+        node.strokeColor = .clear
+        node.position = CGPoint(x: x, y: y)
+        node.zPosition = 1
+        node.name = "envDecor"
+        addChild(node)
+    }
+
+    private func spawnMeadowDecor(x: CGFloat) {
+        let roll = Int.random(in: 0...4)
         switch roll {
         case 0: // Flower
             let stem = SKShapeNode(rectOf: CGSize(width: 1.5, height: CGFloat.random(in: 8...16)))
             stem.fillColor = SKColor(red: 0.30, green: 0.55, blue: 0.22, alpha: 0.7)
-            stem.strokeColor = .clear
-            let sh = stem.frame.height
-            stem.position = CGPoint(x: x, y: groundY + sh / 2)
-            stem.zPosition = 1
-            stem.name = "envDecor"
-            addChild(stem)
+            addDecor(stem, x: x, y: groundY + stem.frame.height / 2)
             let petal = SKShapeNode(circleOfRadius: CGFloat.random(in: 3...6))
-            petal.fillColor = [SKColor.yellow, SKColor.magenta, SKColor.orange, SKColor.white, SKColor.systemPink].randomElement()!
-            petal.strokeColor = .clear
-            petal.position = CGPoint(x: x, y: groundY + sh + 2)
-            petal.zPosition = 1
-            petal.name = "envDecor"
-            addChild(petal)
+            petal.fillColor = [.yellow, .magenta, .orange, .white].randomElement()!
+            addDecor(petal, x: x, y: groundY + stem.frame.height + 2)
         case 1: // Rock
-            let rock = SKShapeNode(rectOf: CGSize(width: CGFloat.random(in: 6...16), height: CGFloat.random(in: 4...9)), cornerRadius: 3)
-            rock.fillColor = SKColor(red: CGFloat.random(in: 0.45...0.60), green: CGFloat.random(in: 0.42...0.55), blue: CGFloat.random(in: 0.38...0.50), alpha: 0.7)
-            rock.strokeColor = .clear
-            rock.position = CGPoint(x: x, y: groundY + 2)
-            rock.zPosition = 1
-            rock.name = "envDecor"
-            addChild(rock)
+            let rock = SKShapeNode(rectOf: CGSize(width: CGFloat.random(in: 6...14), height: CGFloat.random(in: 4...8)), cornerRadius: 3)
+            rock.fillColor = SKColor(red: 0.52, green: 0.48, blue: 0.44, alpha: 0.7)
+            addDecor(rock, x: x, y: groundY + 2)
         case 2: // Bush
-            let bush = SKShapeNode(circleOfRadius: CGFloat.random(in: 8...16))
-            bush.fillColor = SKColor(red: 0.28, green: CGFloat.random(in: 0.52...0.70), blue: 0.18, alpha: 0.65)
-            bush.strokeColor = .clear
-            bush.position = CGPoint(x: x, y: groundY + CGFloat.random(in: 5...12))
-            bush.zPosition = 1
-            bush.name = "envDecor"
-            addChild(bush)
+            let bush = SKShapeNode(circleOfRadius: CGFloat.random(in: 8...14))
+            bush.fillColor = SKColor(red: 0.28, green: CGFloat.random(in: 0.55...0.70), blue: 0.18, alpha: 0.65)
+            addDecor(bush, x: x, y: groundY + CGFloat.random(in: 5...10))
         case 3: // Mushroom
-            let mStem = SKShapeNode(rectOf: CGSize(width: 3, height: 6))
-            mStem.fillColor = SKColor(white: 0.88, alpha: 0.8)
-            mStem.strokeColor = .clear
-            mStem.position = CGPoint(x: x, y: groundY + 3)
-            mStem.zPosition = 1
-            mStem.name = "envDecor"
-            addChild(mStem)
             let cap = SKShapeNode(circleOfRadius: 5)
             cap.fillColor = SKColor(red: 0.85, green: 0.22, blue: 0.18, alpha: 0.8)
-            cap.strokeColor = .clear
-            cap.position = CGPoint(x: x, y: groundY + 8)
-            cap.zPosition = 1
-            cap.name = "envDecor"
-            addChild(cap)
-        case 4: // Tall grass clump
+            addDecor(cap, x: x, y: groundY + 8)
+        default: // Grass
             for j in 0..<3 {
-                let blade = SKShapeNode(rectOf: CGSize(width: 1.5, height: CGFloat.random(in: 12...22)))
+                let blade = SKShapeNode(rectOf: CGSize(width: 1.5, height: CGFloat.random(in: 10...18)))
                 blade.fillColor = SKColor(red: 0.35, green: CGFloat.random(in: 0.60...0.75), blue: 0.22, alpha: 0.6)
-                blade.strokeColor = .clear
-                blade.position = CGPoint(x: x + CGFloat(j) * 3, y: groundY + blade.frame.height / 2)
-                blade.zRotation = CGFloat.random(in: -0.15...0.15)
-                blade.zPosition = 1
-                blade.name = "envDecor"
-                addChild(blade)
+                addDecor(blade, x: x + CGFloat(j) * 3, y: groundY + blade.frame.height / 2)
             }
-        case 5: // Small dirt mound
-            let mound = SKShapeNode()
-            let mp = UIBezierPath()
-            let mw = CGFloat.random(in: 15...30)
-            let mh = CGFloat.random(in: 4...8)
-            mp.move(to: CGPoint(x: 0, y: 0))
-            mp.addQuadCurve(to: CGPoint(x: mw, y: 0), controlPoint: CGPoint(x: mw / 2, y: mh))
-            mp.close()
-            mound.path = mp.cgPath
-            mound.fillColor = SKColor(red: 0.48, green: 0.35, blue: 0.18, alpha: 0.5)
-            mound.strokeColor = .clear
-            mound.position = CGPoint(x: x - mw / 2, y: groundY)
-            mound.zPosition = 1
-            mound.name = "envDecor"
-            addChild(mound)
-        default: // Dandelion
-            let stem = SKShapeNode(rectOf: CGSize(width: 1, height: CGFloat.random(in: 10...18)))
-            stem.fillColor = SKColor(red: 0.35, green: 0.55, blue: 0.25, alpha: 0.5)
-            stem.strokeColor = .clear
-            let sh = stem.frame.height
-            stem.position = CGPoint(x: x, y: groundY + sh / 2)
-            stem.zPosition = 1
-            stem.name = "envDecor"
-            addChild(stem)
-            let puff = SKShapeNode(circleOfRadius: 4)
-            puff.fillColor = SKColor(white: 1.0, alpha: 0.5)
-            puff.strokeColor = .clear
-            puff.position = CGPoint(x: x, y: groundY + sh + 3)
-            puff.zPosition = 1
-            puff.name = "envDecor"
-            addChild(puff)
+        }
+    }
+
+    private func spawnNightDecor(x: CGFloat) {
+        let roll = Int.random(in: 0...3)
+        switch roll {
+        case 0: // Dark bush
+            let bush = SKShapeNode(circleOfRadius: CGFloat.random(in: 8...14))
+            bush.fillColor = SKColor(red: 0.12, green: CGFloat.random(in: 0.22...0.35), blue: 0.10, alpha: 0.7)
+            addDecor(bush, x: x, y: groundY + CGFloat.random(in: 4...10))
+        case 1: // Dead grass
+            for j in 0..<2 {
+                let blade = SKShapeNode(rectOf: CGSize(width: 1.5, height: CGFloat.random(in: 8...14)))
+                blade.fillColor = SKColor(red: 0.25, green: 0.30, blue: 0.15, alpha: 0.5)
+                addDecor(blade, x: x + CGFloat(j) * 3, y: groundY + blade.frame.height / 2)
+            }
+        case 2: // Rock
+            let rock = SKShapeNode(rectOf: CGSize(width: CGFloat.random(in: 6...12), height: CGFloat.random(in: 4...7)), cornerRadius: 2)
+            rock.fillColor = SKColor(white: 0.25, alpha: 0.6)
+            addDecor(rock, x: x, y: groundY + 2)
+        default: // Glowing mushroom
+            let cap = SKShapeNode(circleOfRadius: 4)
+            cap.fillColor = SKColor(red: 0.30, green: 0.80, blue: 0.50, alpha: 0.6)
+            addDecor(cap, x: x, y: groundY + 7)
+        }
+    }
+
+    private func spawnDesertDecor(x: CGFloat) {
+        let roll = Int.random(in: 0...4)
+        switch roll {
+        case 0: // Cactus
+            let trunk = SKShapeNode(rectOf: CGSize(width: 6, height: CGFloat.random(in: 16...28)), cornerRadius: 2)
+            trunk.fillColor = SKColor(red: 0.30, green: 0.55, blue: 0.22, alpha: 0.9)
+            let th = trunk.frame.height
+            addDecor(trunk, x: x, y: groundY + th / 2)
+            // Arms
+            let arm = SKShapeNode(rectOf: CGSize(width: 4, height: 10), cornerRadius: 2)
+            arm.fillColor = SKColor(red: 0.28, green: 0.52, blue: 0.20, alpha: 0.9)
+            addDecor(arm, x: x - 6, y: groundY + th * 0.6)
+        case 1: // Dead bush (brown, spiky)
+            let bush = SKShapeNode(circleOfRadius: CGFloat.random(in: 6...12))
+            bush.fillColor = SKColor(red: 0.55, green: 0.40, blue: 0.22, alpha: 0.6)
+            addDecor(bush, x: x, y: groundY + CGFloat.random(in: 4...8))
+        case 2: // Skull/bone (small)
+            let bone = SKShapeNode(circleOfRadius: 3)
+            bone.fillColor = SKColor(white: 0.85, alpha: 0.6)
+            addDecor(bone, x: x, y: groundY + 2)
+        case 3: // Sand dune
+            let dune = SKShapeNode()
+            let dp = UIBezierPath()
+            let dw = CGFloat.random(in: 20...40)
+            dp.move(to: .zero)
+            dp.addQuadCurve(to: CGPoint(x: dw, y: 0), controlPoint: CGPoint(x: dw / 2, y: CGFloat.random(in: 5...10)))
+            dp.close()
+            dune.path = dp.cgPath
+            dune.fillColor = SKColor(red: 0.82, green: 0.70, blue: 0.42, alpha: 0.5)
+            addDecor(dune, x: x, y: groundY)
+        default: // Tumbleweed (small brown circle)
+            let tw = SKShapeNode(circleOfRadius: CGFloat.random(in: 5...9))
+            tw.fillColor = SKColor(red: 0.60, green: 0.48, blue: 0.28, alpha: 0.5)
+            addDecor(tw, x: x, y: groundY + CGFloat.random(in: 4...8))
+        }
+    }
+
+    private func spawnSnowDecor(x: CGFloat) {
+        let roll = Int.random(in: 0...4)
+        switch roll {
+        case 0: // Pine tree
+            let trunk = SKShapeNode(rectOf: CGSize(width: 4, height: 12))
+            trunk.fillColor = SKColor(red: 0.45, green: 0.30, blue: 0.15, alpha: 0.8)
+            addDecor(trunk, x: x, y: groundY + 6)
+            let tree = SKShapeNode()
+            let tp = UIBezierPath()
+            tp.move(to: CGPoint(x: 0, y: 0))
+            tp.addLine(to: CGPoint(x: -10, y: -16))
+            tp.addLine(to: CGPoint(x: 10, y: -16))
+            tp.close()
+            tree.path = tp.cgPath
+            tree.fillColor = SKColor(red: 0.15, green: 0.40, blue: 0.20, alpha: 0.8)
+            addDecor(tree, x: x, y: groundY + 28)
+        case 1: // Snowdrift
+            let drift = SKShapeNode()
+            let dp = UIBezierPath()
+            let dw = CGFloat.random(in: 15...30)
+            dp.move(to: .zero)
+            dp.addQuadCurve(to: CGPoint(x: dw, y: 0), controlPoint: CGPoint(x: dw / 2, y: CGFloat.random(in: 4...8)))
+            dp.close()
+            drift.path = dp.cgPath
+            drift.fillColor = SKColor(white: 0.95, alpha: 0.7)
+            addDecor(drift, x: x, y: groundY)
+        case 2: // Icicle
+            let ice = SKShapeNode(rectOf: CGSize(width: 2, height: CGFloat.random(in: 8...15)))
+            ice.fillColor = SKColor(red: 0.70, green: 0.85, blue: 1.0, alpha: 0.6)
+            addDecor(ice, x: x, y: groundY + ice.frame.height / 2)
+        case 3: // Snow rock
+            let rock = SKShapeNode(rectOf: CGSize(width: CGFloat.random(in: 8...14), height: CGFloat.random(in: 5...8)), cornerRadius: 3)
+            rock.fillColor = SKColor(red: 0.60, green: 0.62, blue: 0.65, alpha: 0.7)
+            addDecor(rock, x: x, y: groundY + 2)
+        default: // Frozen plant
+            let stem = SKShapeNode(rectOf: CGSize(width: 1.5, height: CGFloat.random(in: 8...14)))
+            stem.fillColor = SKColor(red: 0.55, green: 0.65, blue: 0.75, alpha: 0.5)
+            addDecor(stem, x: x, y: groundY + stem.frame.height / 2)
+        }
+    }
+
+    private func spawnJungleDecor(x: CGFloat) {
+        let roll = Int.random(in: 0...4)
+        switch roll {
+        case 0: // Vine hanging down
+            let vine = SKShapeNode(rectOf: CGSize(width: 2, height: CGFloat.random(in: 20...40)))
+            vine.fillColor = SKColor(red: 0.20, green: 0.50, blue: 0.15, alpha: 0.6)
+            addDecor(vine, x: x, y: groundY + vine.frame.height / 2)
+        case 1: // Giant leaf
+            let leaf = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 12...22), height: CGFloat.random(in: 6...10)))
+            leaf.fillColor = SKColor(red: 0.18, green: CGFloat.random(in: 0.55...0.72), blue: 0.15, alpha: 0.7)
+            addDecor(leaf, x: x, y: groundY + CGFloat.random(in: 4...12))
+        case 2: // Tropical flower
+            let flower = SKShapeNode(circleOfRadius: CGFloat.random(in: 4...7))
+            flower.fillColor = [SKColor.red, SKColor.orange, SKColor(red: 1, green: 0.2, blue: 0.6, alpha: 1), SKColor.yellow].randomElement()!
+            addDecor(flower, x: x, y: groundY + CGFloat.random(in: 6...14))
+        case 3: // Fern
+            for j in 0..<4 {
+                let frond = SKShapeNode(rectOf: CGSize(width: 1.5, height: CGFloat.random(in: 10...20)))
+                frond.fillColor = SKColor(red: 0.15, green: CGFloat.random(in: 0.50...0.68), blue: 0.12, alpha: 0.6)
+                frond.zRotation = CGFloat.random(in: -0.3...0.3)
+                addDecor(frond, x: x + CGFloat(j) * 3, y: groundY + frond.frame.height / 2)
+            }
+        default: // Jungle mushroom
+            let cap = SKShapeNode(circleOfRadius: CGFloat.random(in: 4...7))
+            cap.fillColor = SKColor(red: 0.85, green: 0.55, blue: 0.15, alpha: 0.7)
+            addDecor(cap, x: x, y: groundY + 7)
         }
     }
 
@@ -949,21 +1039,23 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             gnatTimer += dt
             if gnatTimer >= 1.0 { gnatTimer = 0; spawnGnatSwarm() }
             fireflyTimer += dt
-            if fireflyTimer >= 12.0 { fireflyTimer = 0; spawnFirefly() }
+            if fireflyTimer >= 25.0 { fireflyTimer = 0; spawnFirefly() } // Rarer
             spiderTimer += dt
             if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnSpider() }
             birdTimer += dt
-            if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBird() }
+            if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Bat", tint: UIColor(red: 0.15, green: 0.08, blue: 0.25, alpha: 1.0)) }
             frogTimer += dt
             if frogTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnPondCreature() }
 
         case .desert:
             aphidTimer += dt // Desert beetles
             if aphidTimer >= 1.4 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateDesertBeetleTexture(size: CGSize(width: 20, height: 18)), pts: 15, flying: false, name: "Desert Beetle") }
-            flyTimer += dt // Desert flies
-            if flyTimer >= 1.8 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 18, height: 18), bodyColor: UIColor(red: 0.70, green: 0.55, blue: 0.25, alpha: 1.0), eyeColor: .white), pts: 20, flying: true, name: "Sand Fly") }
+            flyTimer += dt // Desert flies (with wings via FruitFly frames)
+            if flyTimer >= 1.8 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 18, height: 18), color: .brown).first!, pts: 20, flying: true, name: "Sand Fly") }
             dragonflyTimer += dt // Scorpions
             if dragonflyTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateScorpionTexture(size: CGSize(width: 36, height: 28)), name: "Scorpion") }
+            spiderTimer += dt // Rattlesnake
+            if spiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 40, height: 16), bodyColor: UIColor(red: 0.55, green: 0.42, blue: 0.20, alpha: 1.0), eyeColor: UIColor(red: 0.90, green: 0.80, blue: 0.10, alpha: 1.0), legCount: 0), name: "Rattlesnake") }
             birdTimer += dt // Hawks
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Hawk", tint: UIColor(red: 0.55, green: 0.35, blue: 0.15, alpha: 1.0)) }
 
