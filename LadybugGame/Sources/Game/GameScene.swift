@@ -80,7 +80,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         fireflyFrames = TextureGenerator.generateFireflyFrames(size: CGSize(width: 24, height: 24))
         heartBugFrames = TextureGenerator.generateHeartBugFrames(size: CGSize(width: 36, height: 36))
         antFrames = TextureGenerator.generateAntFrames(size: CGSize(width: 20, height: 18))
-        spiderFrames = TextureGenerator.generateSpiderFrames(size: CGSize(width: 26, height: 22))
+        spiderFrames = TextureGenerator.generateSpiderFrames(size: CGSize(width: 48, height: 40))
         for fc in [TextureGenerator.FlyColor.brown, .blue, .purple] {
             flyFrames[fc] = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: fc)
         }

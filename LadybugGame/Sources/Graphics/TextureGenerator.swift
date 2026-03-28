@@ -410,52 +410,86 @@ enum TextureGenerator {
             let w = size.width
             let h = size.height
 
-            let legColor = UIColor(red: 0.20, green: 0.15, blue: 0.12, alpha: 1.0).cgColor
-            cg.setStrokeColor(legColor)
-            cg.setLineWidth(0.8)
+            let black = UIColor(red: 0.05, green: 0.03, blue: 0.03, alpha: 1.0).cgColor
             cg.setLineCap(.round)
 
-            // 4 pairs of legs (spiders have 8)
-            let fwd: CGFloat = legPhase == 0 ? 0.05 : -0.05
-            let legXs: [CGFloat] = [0.25, 0.38, 0.52, 0.65]
-            for (i, lx) in legXs.enumerated() {
+            // === 4 pairs of long spindly legs ===
+            cg.setStrokeColor(black)
+            cg.setLineWidth(1.5)
+            let fwd: CGFloat = legPhase == 0 ? 0.04 : -0.04
+            // Left-side legs (extend far out)
+            let legData: [(attachX: CGFloat, kneeOut: CGFloat, footOut: CGFloat, kneeY: CGFloat)] = [
+                (0.32, -0.20, -0.12, 0.15),  // Front left
+                (0.38, -0.25, -0.18, 0.22),  // Mid-front left
+                (0.28, -0.22, -0.15, 0.20),  // Mid-back left
+                (0.22, -0.18, -0.10, 0.18),  // Back left
+            ]
+            for (i, ld) in legData.enumerated() {
                 let off = (i % 2 == 0) ? fwd : -fwd
-                // Upper leg
-                cg.move(to: CGPoint(x: w * lx, y: h * 0.50))
-                cg.addLine(to: CGPoint(x: w * (lx + off - 0.08), y: h * 0.30))
-                // Lower leg
-                cg.addLine(to: CGPoint(x: w * (lx + off - 0.05), y: h * 0.88))
+                // Left leg
+                cg.move(to: CGPoint(x: w * ld.attachX, y: h * 0.48))
+                cg.addLine(to: CGPoint(x: w * (ld.attachX + ld.kneeOut + off), y: h * ld.kneeY))
+                cg.addLine(to: CGPoint(x: w * (ld.attachX + ld.footOut + off), y: h * 0.92))
+                cg.strokePath()
+                // Right leg (mirrored from body center ~0.45)
+                let mirrorX: CGFloat = 0.90 - ld.attachX
+                cg.move(to: CGPoint(x: w * (mirrorX), y: h * 0.48))
+                cg.addLine(to: CGPoint(x: w * (mirrorX - ld.kneeOut - off), y: h * ld.kneeY))
+                cg.addLine(to: CGPoint(x: w * (mirrorX - ld.footOut - off), y: h * 0.92))
                 cg.strokePath()
             }
 
-            // Abdomen (big, round)
-            cg.setFillColor(UIColor(red: 0.22, green: 0.18, blue: 0.15, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.05, y: h * 0.25, width: w * 0.45, height: h * 0.50))
-            // Pattern on abdomen
-            cg.setFillColor(UIColor(red: 0.35, green: 0.25, blue: 0.18, alpha: 0.5).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.15, y: h * 0.32, width: w * 0.12, height: h * 0.15))
-            cg.fillEllipse(in: CGRect(x: w * 0.28, y: h * 0.35, width: w * 0.10, height: h * 0.12))
+            // === Abdomen (big, glossy black, bulbous) ===
+            cg.setFillColor(UIColor(red: 0.06, green: 0.04, blue: 0.04, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.02, y: h * 0.20, width: w * 0.50, height: h * 0.58))
+            // Glossy shine
+            cg.setFillColor(UIColor(red: 0.20, green: 0.18, blue: 0.20, alpha: 0.35).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.08, y: h * 0.24, width: w * 0.22, height: h * 0.25))
 
-            // Cephalothorax
-            cg.setFillColor(UIColor(red: 0.25, green: 0.20, blue: 0.16, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.45, y: h * 0.30, width: w * 0.35, height: h * 0.38))
+            // RED HOURGLASS on abdomen
+            cg.setFillColor(UIColor(red: 0.90, green: 0.08, blue: 0.05, alpha: 1.0).cgColor)
+            // Top triangle
+            cg.move(to: CGPoint(x: w * 0.22, y: h * 0.42))
+            cg.addLine(to: CGPoint(x: w * 0.30, y: h * 0.42))
+            cg.addLine(to: CGPoint(x: w * 0.26, y: h * 0.50))
+            cg.closePath()
+            cg.fillPath()
+            // Bottom triangle
+            cg.move(to: CGPoint(x: w * 0.22, y: h * 0.58))
+            cg.addLine(to: CGPoint(x: w * 0.30, y: h * 0.58))
+            cg.addLine(to: CGPoint(x: w * 0.26, y: h * 0.50))
+            cg.closePath()
+            cg.fillPath()
 
-            // Eyes (multiple!)
-            cg.setFillColor(UIColor(red: 0.90, green: 0.15, blue: 0.10, alpha: 0.8).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.35, width: w * 0.08, height: w * 0.08))
-            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.44, width: w * 0.06, height: w * 0.06))
-            cg.setFillColor(UIColor.black.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.70, y: h * 0.37, width: w * 0.04, height: w * 0.04))
+            // === Cephalothorax (smaller front section) ===
+            cg.setFillColor(UIColor(red: 0.08, green: 0.05, blue: 0.05, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.45, y: h * 0.28, width: w * 0.32, height: h * 0.40))
 
-            // Fangs
-            cg.setStrokeColor(UIColor(red: 0.40, green: 0.25, blue: 0.15, alpha: 1.0).cgColor)
-            cg.setLineWidth(1.0)
-            cg.move(to: CGPoint(x: w * 0.78, y: h * 0.48))
-            cg.addLine(to: CGPoint(x: w * 0.88, y: h * 0.58))
+            // === Eyes (8 eyes — 2 big, 6 small) ===
+            // Two main eyes
+            cg.setFillColor(UIColor(red: 0.85, green: 0.10, blue: 0.08, alpha: 0.9).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.65, y: h * 0.32, width: w * 0.08, height: w * 0.08))
+            cg.fillEllipse(in: CGRect(x: w * 0.65, y: h * 0.44, width: w * 0.08, height: w * 0.08))
+            // Small eyes
+            cg.setFillColor(UIColor(red: 0.70, green: 0.08, blue: 0.05, alpha: 0.7).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.36, width: w * 0.04, height: w * 0.04))
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.48, width: w * 0.04, height: w * 0.04))
+            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.38, width: w * 0.03, height: w * 0.03))
+            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.46, width: w * 0.03, height: w * 0.03))
+
+            // === Fangs (chelicerae) ===
+            cg.setStrokeColor(UIColor(red: 0.15, green: 0.08, blue: 0.05, alpha: 1.0).cgColor)
+            cg.setLineWidth(2.0)
+            cg.move(to: CGPoint(x: w * 0.75, y: h * 0.42))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.88, y: h * 0.55), control: CGPoint(x: w * 0.85, y: h * 0.40))
             cg.strokePath()
-            cg.move(to: CGPoint(x: w * 0.78, y: h * 0.52))
-            cg.addLine(to: CGPoint(x: w * 0.88, y: h * 0.62))
+            cg.move(to: CGPoint(x: w * 0.75, y: h * 0.52))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.88, y: h * 0.60), control: CGPoint(x: w * 0.85, y: h * 0.55))
             cg.strokePath()
+            // Fang tips (red)
+            cg.setFillColor(UIColor(red: 0.70, green: 0.10, blue: 0.08, alpha: 0.8).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.86, y: h * 0.53, width: w * 0.04, height: w * 0.04))
+            cg.fillEllipse(in: CGRect(x: w * 0.86, y: h * 0.58, width: w * 0.04, height: w * 0.04))
         }
         return SKTexture(image: image)
     }
