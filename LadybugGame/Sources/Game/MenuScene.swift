@@ -42,12 +42,17 @@ class MenuScene: SKScene {
                   y: size.height * 0.28)
 
         // Per-biome checkpoint buttons
-        if GameScene.hasNightCheckpoint {
-            let cpScore = GameScene.checkpointScore
-            let biome = Biome.biome(for: cpScore)
-            addButton("Resume: \(biome.name)", name: "checkpoint",
-                      color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
-                      y: size.height * 0.16)
+        let unlocked = GameScene.unlockedBiomes.compactMap { Biome(rawValue: $0) }.sorted { $0.rawValue < $1.rawValue }
+        if !unlocked.isEmpty {
+            let btnY = size.height * 0.16
+            let btnSpacing: CGFloat = 34
+            let totalH = CGFloat(unlocked.count) * btnSpacing
+            for (i, biome) in unlocked.enumerated() {
+                let y = btnY - CGFloat(i) * btnSpacing + totalH / 2 - btnSpacing / 2
+                addButton("Resume: \(biome.name)", name: "checkpoint_\(biome.rawValue)",
+                          color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
+                          y: y)
+            }
         }
 
         let hsLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
@@ -102,10 +107,12 @@ class MenuScene: SKScene {
                 view?.presentScene(bugopedia, transition: .fade(withDuration: 0.3))
                 return
             }
-            if node.name == "checkpoint" {
+            if let name = node.name, name.hasPrefix("checkpoint_") {
+                let biomeRaw = Int(name.replacingOccurrences(of: "checkpoint_", with: "")) ?? 0
                 let game = GameScene(size: size)
                 game.scaleMode = scaleMode
                 game.startFromCheckpoint = true
+                GameScene.checkpointScore = Biome(rawValue: biomeRaw)?.scoreThreshold ?? 0
                 view?.presentScene(game, transition: .fade(withDuration: 0.4))
                 return
             }

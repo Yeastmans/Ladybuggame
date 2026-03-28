@@ -35,6 +35,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 // Save checkpoint at every biome transition
                 GameScene.hasNightCheckpoint = true
                 GameScene.checkpointScore = newBiome.scoreThreshold
+                GameScene.unlockBiome(newBiome)
             }
         }
     }
@@ -51,9 +52,22 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         get { UserDefaults.standard.integer(forKey: checkpointScoreKey) }
         set { UserDefaults.standard.set(newValue, forKey: checkpointScoreKey) }
     }
+    private static let unlockedBiomesKey = "UnlockedBiomes"
+    static var unlockedBiomes: [Int] {
+        get { UserDefaults.standard.array(forKey: unlockedBiomesKey) as? [Int] ?? [] }
+        set { UserDefaults.standard.set(newValue, forKey: unlockedBiomesKey) }
+    }
+    static func unlockBiome(_ biome: Biome) {
+        var biomes = unlockedBiomes
+        if !biomes.contains(biome.rawValue) {
+            biomes.append(biome.rawValue)
+            unlockedBiomes = biomes
+        }
+    }
     var startFromCheckpoint = false
 
     private var isGameOver = false
+    private var isPaused_ = false
     private var isNight = false
     private var hasTransitionedToNight = false
     private var isTouching = false
@@ -68,15 +82,22 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var envTimer: TimeInterval = 0
 
     private var birdTextures: [SKTexture] = []
+    private var batFrames: [SKTexture] = []
+    private var hawkFrames: [SKTexture] = []
+    private var owlFrames: [SKTexture] = []
+    private var toucanFrames: [SKTexture] = []
     private var flyFrames: [TextureGenerator.FlyColor: [SKTexture]] = [:]
     private var dragonflyFrames: [SKTexture] = []
     private var fireflyFrames: [SKTexture] = []
     private var heartBugFrames: [SKTexture] = []
     private var antFrames: [SKTexture] = []
     private var spiderFrames: [SKTexture] = []
+    private var jungleSpiderFrames: [SKTexture] = []
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
+    private var toadTexture: SKTexture!
+    private var poisonDartFrogTexture: SKTexture!
     private var deadTexture: SKTexture!
     private var frogTimer: TimeInterval = 0
     private var dragonflyTimer: TimeInterval = 0
@@ -93,14 +114,21 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         groundY = size.height * 0.28
 
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
+        batFrames = TextureGenerator.generateBatFrames(size: CGSize(width: 50, height: 36))
+        hawkFrames = TextureGenerator.generateHawkFrames(size: CGSize(width: 54, height: 38))
+        owlFrames = TextureGenerator.generateOwlFrames(size: CGSize(width: 50, height: 38))
+        toucanFrames = TextureGenerator.generateToucanFrames(size: CGSize(width: 54, height: 36))
         logTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 70, height: 45))
         frogTexture = TextureGenerator.generateFrogTexture(size: CGSize(width: 36, height: 32))
+        toadTexture = TextureGenerator.generateToadTexture(size: CGSize(width: 36, height: 32))
+        poisonDartFrogTexture = TextureGenerator.generatePoisonDartFrogTexture(size: CGSize(width: 36, height: 32))
         deadTexture = TextureGenerator.generateLadybugDeadTexture(size: CGSize(width: 48, height: 48))
         dragonflyFrames = TextureGenerator.generateDragonflyFrames(size: CGSize(width: 48, height: 28))
         fireflyFrames = TextureGenerator.generateFireflyFrames(size: CGSize(width: 24, height: 24))
         heartBugFrames = TextureGenerator.generateHeartBugFrames(size: CGSize(width: 36, height: 36))
         antFrames = TextureGenerator.generateAntFrames(size: CGSize(width: 20, height: 18))
         spiderFrames = TextureGenerator.generateSpiderFrames(size: CGSize(width: 48, height: 40))
+        jungleSpiderFrames = TextureGenerator.generateJungleSpiderFrames(size: CGSize(width: 48, height: 40))
         for fc in [TextureGenerator.FlyColor.brown, .blue, .purple] {
             flyFrames[fc] = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: fc)
         }
@@ -271,6 +299,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         livesLabel.zPosition = 100
         updateLivesDisplay()
         addChild(livesLabel)
+
+        // Pause button
+        let pauseBtn = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        pauseBtn.text = "❚❚"
+        pauseBtn.fontSize = 20
+        pauseBtn.fontColor = SKColor(white: 1.0, alpha: 0.7)
+        pauseBtn.horizontalAlignmentMode = .center
+        pauseBtn.verticalAlignmentMode = .center
+        pauseBtn.position = CGPoint(x: size.width / 2, y: size.height - 28)
+        pauseBtn.zPosition = 100
+        pauseBtn.name = "pauseButton"
+        addChild(pauseBtn)
     }
 
     private func updateLivesDisplay() {
@@ -308,11 +348,24 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             return
         }
         guard let touch = touches.first else { return }
+        let loc = touch.location(in: self)
+
+        // Check pause button tap
+        let tappedNodes = nodes(at: loc)
+        for node in tappedNodes {
+            if node.name == "pauseButton" || node.name == "pauseOverlay" || node.name == "resumeLabel" {
+                togglePause()
+                return
+            }
+        }
+
+        if isPaused_ { return }
         isTouching = true
-        touchY = touch.location(in: self).y
+        touchY = loc.y
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if isPaused_ { return }
         guard let touch = touches.first else { return }
         touchY = touch.location(in: self).y
     }
@@ -332,7 +385,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Update
 
     override func update(_ currentTime: TimeInterval) {
-        guard !isGameOver else { return }
+        guard !isGameOver, !isPaused_ else { return }
         if lastUpdateTime == 0 { lastUpdateTime = currentTime; return }
         let dt = currentTime - lastUpdateTime
         lastUpdateTime = currentTime
@@ -363,8 +416,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Biome-aware spawning
         spawnForBiome(dt: dt)
-
-        if envTimer >= 0.6 { envTimer = 0; spawnEnvironment() }
     }
 
     // MARK: - Log Tube Mechanic
@@ -451,7 +502,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             tile.position.x -= delta
             if tile.position.x + tile.size.width < 0 {
                 let maxX = groundTiles.map { $0.position.x }.max() ?? 0
-                tile.position.x = maxX + tileStride
+                tile.position.x = round(maxX + tileStride)
             }
         }
     }
@@ -631,17 +682,21 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             addChild(pad)
         }
 
-        // At night: always toad (darker frog), no dragonfly
+        // At night: always toad, no dragonfly
+        // Jungle: always poison dart frog, no dragonfly
         // Day: 60% frog, 40% dragonfly
-        let spawnFrogHere = isNight || Int.random(in: 0..<10) < 6
+        let spawnFrogHere = isNight || currentBiome == .jungle || Int.random(in: 0..<10) < 6
         if spawnFrogHere {
-            let frog = Frog(texture: frogTexture)
-            frog.position = CGPoint(x: spawnX + pondW * 0.3, y: groundY + frog.size.height / 2)
-            // Toad coloring at night
-            if isNight {
-                frog.colorBlendFactor = 0.4
-                frog.color = SKColor(red: 0.30, green: 0.25, blue: 0.15, alpha: 1.0)
+            let tex: SKTexture
+            if currentBiome == .jungle {
+                tex = poisonDartFrogTexture
+            } else if isNight || currentBiome == .meadowNight {
+                tex = toadTexture
+            } else {
+                tex = frogTexture
             }
+            let frog = Frog(texture: tex)
+            frog.position = CGPoint(x: spawnX + pondW * 0.3, y: groundY + frog.size.height / 2)
             addChild(frog)
 
             let checkDistance = SKAction.run { [weak self, weak frog] in
@@ -808,19 +863,49 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnSnowDecor(x: CGFloat) {
         let roll = Int.random(in: 0...4)
         switch roll {
-        case 0: // Pine tree
-            let trunk = SKShapeNode(rectOf: CGSize(width: 4, height: 12))
+        case 0: // Pine tree (tall)
+            let trunkH: CGFloat = 28
+            let trunk = SKShapeNode(rectOf: CGSize(width: 6, height: trunkH))
             trunk.fillColor = SKColor(red: 0.45, green: 0.30, blue: 0.15, alpha: 0.8)
-            addDecor(trunk, x: x, y: groundY + 6)
-            let tree = SKShapeNode()
-            let tp = UIBezierPath()
-            tp.move(to: CGPoint(x: 0, y: 0))
-            tp.addLine(to: CGPoint(x: -10, y: -16))
-            tp.addLine(to: CGPoint(x: 10, y: -16))
-            tp.close()
-            tree.path = tp.cgPath
-            tree.fillColor = SKColor(red: 0.15, green: 0.40, blue: 0.20, alpha: 0.8)
-            addDecor(tree, x: x, y: groundY + 28)
+            addDecor(trunk, x: x, y: groundY + trunkH / 2)
+            // Bottom tier (widest)
+            let t1 = SKShapeNode()
+            let p1 = UIBezierPath()
+            p1.move(to: CGPoint(x: 0, y: 0))
+            p1.addLine(to: CGPoint(x: -18, y: -22))
+            p1.addLine(to: CGPoint(x: 18, y: -22))
+            p1.close()
+            t1.path = p1.cgPath
+            t1.fillColor = SKColor(red: 0.12, green: 0.35, blue: 0.18, alpha: 0.9)
+            t1.strokeColor = .clear
+            addDecor(t1, x: x, y: groundY + trunkH + 10)
+            // Middle tier
+            let t2 = SKShapeNode()
+            let p2 = UIBezierPath()
+            p2.move(to: CGPoint(x: 0, y: 0))
+            p2.addLine(to: CGPoint(x: -14, y: -18))
+            p2.addLine(to: CGPoint(x: 14, y: -18))
+            p2.close()
+            t2.path = p2.cgPath
+            t2.fillColor = SKColor(red: 0.15, green: 0.40, blue: 0.20, alpha: 0.9)
+            t2.strokeColor = .clear
+            addDecor(t2, x: x, y: groundY + trunkH + 26)
+            // Top tier
+            let t3 = SKShapeNode()
+            let p3 = UIBezierPath()
+            p3.move(to: CGPoint(x: 0, y: 0))
+            p3.addLine(to: CGPoint(x: -9, y: -14))
+            p3.addLine(to: CGPoint(x: 9, y: -14))
+            p3.close()
+            t3.path = p3.cgPath
+            t3.fillColor = SKColor(red: 0.18, green: 0.45, blue: 0.22, alpha: 0.9)
+            t3.strokeColor = .clear
+            addDecor(t3, x: x, y: groundY + trunkH + 38)
+            // Snow on branches
+            let snow = SKShapeNode(ellipseOf: CGSize(width: 20, height: 5))
+            snow.fillColor = SKColor(white: 0.98, alpha: 0.7)
+            snow.strokeColor = .clear
+            addDecor(snow, x: x, y: groundY + trunkH + 24)
         case 1: // Snowdrift
             let drift = SKShapeNode()
             let dp = UIBezierPath()
@@ -849,10 +934,25 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnJungleDecor(x: CGFloat) {
         let roll = Int.random(in: 0...4)
         switch roll {
-        case 0: // Vine hanging down
-            let vine = SKShapeNode(rectOf: CGSize(width: 2, height: CGFloat.random(in: 20...40)))
-            vine.fillColor = SKColor(red: 0.20, green: 0.50, blue: 0.15, alpha: 0.6)
-            addDecor(vine, x: x, y: groundY + vine.frame.height / 2)
+        case 0: // Jungle tree with vines
+            let trunkH: CGFloat = CGFloat.random(in: 40...60)
+            let trunk = SKShapeNode(rectOf: CGSize(width: 8, height: trunkH))
+            trunk.fillColor = SKColor(red: 0.35, green: 0.22, blue: 0.10, alpha: 0.9)
+            addDecor(trunk, x: x, y: groundY + trunkH / 2)
+            // Leafy canopy (layered)
+            let c1 = SKShapeNode(circleOfRadius: CGFloat.random(in: 18...26))
+            c1.fillColor = SKColor(red: 0.15, green: CGFloat.random(in: 0.50...0.65), blue: 0.12, alpha: 0.8)
+            addDecor(c1, x: x - 8, y: groundY + trunkH + 8)
+            let c2 = SKShapeNode(circleOfRadius: CGFloat.random(in: 16...22))
+            c2.fillColor = SKColor(red: 0.18, green: CGFloat.random(in: 0.55...0.70), blue: 0.15, alpha: 0.8)
+            addDecor(c2, x: x + 10, y: groundY + trunkH + 12)
+            let c3 = SKShapeNode(circleOfRadius: CGFloat.random(in: 14...18))
+            c3.fillColor = SKColor(red: 0.22, green: CGFloat.random(in: 0.60...0.75), blue: 0.18, alpha: 0.7)
+            addDecor(c3, x: x, y: groundY + trunkH + 20)
+            // Hanging vine
+            let vine = SKShapeNode(rectOf: CGSize(width: 2, height: CGFloat.random(in: 20...35)))
+            vine.fillColor = SKColor(red: 0.18, green: 0.48, blue: 0.12, alpha: 0.6)
+            addDecor(vine, x: x + 5, y: groundY + trunkH - vine.frame.height / 2 + 5)
         case 1: // Giant leaf
             let leaf = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 12...22), height: CGFloat.random(in: 6...10)))
             leaf.fillColor = SKColor(red: 0.18, green: CGFloat.random(in: 0.55...0.72), blue: 0.15, alpha: 0.7)
@@ -975,8 +1075,17 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 if enemyNode is Bird { unlockBug(.bird) }
                 else if enemyNode is Dragonfly { unlockBug(.dragonfly) }
                 else if enemyNode is Ant { unlockBug(.ant) }
-                else if enemyNode is Spider { unlockBug(.spider) }
-                else if enemyNode?.parent is Frog { unlockBug(.frog) }
+                else if enemyNode is Spider {
+                    if currentBiome == .jungle { unlockBug(.jungleSpider) }
+                    else { unlockBug(.spider) }
+                }
+                else if enemyNode?.parent is Frog {
+                    switch currentBiome {
+                    case .meadowNight: unlockBug(.toad)
+                    case .jungle: unlockBug(.poisonDartFrog)
+                    default: unlockBug(.frog)
+                    }
+                }
                 else if let swooper = enemyNode as? BiomeSwooper {
                     switch swooper.biomeName {
                     case "Bat": unlockBug(.bat)
@@ -1082,7 +1191,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             spiderTimer += dt
             if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnSpider() }
             birdTimer += dt
-            if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Bat", tint: UIColor(red: 0.15, green: 0.08, blue: 0.25, alpha: 1.0)) }
+            if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Bat") }
             frogTimer += dt
             if frogTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnPondCreature() }
 
@@ -1096,7 +1205,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             spiderTimer += dt // Rattlesnake
             if spiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateRattlesnakeTexture(size: CGSize(width: 44, height: 28)), name: "Rattlesnake") }
             birdTimer += dt // Hawks
-            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Hawk", tint: UIColor(red: 0.55, green: 0.35, blue: 0.15, alpha: 1.0)) }
+            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Hawk") }
 
         case .snow:
             aphidTimer += dt // Snow fleas
@@ -1106,7 +1215,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             spiderTimer += dt // Ice spiders
             if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 32, height: 28), bodyColor: UIColor(red: 0.50, green: 0.60, blue: 0.80, alpha: 1.0), eyeColor: UIColor(red: 0.20, green: 0.80, blue: 1.0, alpha: 1.0), legCount: 4), name: "Ice Spider") }
             birdTimer += dt // Snow owls
-            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Snow Owl", tint: UIColor(red: 0.92, green: 0.92, blue: 0.95, alpha: 1.0)) }
+            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Snow Owl") }
             fireflyTimer += dt // Hot cocoa (rare power-up)
             if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
 
@@ -1118,9 +1227,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             dragonflyTimer += dt // Poison dart frogs at ponds
             if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnPondCreature() }
             spiderTimer += dt // Jungle spiders
-            if spiderTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 36, height: 30), bodyColor: UIColor(red: 0.15, green: 0.40, blue: 0.10, alpha: 1.0), eyeColor: UIColor(red: 1.0, green: 0.20, blue: 0.10, alpha: 1.0), legCount: 4), name: "Jungle Spider") }
+            if spiderTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnJungleSpider() }
             birdTimer += dt // Toucans
-            if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Toucan", tint: UIColor(red: 0.95, green: 0.55, blue: 0.10, alpha: 1.0)) }
+            if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Toucan") }
         }
     }
 
@@ -1146,12 +1255,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(enemy)
     }
 
-    private func spawnBiomeSwooper(name: String, tint: UIColor) {
-        let swooper = BiomeSwooper(textures: birdTextures, biomeName: name)
+    private func spawnBiomeSwooper(name: String) {
+        let frames: [SKTexture]
+        switch name {
+        case "Bat": frames = batFrames
+        case "Hawk": frames = hawkFrames
+        case "Snow Owl": frames = owlFrames
+        case "Toucan": frames = toucanFrames
+        default: frames = birdTextures
+        }
+        let swooper = BiomeSwooper(textures: frames, biomeName: name)
         swooper.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.50...0.85))
         swooper.xScale = -1
-        swooper.colorBlendFactor = 0.5
-        swooper.color = tint
         swooper.setupPhysics()
         addChild(swooper)
         // Biome-specific swooper sound
@@ -1166,6 +1281,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         swooper.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
                             targetY: targetY, startY: swooper.position.y,
                             duration: 2.0 + Double.random(in: 0...0.8))
+    }
+
+    private func spawnJungleSpider() {
+        let spawnX = size.width + 40
+        if isNearGroundObject(x: spawnX, range: 80) { return }
+        let spider = Spider(walkFrames: jungleSpiderFrames)
+        spider.position = CGPoint(x: spawnX, y: groundY + spider.size.height / 2)
+        spider.baseY = groundY + spider.size.height / 2
+        spider.setupPhysics()
+        spider.startCrawling()
+        addChild(spider)
+        unlockBug(.jungleSpider)
     }
 
     // MARK: - Biome Transitions
@@ -1421,6 +1548,47 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         swarm.setupPhysics()
         swarm.startMoving()
         addChild(swarm)
+    }
+
+    private func togglePause() {
+        isPaused_ = !isPaused_
+        self.isPaused = isPaused_
+
+        if isPaused_ {
+            isTouching = false
+            touchY = nil
+            ladybug.targetY = nil
+
+            let overlay = SKShapeNode(rectOf: size)
+            overlay.fillColor = SKColor(white: 0.0, alpha: 0.5)
+            overlay.strokeColor = .clear
+            overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            overlay.zPosition = 140
+            overlay.name = "pauseOverlay"
+            addChild(overlay)
+
+            let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            label.text = "PAUSED"
+            label.fontSize = 36
+            label.fontColor = .white
+            label.position = CGPoint(x: size.width / 2, y: size.height / 2 + 20)
+            label.zPosition = 141
+            label.name = "pauseOverlay"
+            addChild(label)
+
+            let resume = SKLabelNode(fontNamed: "AvenirNext-Medium")
+            resume.text = "Tap to Resume"
+            resume.fontSize = 18
+            resume.fontColor = SKColor(white: 1.0, alpha: 0.6)
+            resume.position = CGPoint(x: size.width / 2, y: size.height / 2 - 20)
+            resume.zPosition = 141
+            resume.name = "resumeLabel"
+            addChild(resume)
+        } else {
+            enumerateChildNodes(withName: "pauseOverlay") { node, _ in node.removeFromParent() }
+            enumerateChildNodes(withName: "resumeLabel") { node, _ in node.removeFromParent() }
+            lastUpdateTime = 0 // Reset to avoid big dt jump
+        }
     }
 
     private func gameOver() {

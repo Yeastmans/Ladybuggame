@@ -80,14 +80,15 @@ enum TextureGenerator {
                 cg.setLineWidth(1.2)
                 cg.strokeEllipse(in: bodyRect)
 
-                // Spots
+                // Spots (matched to walking spots)
                 let spotColor = UIColor(red: 0.10, green: 0.05, blue: 0.05, alpha: 1.0).cgColor
                 cg.setFillColor(spotColor)
-                cg.fillEllipse(in: CGRect(x: w * 0.30, y: h * 0.32, width: w * 0.11, height: w * 0.11))
-                cg.fillEllipse(in: CGRect(x: w * 0.50, y: h * 0.30, width: w * 0.14, height: w * 0.14))
-                cg.fillEllipse(in: CGRect(x: w * 0.42, y: h * 0.48, width: w * 0.09, height: w * 0.09))
-                cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.38, width: w * 0.10, height: w * 0.10))
-                cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * 0.48, width: w * 0.07, height: w * 0.07))
+                cg.fillEllipse(in: CGRect(x: w * 0.30, y: h * 0.30, width: w * 0.12, height: w * 0.12))
+                cg.fillEllipse(in: CGRect(x: w * 0.50, y: h * 0.28, width: w * 0.15, height: w * 0.15))
+                cg.fillEllipse(in: CGRect(x: w * 0.42, y: h * 0.48, width: w * 0.10, height: w * 0.10))
+                cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.38, width: w * 0.11, height: w * 0.11))
+                cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.52, width: w * 0.07, height: w * 0.07))
+                cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * 0.50, width: w * 0.08, height: w * 0.08))
             } else {
                 // === Body dome (red, side profile) ===
                 let bodyRect = CGRect(x: w * 0.12, y: h * 0.22, width: w * 0.60, height: h * 0.52)
@@ -997,6 +998,526 @@ enum TextureGenerator {
             }
             cg.setFillColor(UIColor.black.cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.42, width: 3, height: 3))
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Bat (two flap frames — dark purple/brown, pointed ears, webbed wings)
+
+    static func generateBatFrames(size: CGSize) -> [SKTexture] {
+        return [drawBat(size: size, wingsUp: true), drawBat(size: size, wingsUp: false)]
+    }
+
+    private static func drawBat(size: CGSize, wingsUp: Bool) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+            let bodyC = UIColor(red: 0.18, green: 0.10, blue: 0.28, alpha: 1.0)
+
+            // Webbed wings (jagged edge)
+            cg.setFillColor(UIColor(red: 0.22, green: 0.12, blue: 0.30, alpha: 0.9).cgColor)
+            if wingsUp {
+                let wp = UIBezierPath()
+                wp.move(to: CGPoint(x: w * 0.45, y: h * 0.45))
+                wp.addLine(to: CGPoint(x: w * 0.15, y: h * 0.05))
+                wp.addLine(to: CGPoint(x: w * 0.25, y: h * 0.20))
+                wp.addLine(to: CGPoint(x: w * 0.10, y: h * 0.10))
+                wp.addLine(to: CGPoint(x: w * 0.30, y: h * 0.30))
+                wp.addLine(to: CGPoint(x: w * 0.55, y: h * 0.42))
+                wp.close()
+                cg.addPath(wp.cgPath); cg.fillPath()
+            } else {
+                let wp = UIBezierPath()
+                wp.move(to: CGPoint(x: w * 0.45, y: h * 0.50))
+                wp.addLine(to: CGPoint(x: w * 0.10, y: h * 0.85))
+                wp.addLine(to: CGPoint(x: w * 0.22, y: h * 0.70))
+                wp.addLine(to: CGPoint(x: w * 0.08, y: h * 0.95))
+                wp.addLine(to: CGPoint(x: w * 0.32, y: h * 0.75))
+                wp.addLine(to: CGPoint(x: w * 0.55, y: h * 0.55))
+                wp.close()
+                cg.addPath(wp.cgPath); cg.fillPath()
+            }
+            // Wing membrane veins
+            cg.setStrokeColor(UIColor(red: 0.30, green: 0.18, blue: 0.38, alpha: 0.4).cgColor)
+            cg.setLineWidth(0.5)
+            if wingsUp {
+                cg.move(to: CGPoint(x: w * 0.45, y: h * 0.45))
+                cg.addLine(to: CGPoint(x: w * 0.18, y: h * 0.12))
+                cg.strokePath()
+            }
+
+            // Body (furry, dark)
+            cg.setFillColor(bodyC.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * 0.30, width: w * 0.40, height: h * 0.40))
+
+            // Head
+            cg.setFillColor(UIColor(red: 0.20, green: 0.12, blue: 0.30, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * 0.30, width: w * 0.25, height: h * 0.28))
+
+            // Pointed ears
+            cg.setFillColor(bodyC.cgColor)
+            let ear1 = UIBezierPath()
+            ear1.move(to: CGPoint(x: w * 0.65, y: h * 0.30))
+            ear1.addLine(to: CGPoint(x: w * 0.60, y: h * 0.12))
+            ear1.addLine(to: CGPoint(x: w * 0.70, y: h * 0.28))
+            ear1.close()
+            cg.addPath(ear1.cgPath); cg.fillPath()
+            let ear2 = UIBezierPath()
+            ear2.move(to: CGPoint(x: w * 0.74, y: h * 0.30))
+            ear2.addLine(to: CGPoint(x: w * 0.72, y: h * 0.14))
+            ear2.addLine(to: CGPoint(x: w * 0.80, y: h * 0.28))
+            ear2.close()
+            cg.addPath(ear2.cgPath); cg.fillPath()
+
+            // Eyes (small, glowing red)
+            cg.setFillColor(UIColor(red: 1.0, green: 0.20, blue: 0.15, alpha: 0.9).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.70, y: h * 0.36, width: w * 0.06, height: w * 0.06))
+
+            // Tiny fangs
+            cg.setStrokeColor(UIColor.white.cgColor)
+            cg.setLineWidth(1.0); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.76, y: h * 0.50))
+            cg.addLine(to: CGPoint(x: w * 0.76, y: h * 0.56))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.80, y: h * 0.50))
+            cg.addLine(to: CGPoint(x: w * 0.80, y: h * 0.55))
+            cg.strokePath()
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Hawk (two flap frames — brown raptor, hooked beak, broad wings)
+
+    static func generateHawkFrames(size: CGSize) -> [SKTexture] {
+        return [drawHawk(size: size, wingsUp: true), drawHawk(size: size, wingsUp: false)]
+    }
+
+    private static func drawHawk(size: CGSize, wingsUp: Bool) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            // Broad wings
+            cg.setFillColor(UIColor(red: 0.50, green: 0.32, blue: 0.15, alpha: 1.0).cgColor)
+            if wingsUp {
+                cg.move(to: CGPoint(x: w * 0.45, y: h * 0.45))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.20, y: h * 0.02), control: CGPoint(x: w * 0.18, y: h * 0.20))
+                cg.addLine(to: CGPoint(x: w * 0.35, y: h * 0.05))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.55, y: h * 0.42), control: CGPoint(x: w * 0.50, y: h * 0.15))
+                cg.fillPath()
+            } else {
+                cg.move(to: CGPoint(x: w * 0.45, y: h * 0.50))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.12, y: h * 0.88), control: CGPoint(x: w * 0.15, y: h * 0.65))
+                cg.addLine(to: CGPoint(x: w * 0.28, y: h * 0.82))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.55, y: h * 0.55), control: CGPoint(x: w * 0.42, y: h * 0.68))
+                cg.fillPath()
+            }
+            // Wing feather tips (darker)
+            cg.setFillColor(UIColor(red: 0.35, green: 0.22, blue: 0.10, alpha: 0.6).cgColor)
+            if wingsUp {
+                cg.fillEllipse(in: CGRect(x: w * 0.18, y: h * 0.02, width: w * 0.18, height: h * 0.10))
+            } else {
+                cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.82, width: w * 0.20, height: h * 0.10))
+            }
+
+            // Tail feathers
+            cg.setFillColor(UIColor(red: 0.42, green: 0.28, blue: 0.15, alpha: 1.0).cgColor)
+            cg.move(to: CGPoint(x: w * 0.08, y: h * 0.40))
+            cg.addLine(to: CGPoint(x: -w * 0.04, y: h * 0.35))
+            cg.addLine(to: CGPoint(x: -w * 0.02, y: h * 0.55))
+            cg.addLine(to: CGPoint(x: w * 0.10, y: h * 0.55))
+            cg.closePath(); cg.fillPath()
+
+            // Body
+            cg.setFillColor(UIColor(red: 0.55, green: 0.38, blue: 0.18, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.12, y: h * 0.30, width: w * 0.52, height: h * 0.38))
+            // White breast
+            cg.setFillColor(UIColor(red: 0.92, green: 0.88, blue: 0.78, alpha: 0.7).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * 0.42, width: w * 0.30, height: h * 0.22))
+
+            // Head
+            cg.setFillColor(UIColor(red: 0.45, green: 0.30, blue: 0.15, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * 0.28, width: w * 0.28, height: h * 0.30))
+
+            // Hooked beak
+            cg.setFillColor(UIColor(red: 0.25, green: 0.20, blue: 0.10, alpha: 1.0).cgColor)
+            cg.move(to: CGPoint(x: w * 0.84, y: h * 0.40))
+            cg.addLine(to: CGPoint(x: w * 1.02, y: h * 0.44))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.92, y: h * 0.54), control: CGPoint(x: w * 1.0, y: h * 0.52))
+            cg.addLine(to: CGPoint(x: w * 0.84, y: h * 0.50))
+            cg.closePath(); cg.fillPath()
+
+            // Fierce eye
+            cg.setFillColor(UIColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.34, width: w * 0.09, height: w * 0.09))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.75, y: h * 0.37, width: w * 0.05, height: w * 0.05))
+            // Angry brow
+            cg.setStrokeColor(UIColor(red: 0.30, green: 0.18, blue: 0.08, alpha: 1.0).cgColor)
+            cg.setLineWidth(2.0); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.70, y: h * 0.30))
+            cg.addLine(to: CGPoint(x: w * 0.82, y: h * 0.34))
+            cg.strokePath()
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Snow Owl (two flap frames — white/grey, round face, big eyes)
+
+    static func generateOwlFrames(size: CGSize) -> [SKTexture] {
+        return [drawOwl(size: size, wingsUp: true), drawOwl(size: size, wingsUp: false)]
+    }
+
+    private static func drawOwl(size: CGSize, wingsUp: Bool) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            // Wings (white/grey spotted)
+            cg.setFillColor(UIColor(red: 0.85, green: 0.85, blue: 0.88, alpha: 1.0).cgColor)
+            if wingsUp {
+                cg.move(to: CGPoint(x: w * 0.42, y: h * 0.45))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.25, y: h * 0.02), control: CGPoint(x: w * 0.20, y: h * 0.18))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.55, y: h * 0.42), control: CGPoint(x: w * 0.50, y: h * 0.12))
+                cg.fillPath()
+            } else {
+                cg.move(to: CGPoint(x: w * 0.42, y: h * 0.50))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.15, y: h * 0.90), control: CGPoint(x: w * 0.15, y: h * 0.68))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.55, y: h * 0.55), control: CGPoint(x: w * 0.42, y: h * 0.72))
+                cg.fillPath()
+            }
+            // Grey speckles on wings
+            cg.setFillColor(UIColor(red: 0.60, green: 0.60, blue: 0.65, alpha: 0.4).cgColor)
+            for _ in 0..<4 {
+                let sx = CGFloat.random(in: 0.22...0.50)
+                let sy = CGFloat.random(in: 0.15...0.65)
+                cg.fillEllipse(in: CGRect(x: w * sx, y: h * sy, width: 3, height: 3))
+            }
+
+            // Short tail
+            cg.setFillColor(UIColor(red: 0.80, green: 0.78, blue: 0.82, alpha: 1.0).cgColor)
+            cg.move(to: CGPoint(x: w * 0.05, y: h * 0.40))
+            cg.addLine(to: CGPoint(x: -w * 0.02, y: h * 0.38))
+            cg.addLine(to: CGPoint(x: -w * 0.01, y: h * 0.55))
+            cg.addLine(to: CGPoint(x: w * 0.08, y: h * 0.55))
+            cg.closePath(); cg.fillPath()
+
+            // Body (fluffy white)
+            cg.setFillColor(UIColor(red: 0.95, green: 0.95, blue: 0.97, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.12, y: h * 0.28, width: w * 0.50, height: h * 0.42))
+
+            // Head (round, large relative to body)
+            cg.setFillColor(UIColor(red: 0.96, green: 0.96, blue: 0.98, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.52, y: h * 0.20, width: w * 0.38, height: h * 0.42))
+
+            // Facial disc (grey ring around eyes)
+            cg.setFillColor(UIColor(red: 0.80, green: 0.78, blue: 0.82, alpha: 0.5).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * 0.25, width: w * 0.28, height: h * 0.32))
+            cg.setFillColor(UIColor(red: 0.96, green: 0.96, blue: 0.98, alpha: 0.8).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.28, width: w * 0.20, height: h * 0.25))
+
+            // Big yellow eyes
+            cg.setFillColor(UIColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.64, y: h * 0.32, width: w * 0.10, height: w * 0.10))
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.32, width: w * 0.10, height: w * 0.10))
+            // Black pupils
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.67, y: h * 0.35, width: w * 0.05, height: w * 0.05))
+            cg.fillEllipse(in: CGRect(x: w * 0.75, y: h * 0.35, width: w * 0.05, height: w * 0.05))
+
+            // Small dark beak
+            cg.setFillColor(UIColor(red: 0.25, green: 0.22, blue: 0.18, alpha: 1.0).cgColor)
+            cg.move(to: CGPoint(x: w * 0.72, y: h * 0.44))
+            cg.addLine(to: CGPoint(x: w * 0.76, y: h * 0.50))
+            cg.addLine(to: CGPoint(x: w * 0.68, y: h * 0.50))
+            cg.closePath(); cg.fillPath()
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Toucan (two flap frames — black body, massive colorful beak)
+
+    static func generateToucanFrames(size: CGSize) -> [SKTexture] {
+        return [drawToucan(size: size, wingsUp: true), drawToucan(size: size, wingsUp: false)]
+    }
+
+    private static func drawToucan(size: CGSize, wingsUp: Bool) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            // Wings (dark blue-black)
+            cg.setFillColor(UIColor(red: 0.08, green: 0.08, blue: 0.15, alpha: 1.0).cgColor)
+            if wingsUp {
+                cg.move(to: CGPoint(x: w * 0.40, y: h * 0.45))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.25, y: h * 0.02), control: CGPoint(x: w * 0.20, y: h * 0.18))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.52, y: h * 0.42), control: CGPoint(x: w * 0.48, y: h * 0.14))
+                cg.fillPath()
+            } else {
+                cg.move(to: CGPoint(x: w * 0.40, y: h * 0.50))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.15, y: h * 0.90), control: CGPoint(x: w * 0.15, y: h * 0.65))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.52, y: h * 0.55), control: CGPoint(x: w * 0.40, y: h * 0.72))
+                cg.fillPath()
+            }
+
+            // Tail (long, dark)
+            cg.setFillColor(UIColor(red: 0.10, green: 0.08, blue: 0.12, alpha: 1.0).cgColor)
+            cg.move(to: CGPoint(x: w * 0.05, y: h * 0.38))
+            cg.addLine(to: CGPoint(x: -w * 0.08, y: h * 0.32))
+            cg.addLine(to: CGPoint(x: -w * 0.06, y: h * 0.55))
+            cg.addLine(to: CGPoint(x: w * 0.08, y: h * 0.56))
+            cg.closePath(); cg.fillPath()
+
+            // Body (black)
+            cg.setFillColor(UIColor(red: 0.10, green: 0.10, blue: 0.12, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.08, y: h * 0.28, width: w * 0.50, height: h * 0.40))
+            // White breast
+            cg.setFillColor(UIColor(red: 1.0, green: 0.95, blue: 0.85, alpha: 0.9).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.30, y: h * 0.40, width: w * 0.22, height: h * 0.24))
+
+            // Head
+            cg.setFillColor(UIColor(red: 0.10, green: 0.10, blue: 0.12, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.48, y: h * 0.24, width: w * 0.28, height: h * 0.34))
+
+            // MASSIVE colorful beak (orange → yellow → red tip)
+            let beak = UIBezierPath()
+            beak.move(to: CGPoint(x: w * 0.72, y: h * 0.34))
+            beak.addQuadCurve(to: CGPoint(x: w * 1.10, y: h * 0.46), control: CGPoint(x: w * 0.95, y: h * 0.32))
+            beak.addQuadCurve(to: CGPoint(x: w * 0.72, y: h * 0.56), control: CGPoint(x: w * 0.95, y: h * 0.60))
+            beak.close()
+            cg.addPath(beak.cgPath)
+            cg.setFillColor(UIColor(red: 0.98, green: 0.60, blue: 0.05, alpha: 1.0).cgColor)
+            cg.fillPath()
+            // Yellow stripe on beak
+            cg.setFillColor(UIColor(red: 1.0, green: 0.90, blue: 0.10, alpha: 0.7).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.80, y: h * 0.40, width: w * 0.15, height: h * 0.10))
+            // Red tip
+            cg.setFillColor(UIColor(red: 0.90, green: 0.15, blue: 0.10, alpha: 0.8).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 1.00, y: h * 0.42, width: w * 0.08, height: h * 0.08))
+            // Beak ridge line
+            cg.setStrokeColor(UIColor(red: 0.30, green: 0.18, blue: 0.05, alpha: 0.5).cgColor)
+            cg.setLineWidth(0.6)
+            cg.move(to: CGPoint(x: w * 0.74, y: h * 0.45))
+            cg.addLine(to: CGPoint(x: w * 1.06, y: h * 0.46))
+            cg.strokePath()
+
+            // Eye (blue ring)
+            cg.setFillColor(UIColor(red: 0.20, green: 0.50, blue: 0.85, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.34, width: w * 0.10, height: w * 0.10))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.65, y: h * 0.37, width: w * 0.06, height: w * 0.06))
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.63, y: h * 0.35, width: w * 0.03, height: w * 0.03))
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Toad (side view — brown/warty variant of frog)
+
+    static func generateToadTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            // Back leg
+            cg.setFillColor(UIColor(red: 0.38, green: 0.30, blue: 0.18, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.05, y: h * 0.55, width: w * 0.30, height: h * 0.35))
+
+            // Body (brown, bumpy)
+            cg.setFillColor(UIColor(red: 0.42, green: 0.34, blue: 0.20, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.20, width: w * 0.60, height: h * 0.55))
+
+            // Warts
+            cg.setFillColor(UIColor(red: 0.35, green: 0.28, blue: 0.15, alpha: 0.6).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.20, y: h * 0.30, width: w * 0.08, height: w * 0.08))
+            cg.fillEllipse(in: CGRect(x: w * 0.35, y: h * 0.25, width: w * 0.06, height: w * 0.06))
+            cg.fillEllipse(in: CGRect(x: w * 0.48, y: h * 0.32, width: w * 0.07, height: w * 0.07))
+            cg.fillEllipse(in: CGRect(x: w * 0.28, y: h * 0.45, width: w * 0.05, height: w * 0.05))
+
+            // Belly
+            cg.setFillColor(UIColor(red: 0.65, green: 0.58, blue: 0.40, alpha: 0.8).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.22, y: h * 0.48, width: w * 0.35, height: h * 0.22))
+
+            // Head (wider, flatter than frog)
+            cg.setFillColor(UIColor(red: 0.40, green: 0.32, blue: 0.18, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.15, width: w * 0.40, height: h * 0.42))
+
+            // Eye (bulging, golden)
+            cg.setFillColor(UIColor(red: 0.85, green: 0.70, blue: 0.15, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.06, width: w * 0.22, height: w * 0.22))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.80, y: h * 0.12, width: w * 0.10, height: w * 0.10))
+
+            // Mouth line
+            cg.setStrokeColor(UIColor(red: 0.30, green: 0.22, blue: 0.12, alpha: 1.0).cgColor)
+            cg.setLineWidth(1.2); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.80, y: h * 0.40))
+            cg.addLine(to: CGPoint(x: w * 0.98, y: h * 0.38))
+            cg.strokePath()
+
+            // Front leg
+            cg.setFillColor(UIColor(red: 0.38, green: 0.30, blue: 0.18, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.60, width: w * 0.18, height: h * 0.32))
+            cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * 0.82, width: w * 0.20, height: h * 0.12))
+            // Back foot
+            cg.fillEllipse(in: CGRect(x: w * 0.02, y: h * 0.82, width: w * 0.22, height: h * 0.12))
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Poison Dart Frog (vibrant blue/red/yellow)
+
+    static func generatePoisonDartFrogTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            // Back leg
+            cg.setFillColor(UIColor(red: 0.10, green: 0.30, blue: 0.85, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.05, y: h * 0.55, width: w * 0.30, height: h * 0.35))
+
+            // Body (vibrant blue)
+            cg.setFillColor(UIColor(red: 0.12, green: 0.35, blue: 0.90, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.20, width: w * 0.60, height: h * 0.55))
+
+            // Black spots/patches
+            cg.setFillColor(UIColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 0.7).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.18, y: h * 0.28, width: w * 0.14, height: w * 0.14))
+            cg.fillEllipse(in: CGRect(x: w * 0.38, y: h * 0.25, width: w * 0.12, height: w * 0.12))
+            cg.fillEllipse(in: CGRect(x: w * 0.28, y: h * 0.42, width: w * 0.10, height: w * 0.10))
+            cg.fillEllipse(in: CGRect(x: w * 0.50, y: h * 0.38, width: w * 0.08, height: w * 0.08))
+
+            // Bright yellow belly
+            cg.setFillColor(UIColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 0.8).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.22, y: h * 0.48, width: w * 0.35, height: h * 0.22))
+
+            // Head
+            cg.setFillColor(UIColor(red: 0.12, green: 0.35, blue: 0.90, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.12, width: w * 0.40, height: h * 0.45))
+
+            // Eye (big, dark)
+            cg.setFillColor(UIColor(red: 0.10, green: 0.10, blue: 0.12, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.05, width: w * 0.22, height: w * 0.22))
+            cg.setFillColor(UIColor(red: 0.85, green: 0.50, blue: 0.0, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.78, y: h * 0.10, width: w * 0.12, height: w * 0.12))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.82, y: h * 0.13, width: w * 0.06, height: w * 0.06))
+
+            // Mouth line
+            cg.setStrokeColor(UIColor(red: 0.08, green: 0.20, blue: 0.60, alpha: 1.0).cgColor)
+            cg.setLineWidth(1.2); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.80, y: h * 0.40))
+            cg.addLine(to: CGPoint(x: w * 0.98, y: h * 0.38))
+            cg.strokePath()
+
+            // Orange front toes
+            cg.setFillColor(UIColor(red: 1.0, green: 0.50, blue: 0.0, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * 0.82, width: w * 0.22, height: h * 0.12))
+            // Orange back toes
+            cg.fillEllipse(in: CGRect(x: w * 0.02, y: h * 0.82, width: w * 0.24, height: h * 0.12))
+
+            // Front leg
+            cg.setFillColor(UIColor(red: 0.10, green: 0.30, blue: 0.85, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.60, width: w * 0.18, height: h * 0.28))
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Jungle Spider (colorful, large — green/red/yellow)
+
+    static func generateJungleSpiderFrames(size: CGSize) -> [SKTexture] {
+        return [drawJungleSpider(size: size, legPhase: 0), drawJungleSpider(size: size, legPhase: 1)]
+    }
+
+    private static func drawJungleSpider(size: CGSize, legPhase: Int) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            let legC = UIColor(red: 0.10, green: 0.35, blue: 0.08, alpha: 1.0).cgColor
+            cg.setLineCap(.round); cg.setLineJoin(.round)
+
+            // 4 hairy legs per side (green with yellow bands)
+            cg.setStrokeColor(legC)
+            cg.setLineWidth(2.0)
+            let sway: CGFloat = legPhase == 0 ? 0.03 : -0.03
+
+            let legs: [(bx: CGFloat, kx: CGFloat, ky: CGFloat, fx: CGFloat)] = [
+                (0.40, -0.20, 0.16, -0.12),
+                (0.34, -0.26, 0.12, -0.18),
+                (0.28, -0.24, 0.14, -0.14),
+                (0.22, -0.18, 0.18, -0.08),
+            ]
+            for (i, l) in legs.enumerated() {
+                let s = (i % 2 == 0) ? sway : -sway
+                cg.move(to: CGPoint(x: w * l.bx, y: h * 0.48))
+                cg.addLine(to: CGPoint(x: w * (l.bx + l.kx + s), y: h * l.ky))
+                cg.addLine(to: CGPoint(x: w * (l.bx + l.fx + s), y: h * 0.95))
+                cg.strokePath()
+                let mx: CGFloat = 0.88 - l.bx
+                cg.move(to: CGPoint(x: w * mx, y: h * 0.48))
+                cg.addLine(to: CGPoint(x: w * (mx - l.kx - s), y: h * l.ky))
+                cg.addLine(to: CGPoint(x: w * (mx - l.fx - s), y: h * 0.95))
+                cg.strokePath()
+            }
+            // Yellow leg bands
+            cg.setStrokeColor(UIColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 0.6).cgColor)
+            cg.setLineWidth(1.0)
+            for l in legs {
+                let knee1 = CGPoint(x: w * (l.bx + l.kx), y: h * l.ky)
+                cg.move(to: CGPoint(x: knee1.x - 2, y: knee1.y))
+                cg.addLine(to: CGPoint(x: knee1.x + 2, y: knee1.y))
+                cg.strokePath()
+            }
+
+            // Abdomen (bright green with yellow/red markings)
+            cg.setFillColor(UIColor(red: 0.15, green: 0.55, blue: 0.10, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.02, y: h * 0.18, width: w * 0.50, height: h * 0.55))
+            // Red warning pattern
+            cg.setFillColor(UIColor(red: 0.90, green: 0.15, blue: 0.10, alpha: 0.8).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.12, y: h * 0.30, width: w * 0.14, height: w * 0.14))
+            cg.fillEllipse(in: CGRect(x: w * 0.28, y: h * 0.28, width: w * 0.10, height: w * 0.10))
+            // Yellow spots
+            cg.setFillColor(UIColor(red: 1.0, green: 0.90, blue: 0.0, alpha: 0.7).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.18, y: h * 0.48, width: w * 0.08, height: w * 0.08))
+            cg.fillEllipse(in: CGRect(x: w * 0.32, y: h * 0.42, width: w * 0.06, height: w * 0.06))
+
+            // Cephalothorax (dark green)
+            cg.setFillColor(UIColor(red: 0.10, green: 0.42, blue: 0.08, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.46, y: h * 0.28, width: w * 0.30, height: h * 0.38))
+
+            // Eyes (bright red, menacing)
+            cg.setFillColor(UIColor(red: 1.0, green: 0.15, blue: 0.10, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.66, y: h * 0.33, width: w * 0.08, height: w * 0.08))
+            cg.fillEllipse(in: CGRect(x: w * 0.66, y: h * 0.44, width: w * 0.08, height: w * 0.08))
+            // Black pupils
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.69, y: h * 0.36, width: w * 0.04, height: w * 0.04))
+            cg.fillEllipse(in: CGRect(x: w * 0.69, y: h * 0.47, width: w * 0.04, height: w * 0.04))
+
+            // Fangs (yellow-green)
+            cg.setStrokeColor(UIColor(red: 0.55, green: 0.50, blue: 0.10, alpha: 1.0).cgColor)
+            cg.setLineWidth(2.0)
+            cg.move(to: CGPoint(x: w * 0.74, y: h * 0.43))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.86, y: h * 0.56), control: CGPoint(x: w * 0.84, y: h * 0.40))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.74, y: h * 0.51))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.86, y: h * 0.62), control: CGPoint(x: w * 0.84, y: h * 0.54))
+            cg.strokePath()
         }
         return SKTexture(image: image)
     }
