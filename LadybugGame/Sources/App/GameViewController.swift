@@ -15,14 +15,14 @@ class GameViewController: UIViewController {
         guard !hasPresented, let skView = view as? SKView, view.bounds.width > 0 else { return }
         hasPresented = true
 
-        let scene = GameScene(size: view.bounds.size)
+        let scene = MenuScene(size: view.bounds.size)
         scene.scaleMode = .aspectFill
         skView.presentScene(scene)
         skView.ignoresSiblingOrder = true
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        return .portrait
+        return .landscape
     }
 
     override var prefersStatusBarHidden: Bool {

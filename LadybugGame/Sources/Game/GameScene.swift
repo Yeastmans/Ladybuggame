@@ -8,303 +8,190 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         static let ladybug: UInt32   = 0b0001
         static let aphid: UInt32     = 0b0010
         static let bird: UInt32      = 0b0100
-        static let boundary: UInt32  = 0b1000
+        static let log: UInt32       = 0b1000
     }
-
-    // MARK: - High Score
-    private static let highScoreKey = "LadybugGameHighScore"
-
-    private static var highScore: Int {
-        get { UserDefaults.standard.integer(forKey: highScoreKey) }
-        set { UserDefaults.standard.set(newValue, forKey: highScoreKey) }
-    }
-
-    // MARK: - Cached Textures
-    private var aphidTextures: [SKTexture] = []
-    private var birdTextures: [SKTexture] = []
 
     // MARK: - Properties
     private var ladybug: Ladybug!
-    private var logs: [Log] = []
-    private var scoreLabel: SKLabelNode!
-    private var livesLabel: SKLabelNode!
-    private var highScoreLabel: SKLabelNode!
-    private var jumpButton: SKShapeNode!
+    private var groundY: CGFloat = 0
+    private var scrollSpeed: CGFloat = 180
+    private var distanceTraveled: CGFloat = 0
 
+    private var scoreLabel: SKLabelNode!
     private var score: Int = 0 {
-        didSet {
-            scoreLabel.text = "Score: \(score)"
-            if score > GameScene.highScore {
-                GameScene.highScore = score
-                highScoreLabel.text = "Best: \(score)"
-            }
-        }
+        didSet { scoreLabel.text = "\(score)" }
     }
-    private var lives: Int = 3 {
-        didSet { livesLabel.text = "Lives: \(lives)" }
-    }
+    private var lives: Int = 3
+    private var livesLabel: SKLabelNode!
 
     private var isGameOver = false
-    private var isHiding = false
-    private var aphidSpawnTimer: TimeInterval = 0
-    private var birdSwoopTimer: TimeInterval = 0
+    private var isTouching = false
     private var lastUpdateTime: TimeInterval = 0
-    private var targetPosition: CGPoint?
+
+    // Spawn timers
+    private var aphidTimer: TimeInterval = 0
+    private var logTimer: TimeInterval = 0
+    private var birdTimer: TimeInterval = 0
+
+    // Cached textures
+    private var birdTextures: [SKTexture] = []
+    private var aphidTextures: [TextureGenerator.AphidColor: SKTexture] = [:]
+    private var logTexture: SKTexture!
+
+    // Scrolling ground
+    private var groundTiles: [SKSpriteNode] = []
 
     // MARK: - Scene Lifecycle
 
     override func didMove(to view: SKView) {
-        backgroundColor = SKColor(red: 0.45, green: 0.72, blue: 0.30, alpha: 1.0)
+        backgroundColor = SKColor(red: 0.50, green: 0.78, blue: 0.95, alpha: 1.0)
 
         physicsWorld.gravity = .zero
         physicsWorld.contactDelegate = self
 
-        // Pre-generate animated textures
-        aphidTextures = TextureGenerator.generateAphidTextures(size: CGSize(width: 24, height: 24))
-        birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 56, height: 40))
+        groundY = size.height * 0.35
 
-        setupBoundary()
+        // Pre-generate textures
+        birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
+        logTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 70, height: 50))
+        for color in [TextureGenerator.AphidColor.green, .yellow, .red] {
+            aphidTextures[color] = TextureGenerator.generateAphidTexture(size: CGSize(width: 22, height: 22), color: color)
+        }
+
+        setupBackground()
+        setupGround()
         setupHUD()
-        setupJumpButton()
-        spawnLogs()
         spawnLadybug()
-        spawnInitialAphids()
     }
 
     // MARK: - Setup
 
-    private func setupBoundary() {
-        let borderBody = SKPhysicsBody(edgeLoopFrom: frame)
-        borderBody.categoryBitMask = PhysicsCategory.boundary
-        borderBody.friction = 0
-        physicsBody = borderBody
+    private func setupBackground() {
+        // Clouds
+        for i in 0..<4 {
+            let cloud = SKShapeNode(rectOf: CGSize(width: CGFloat.random(in: 60...120), height: CGFloat.random(in: 20...35)), cornerRadius: 15)
+            cloud.fillColor = SKColor(white: 1.0, alpha: CGFloat.random(in: 0.3...0.6))
+            cloud.strokeColor = .clear
+            let x = CGFloat(i) * size.width * 0.28 + CGFloat.random(in: 0...60)
+            let y = size.height * CGFloat.random(in: 0.72...0.92)
+            cloud.position = CGPoint(x: x, y: y)
+            cloud.zPosition = -5
+            cloud.name = "cloud"
+            addChild(cloud)
+        }
+    }
+
+    private func setupGround() {
+        // Scrolling ground tiles
+        let tileWidth = size.width
+        for i in 0..<3 {
+            let tile = SKSpriteNode(color: SKColor(red: 0.45, green: 0.72, blue: 0.30, alpha: 1.0),
+                                    size: CGSize(width: tileWidth, height: groundY))
+            tile.anchorPoint = CGPoint(x: 0, y: 0)
+            tile.position = CGPoint(x: CGFloat(i) * tileWidth, y: 0)
+            tile.zPosition = -2
+            tile.name = "groundTile"
+            addChild(tile)
+            groundTiles.append(tile)
+
+            // Dark grass line at top
+            let grassLine = SKShapeNode(rectOf: CGSize(width: tileWidth, height: 3))
+            grassLine.fillColor = SKColor(red: 0.35, green: 0.58, blue: 0.22, alpha: 1.0)
+            grassLine.strokeColor = .clear
+            grassLine.position = CGPoint(x: tileWidth / 2, y: groundY)
+            tile.addChild(grassLine)
+
+            // Some grass tufts
+            for _ in 0..<8 {
+                let tuft = SKShapeNode(rectOf: CGSize(width: 2, height: CGFloat.random(in: 4...10)))
+                tuft.fillColor = SKColor(red: 0.38, green: 0.65, blue: 0.25, alpha: 0.6)
+                tuft.strokeColor = .clear
+                tuft.position = CGPoint(x: CGFloat.random(in: 10...tileWidth - 10),
+                                        y: groundY + CGFloat.random(in: 2...5))
+                tile.addChild(tuft)
+            }
+        }
     }
 
     private func setupHUD() {
+        // Score (top left)
+        let scoreIcon = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        scoreIcon.text = "Score:"
+        scoreIcon.fontSize = 18
+        scoreIcon.fontColor = .white
+        scoreIcon.horizontalAlignmentMode = .left
+        scoreIcon.position = CGPoint(x: 16, y: size.height - 35)
+        scoreIcon.zPosition = 100
+        addChild(scoreIcon)
+
         scoreLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        scoreLabel.fontSize = 20
+        scoreLabel.text = "0"
+        scoreLabel.fontSize = 18
         scoreLabel.fontColor = .white
         scoreLabel.horizontalAlignmentMode = .left
-        scoreLabel.position = CGPoint(x: 16, y: size.height - 50)
+        scoreLabel.position = CGPoint(x: 80, y: size.height - 35)
         scoreLabel.zPosition = 100
-        scoreLabel.text = "Score: 0"
         addChild(scoreLabel)
 
+        // Lives (top right)
         livesLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        livesLabel.fontSize = 20
+        livesLabel.fontSize = 18
         livesLabel.fontColor = .white
         livesLabel.horizontalAlignmentMode = .right
-        livesLabel.position = CGPoint(x: size.width - 16, y: size.height - 50)
+        livesLabel.position = CGPoint(x: size.width - 16, y: size.height - 35)
         livesLabel.zPosition = 100
-        livesLabel.text = "Lives: 3"
+        updateLivesDisplay()
         addChild(livesLabel)
-
-        highScoreLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        highScoreLabel.fontSize = 16
-        highScoreLabel.fontColor = SKColor(white: 1.0, alpha: 0.7)
-        highScoreLabel.horizontalAlignmentMode = .left
-        highScoreLabel.position = CGPoint(x: 16, y: size.height - 74)
-        highScoreLabel.zPosition = 100
-        highScoreLabel.text = "Best: \(GameScene.highScore)"
-        addChild(highScoreLabel)
     }
 
-    private func setupJumpButton() {
-        let radius: CGFloat = 30
-        jumpButton = SKShapeNode(circleOfRadius: radius)
-        jumpButton.fillColor = SKColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 0.6)
-        jumpButton.strokeColor = SKColor(white: 1.0, alpha: 0.5)
-        jumpButton.lineWidth = 2
-        jumpButton.position = CGPoint(x: size.width - 50, y: 80)
-        jumpButton.zPosition = 150
-        jumpButton.name = "jumpButton"
-        addChild(jumpButton)
-
-        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        label.text = "FLY"
-        label.fontSize = 14
-        label.fontColor = .white
-        label.verticalAlignmentMode = .center
-        label.horizontalAlignmentMode = .center
-        jumpButton.addChild(label)
-    }
-
-    private func spawnLogs() {
-        let hLogTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 100, height: 36))
-        let vLogTexture = TextureGenerator.generateVerticalLogTexture(size: CGSize(width: 36, height: 100))
-
-        let margin: CGFloat = 60
-        let logCount = 3
-        let usableHeight = size.height - margin * 2
-        guard usableHeight > 60, size.width > margin * 2 else { return }
-
-        let sectionHeight = usableHeight / CGFloat(logCount)
-
-        for i in 0..<logCount {
-            let isVertical = (i % 2 == 1)
-            let texture = isVertical ? vLogTexture : hLogTexture
-            let log = Log(texture: texture)
-
-            let xMin = margin
-            let xMax = max(margin, size.width - margin)
-            let yInset = min(20, sectionHeight * 0.2)
-            let yMin = yInset
-            let yMax = max(yInset, sectionHeight - yInset)
-
-            let x = CGFloat.random(in: xMin...xMax)
-            let y = margin + sectionHeight * CGFloat(i) + CGFloat.random(in: yMin...yMax)
-            log.position = CGPoint(x: x, y: y)
-            log.setupPhysics()
-            addChild(log)
-            logs.append(log)
-        }
+    private func updateLivesDisplay() {
+        livesLabel.text = String(repeating: "❤️", count: max(0, lives))
     }
 
     private func spawnLadybug() {
-        let ladybugSize = CGSize(width: 48, height: 48)
-        let walkTex = TextureGenerator.generateLadybugTexture(size: ladybugSize)
-        let glideTex = TextureGenerator.generateLadybugGlideTexture(size: CGSize(width: 64, height: 48))
-        let blinkTex = TextureGenerator.generateLadybugBlinkTexture(size: ladybugSize)
+        let bugSize = CGSize(width: 44, height: 44)
+        let walkTex = TextureGenerator.generateLadybugTexture(size: bugSize)
+        let glideTex = TextureGenerator.generateLadybugGlideTexture(size: CGSize(width: 58, height: 44))
+        let blinkTex = TextureGenerator.generateLadybugBlinkTexture(size: bugSize)
         ladybug = Ladybug(walkTexture: walkTex, glideTexture: glideTex, blinkTexture: blinkTex)
-        ladybug.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        ladybug.setupPhysics(category: PhysicsCategory.ladybug,
-                             contact: PhysicsCategory.aphid | PhysicsCategory.bird,
-                             collision: PhysicsCategory.boundary)
+        ladybug.position = CGPoint(x: size.width * 0.18, y: groundY + bugSize.height / 2)
+        ladybug.zRotation = -.pi / 2 // Face right
+
+        let body = SKPhysicsBody(circleOfRadius: bugSize.width / 2 * 0.7)
+        body.isDynamic = true
+        body.categoryBitMask = PhysicsCategory.ladybug
+        body.contactTestBitMask = PhysicsCategory.aphid | PhysicsCategory.bird | PhysicsCategory.log
+        body.collisionBitMask = PhysicsCategory.none
+        body.allowsRotation = false
+        ladybug.physicsBody = body
+
         addChild(ladybug)
     }
 
-    private func spawnInitialAphids() {
-        for _ in 0..<5 {
-            spawnAphid()
-        }
-    }
-
-    // MARK: - Spawning
-
-    private func spawnAphid() {
-        let aphid = Aphid(textures: aphidTextures)
-        aphid.position = randomPosition(margin: 40)
-        aphid.setupPhysics(category: PhysicsCategory.aphid,
-                           contact: PhysicsCategory.ladybug,
-                           collision: PhysicsCategory.none)
-        addChild(aphid)
-        aphid.startWandering(in: frame)
-    }
-
-    private func spawnSwoopingBird() {
-        let bird = Bird(textures: birdTextures)
-
-        let yRange = max(50, size.height - 100)
-        let xRange = max(50, size.width - 100)
-
-        let side = Int.random(in: 0...3)
-        let startPos: CGPoint
-        switch side {
-        case 0: startPos = CGPoint(x: -60, y: CGFloat.random(in: 50...yRange))
-        case 1: startPos = CGPoint(x: size.width + 60, y: CGFloat.random(in: 50...yRange))
-        case 2: startPos = CGPoint(x: CGFloat.random(in: 50...xRange), y: size.height + 60)
-        default: startPos = CGPoint(x: CGFloat.random(in: 50...xRange), y: -60)
-        }
-
-        bird.position = startPos
-        bird.setupPhysics(category: PhysicsCategory.bird,
-                          contact: PhysicsCategory.ladybug,
-                          collision: PhysicsCategory.none)
-        bird.zPosition = 10
-        addChild(bird)
-
-        // Swoop at the ladybug's position with overshoot
-        let targetPos = ladybug.position
-        let dx = targetPos.x - startPos.x
-        let dy = targetPos.y - startPos.y
-        let dist = hypot(dx, dy)
-        guard dist > 1 else {
-            bird.removeFromParent()
-            return
-        }
-        let endPos = CGPoint(
-            x: targetPos.x + (dx / dist) * 200,
-            y: targetPos.y + (dy / dist) * 200
-        )
-
-        bird.swoop(to: endPos, duration: 1.8 + Double.random(in: 0...1.0))
-    }
-
-    private func randomPosition(margin: CGFloat) -> CGPoint {
-        let xMin = margin
-        let xMax = max(margin, size.width - margin)
-        let yMin = margin
-        let yMax = max(margin, size.height - margin)
-        return CGPoint(
-            x: CGFloat.random(in: xMin...xMax),
-            y: CGFloat.random(in: yMin...yMax)
-        )
-    }
-
-    // MARK: - Hiding Mechanic
-
-    private func checkHiding() {
-        var nowHiding = false
-        for log in logs {
-            let logFrame = CGRect(
-                x: log.position.x - log.size.width / 2,
-                y: log.position.y - log.size.height / 2,
-                width: log.size.width,
-                height: log.size.height
-            )
-            if logFrame.contains(ladybug.position) {
-                nowHiding = true
-                log.showShieldEffect()
-            } else {
-                log.hideShieldEffect()
-            }
-        }
-
-        if nowHiding != isHiding {
-            isHiding = nowHiding
-            if isHiding {
-                ladybug.alpha = 0.5
-                ladybug.zPosition = 2
-            } else {
-                ladybug.alpha = 1.0
-                ladybug.zPosition = 5
-            }
-        }
-    }
-
-    // MARK: - Touch Handling
+    // MARK: - Touch (tap = jump, hold = glide)
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if isGameOver {
-            restartGame()
+            let menu = MenuScene(size: size)
+            menu.scaleMode = scaleMode
+            view?.presentScene(menu, transition: .fade(withDuration: 0.4))
             return
         }
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-
-        // Check jump button
-        if jumpButton.contains(location) {
-            ladybug.jump()
-            return
-        }
-
-        targetPosition = location
-    }
-
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard !isGameOver, let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        // Don't update target if dragging on the jump button
-        if !jumpButton.contains(location) {
-            targetPosition = location
-        }
+        isTouching = true
+        ladybug.jump()
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Keep moving to last target
+        isTouching = false
+        ladybug.stopGlide()
     }
 
-    // MARK: - Update Loop
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        isTouching = false
+        ladybug.stopGlide()
+    }
+
+    // MARK: - Update
 
     override func update(_ currentTime: TimeInterval) {
         guard !isGameOver else { return }
@@ -315,69 +202,173 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
         let dt = currentTime - lastUpdateTime
         lastUpdateTime = currentTime
-        guard dt > 0 else { return }
+        guard dt > 0, dt < 0.5 else { return }
 
-        // Move ladybug toward touch
-        if let target = targetPosition {
-            ladybug.moveToward(target, speed: 200, dt: dt)
+        // Hold to glide
+        if isTouching && !ladybug.isOnGround && !ladybug.isGliding {
+            ladybug.startGlide()
         }
 
-        // Update jump/glide physics
-        ladybug.updateJump(dt: dt)
+        // Ladybug physics
+        let ladybugGroundY = groundY + ladybug.size.height / 2
+        ladybug.updatePhysics(dt: dt, groundY: ladybugGroundY)
 
-        // Check if hiding under a log (only when not airborne)
-        if !ladybug.isGliding {
-            checkHiding()
-        }
+        // Scroll speed increases over time
+        distanceTraveled += scrollSpeed * CGFloat(dt)
+        scrollSpeed = min(350, 180 + distanceTraveled * 0.003)
 
-        // Spawn aphids
-        aphidSpawnTimer += dt
-        if aphidSpawnTimer >= 2.0 {
-            aphidSpawnTimer = 0
-            let aphidCount = children.filter { $0 is Aphid }.count
-            if aphidCount < 8 {
-                spawnAphid()
+        let scrollDelta = scrollSpeed * CGFloat(dt)
+
+        // Scroll ground tiles
+        scrollGround(delta: scrollDelta)
+
+        // Scroll clouds (parallax)
+        enumerateChildNodes(withName: "cloud") { node, _ in
+            node.position.x -= scrollDelta * 0.2
+            if node.position.x < -150 {
+                node.position.x = self.size.width + CGFloat.random(in: 50...150)
+                node.position.y = self.size.height * CGFloat.random(in: 0.72...0.92)
             }
         }
 
-        // Birds swoop periodically
-        birdSwoopTimer += dt
-        let swoopInterval = max(2.0, 5.0 - Double(score) * 0.03)
-        if birdSwoopTimer >= swoopInterval {
-            birdSwoopTimer = 0
-            spawnSwoopingBird()
+        // Scroll world objects
+        scrollWorldObjects(delta: scrollDelta)
+
+        // Spawn timers
+        aphidTimer += dt
+        if aphidTimer >= 0.8 {
+            aphidTimer = 0
+            spawnAphid()
         }
+
+        logTimer += dt
+        let logInterval = max(2.0, 4.5 - Double(distanceTraveled) * 0.0003)
+        if logTimer >= logInterval {
+            logTimer = 0
+            spawnLog()
+        }
+
+        birdTimer += dt
+        let birdInterval = max(2.5, 6.0 - Double(distanceTraveled) * 0.0004)
+        if birdTimer >= birdInterval {
+            birdTimer = 0
+            spawnBird()
+        }
+    }
+
+    // MARK: - Scrolling
+
+    private func scrollGround(delta: CGFloat) {
+        for tile in groundTiles {
+            tile.position.x -= delta
+            if tile.position.x + tile.size.width < 0 {
+                let maxX = groundTiles.map { $0.position.x }.max() ?? 0
+                tile.position.x = maxX + tile.size.width
+            }
+        }
+    }
+
+    private func scrollWorldObjects(delta: CGFloat) {
+        for child in children {
+            if child is Aphid || child is Log || child is Bird {
+                child.position.x -= delta
+                if child.position.x < -100 {
+                    child.removeFromParent()
+                }
+            }
+        }
+    }
+
+    // MARK: - Spawning
+
+    private func spawnAphid() {
+        // Pick color by rarity
+        let roll = Int.random(in: 0..<100)
+        let color: TextureGenerator.AphidColor
+        if roll < 60 { color = .green }
+        else if roll < 85 { color = .yellow }
+        else { color = .red }
+
+        guard let tex = aphidTextures[color] else { return }
+        let aphid = Aphid(texture: tex, colorType: color)
+
+        // Ground or air placement
+        let onGround = Bool.random()
+        let x = size.width + 40
+        let y: CGFloat
+        if onGround {
+            y = groundY + aphid.size.height / 2
+        } else {
+            y = groundY + CGFloat.random(in: 40...size.height * 0.45)
+        }
+        aphid.position = CGPoint(x: x, y: y)
+        aphid.setupPhysics()
+        addChild(aphid)
+    }
+
+    private func spawnLog() {
+        let log = Log(texture: logTexture)
+        log.position = CGPoint(x: size.width + 50, y: groundY + log.size.height / 2 - 5)
+        log.setupPhysics()
+        addChild(log)
+    }
+
+    private func spawnBird() {
+        let bird = Bird(textures: birdTextures)
+        let startX = size.width + 60
+        let startY = size.height * CGFloat.random(in: 0.55...0.90)
+        bird.position = CGPoint(x: startX, y: startY)
+        bird.zRotation = .pi / 2 // Face left
+        bird.setupPhysics()
+        addChild(bird)
+
+        // Swoop down toward ladybug's height then back up
+        let midY = groundY + ladybug.size.height / 2 + 10
+        let swoopDown = SKAction.moveTo(y: midY, duration: 0.6)
+        swoopDown.timingMode = .easeIn
+        let swoopUp = SKAction.moveTo(y: size.height * CGFloat.random(in: 0.5...0.8), duration: 0.8)
+        swoopUp.timingMode = .easeOut
+        bird.run(SKAction.sequence([
+            SKAction.wait(forDuration: 0.3),
+            swoopDown,
+            swoopUp
+        ]))
     }
 
     // MARK: - Physics Contact
 
     func didBegin(_ contact: SKPhysicsContact) {
+        guard !isGameOver else { return }
         let collision = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
 
         if collision == PhysicsCategory.ladybug | PhysicsCategory.aphid {
             let aphidNode = (contact.bodyA.categoryBitMask == PhysicsCategory.aphid)
-                ? contact.bodyA.node : contact.bodyB.node
-            aphidNode?.removeFromParent()
-            score += 10
-            ladybug.pulse()
+                ? contact.bodyA.node as? Aphid : contact.bodyB.node as? Aphid
+            if let aphid = aphidNode {
+                score += aphid.points
+                aphid.removeFromParent()
+                ladybug.pulse()
+            }
         }
 
         if collision == PhysicsCategory.ladybug | PhysicsCategory.bird {
-            // Safe if hiding under a log or gliding in the air
-            if isHiding || ladybug.isGliding {
-                return
-            }
+            if ladybug.isGliding { return } // Safe while gliding
+            takeDamage()
+        }
 
-            lives -= 1
-            ladybug.flash()
+        if collision == PhysicsCategory.ladybug | PhysicsCategory.log {
+            if !ladybug.isOnGround { return } // Jumped over it
+            takeDamage()
+        }
+    }
 
-            let birdNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird)
-                ? contact.bodyA.node : contact.bodyB.node
-            birdNode?.removeFromParent()
+    private func takeDamage() {
+        lives -= 1
+        updateLivesDisplay()
+        ladybug.flash()
 
-            if lives <= 0 {
-                gameOver()
-            }
+        if lives <= 0 {
+            gameOver()
         }
     }
 
@@ -385,72 +376,51 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func gameOver() {
         isGameOver = true
-        ladybug.removeAllActions()
 
-        let isNewHighScore = score >= GameScene.highScore && score > 0
+        if score > MenuScene.highScore {
+            MenuScene.highScore = score
+        }
 
         // Dim overlay
         let overlay = SKShapeNode(rectOf: size)
-        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        overlay.fillColor = SKColor(white: 0.0, alpha: 0.4)
+        overlay.fillColor = SKColor(white: 0.0, alpha: 0.5)
         overlay.strokeColor = .clear
+        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
         overlay.zPosition = 150
         addChild(overlay)
 
-        let gameOverLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        gameOverLabel.text = "Game Over"
-        gameOverLabel.fontSize = 44
-        gameOverLabel.fontColor = .white
-        gameOverLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 50)
-        gameOverLabel.zPosition = 200
-        addChild(gameOverLabel)
+        let goLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        goLabel.text = "Game Over"
+        goLabel.fontSize = 42
+        goLabel.fontColor = .white
+        goLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 35)
+        goLabel.zPosition = 200
+        addChild(goLabel)
 
-        let finalScoreLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        finalScoreLabel.text = "Score: \(score)"
-        finalScoreLabel.fontSize = 28
-        finalScoreLabel.fontColor = .white
-        finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        finalScoreLabel.zPosition = 200
-        addChild(finalScoreLabel)
+        let scoreText = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        scoreText.text = "Score: \(score)"
+        scoreText.fontSize = 26
+        scoreText.fontColor = .white
+        scoreText.position = CGPoint(x: size.width / 2, y: size.height / 2 - 5)
+        scoreText.zPosition = 200
+        addChild(scoreText)
 
-        if isNewHighScore {
-            let newHighLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            newHighLabel.text = "New High Score!"
-            newHighLabel.fontSize = 22
-            newHighLabel.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0)
-            newHighLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 35)
-            newHighLabel.zPosition = 200
-            addChild(newHighLabel)
-
-            let scaleUp = SKAction.scale(to: 1.15, duration: 0.3)
-            let scaleDown = SKAction.scale(to: 1.0, duration: 0.3)
-            newHighLabel.run(SKAction.repeatForever(SKAction.sequence([scaleUp, scaleDown])))
+        if score >= MenuScene.highScore && score > 0 {
+            let newHigh = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            newHigh.text = "New High Score!"
+            newHigh.fontSize = 20
+            newHigh.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0)
+            newHigh.position = CGPoint(x: size.width / 2, y: size.height / 2 - 35)
+            newHigh.zPosition = 200
+            addChild(newHigh)
         }
 
-        let bestLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        bestLabel.text = "Best: \(GameScene.highScore)"
-        bestLabel.fontSize = 20
-        bestLabel.fontColor = SKColor(white: 1.0, alpha: 0.8)
-        bestLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 65)
-        bestLabel.zPosition = 200
-        addChild(bestLabel)
-
         let tapLabel = SKLabelNode(fontNamed: "AvenirNext-Regular")
-        tapLabel.text = "Tap to play again"
-        tapLabel.fontSize = 18
+        tapLabel.text = "Tap for menu"
+        tapLabel.fontSize = 16
         tapLabel.fontColor = SKColor(white: 1.0, alpha: 0.6)
-        tapLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 100)
+        tapLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 65)
         tapLabel.zPosition = 200
         addChild(tapLabel)
-
-        let fadeIn = SKAction.fadeAlpha(to: 0.6, duration: 0.5)
-        let fadeOut = SKAction.fadeAlpha(to: 1.0, duration: 0.5)
-        tapLabel.run(SKAction.repeatForever(SKAction.sequence([fadeIn, fadeOut])))
-    }
-
-    private func restartGame() {
-        let newScene = GameScene(size: size)
-        newScene.scaleMode = scaleMode
-        view?.presentScene(newScene, transition: .fade(withDuration: 0.5))
     }
 }
