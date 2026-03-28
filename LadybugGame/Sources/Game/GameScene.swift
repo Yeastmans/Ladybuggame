@@ -555,27 +555,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func spawnBird() {
         let bird = Bird(textures: birdTextures)
-        bird.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.45...0.82))
+        bird.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.50...0.85))
         bird.xScale = -1
         bird.setupPhysics()
         addChild(bird)
 
-        // Swoop lower toward ground, slightly slower
-        let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...20)
+        // Single bird swoops down toward player then back up and off screen
+        let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...15)
         SoundManager.shared.play("caw")
         bird.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                         targetY: targetY, duration: 2.0 + Double.random(in: 0...0.8))
-
-        if distanceTraveled > 2000 && Bool.random() {
-            let bird2 = Bird(textures: birdTextures)
-            bird2.position = CGPoint(x: size.width + 120, y: size.height * CGFloat.random(in: 0.45...0.80))
-            bird2.xScale = -1
-            bird2.setupPhysics()
-            addChild(bird2)
-            bird2.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                             targetY: targetY + CGFloat.random(in: -20...20),
-                             duration: 2.2 + Double.random(in: 0...0.6))
-        }
+                         targetY: targetY, duration: 2.2 + Double.random(in: 0...0.8))
     }
 
     /// Spawns a pond with either a frog or dragonfly (never both)
@@ -640,7 +629,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func spawnAnt() {
         let spawnX = size.width + 30
-        if isNearGroundObject(x: spawnX, range: 60) { return }
+        if isNearGroundObject(x: spawnX, range: 100) { return } // Wide range to avoid ponds
         let ant = Ant(walkFrames: antFrames)
         ant.position = CGPoint(x: spawnX, y: groundY + ant.size.height / 2)
         ant.setupPhysics()

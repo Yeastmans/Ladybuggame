@@ -28,8 +28,9 @@ class Ant: SKSpriteNode {
         physicsBody = body
     }
 
+    /// startX is where the ant spawned — it patrols within a small range and never leaves
     func startPatrolling() {
-        let patrolDist = CGFloat.random(in: 15...35)
+        let patrolDist = CGFloat.random(in: 10...25) // Small range to stay put
         let flipRight = SKAction.run { [weak self] in self?.xScale = abs(self?.xScale ?? 1) }
         let moveRight = SKAction.moveBy(x: patrolDist, y: 0, duration: Double.random(in: 0.5...0.9))
         let flipLeft = SKAction.run { [weak self] in self?.xScale = -(abs(self?.xScale ?? 1)) }

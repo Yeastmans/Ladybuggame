@@ -13,11 +13,12 @@ class Ladybug: SKSpriteNode {
     var targetY: CGFloat?
     private var invincibleTimer: TimeInterval = 0
     private var walkBobTime: CGFloat = 0
+    private var walkLegTime: CGFloat = 0
 
     let gravity: CGFloat = -450
-    let followStrength: CGFloat = 1.6   // Very gentle pull
-    let damping: CGFloat = 0.96         // Heavy damping
-    let maxVelocityY: CGFloat = 220     // Clamp — can't jerk up/down fast
+    let followStrength: CGFloat = 1.6
+    let damping: CGFloat = 0.96
+    let maxVelocityY: CGFloat = 220
 
     var isInvincible: Bool { invincibleTimer > 0 }
     var isSheltered: Bool { isInsideLog && isOnGround }
@@ -79,23 +80,43 @@ class Ladybug: SKSpriteNode {
                 velocityY += diff * followStrength
                 velocityY *= damping
                 velocityY = max(-maxVelocityY, min(maxVelocityY, velocityY))
-                let tilt = max(-0.15, min(0.15, velocityY * 0.0003))
+
+                // Dramatic tilt — up to ~25 degrees
+                let tilt = max(-0.45, min(0.45, velocityY * 0.002))
                 zRotation = -tilt
             }
         } else if !isOnGround {
             isFlying = false
             velocityY += gravity * CGFloat(dt)
-            let tilt = max(-0.2, min(0, velocityY * 0.0004))
+
+            // Nose-dive tilt when falling
+            let tilt = max(-0.5, min(0, velocityY * 0.0015))
             zRotation = -tilt
         }
 
+        // Walking animation on ground
         if isOnGround {
-            walkBobTime += CGFloat(dt) * 6
-            let bob = sin(walkBobTime) * 1.2
+            walkBobTime += CGFloat(dt) * 8
+            walkLegTime += CGFloat(dt) * 12
+
+            // Bob up and down
+            let bob = sin(walkBobTime) * 2.0
             position.y = groundY + bob
-            zRotation = sin(walkBobTime * 0.5) * 0.015
+
+            // Slight body rock while walking
+            zRotation = sin(walkLegTime) * 0.04
+
+            // Squash/stretch for walking feel
+            let squash = 1.0 + sin(walkLegTime * 2) * 0.03
+            yScale = squash
+            xScale = 2.0 - squash
+
             return
         }
+
+        // Reset scale in air
+        xScale = 1.0
+        yScale = 1.0
 
         position.y += velocityY * CGFloat(dt)
 
@@ -111,6 +132,9 @@ class Ladybug: SKSpriteNode {
             isFlying = false
             zRotation = 0
             walkBobTime = 0
+            walkLegTime = 0
+            xScale = 1.0
+            yScale = 1.0
             stopFlapAnimation()
             SoundManager.shared.play("land")
         }
