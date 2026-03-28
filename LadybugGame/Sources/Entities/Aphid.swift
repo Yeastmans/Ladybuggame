@@ -37,9 +37,11 @@ class Aphid: SKSpriteNode {
         let wander = SKAction.run { [weak self] in
             guard let self = self else { return }
             let margin: CGFloat = 30
+            let xMax = max(margin, bounds.width - margin)
+            let yMax = max(margin, bounds.height - margin)
             let target = CGPoint(
-                x: CGFloat.random(in: margin...(bounds.width - margin)),
-                y: CGFloat.random(in: margin...(bounds.height - margin))
+                x: CGFloat.random(in: margin...xMax),
+                y: CGFloat.random(in: margin...yMax)
             )
             let dx = target.x - self.position.x
             let dy = target.y - self.position.y

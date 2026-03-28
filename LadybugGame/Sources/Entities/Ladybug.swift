@@ -67,11 +67,13 @@ class Ladybug: SKSpriteNode {
         let maybeBlink = SKAction.run { [weak self] in
             guard let self = self, !self.isGliding else { return }
             if Bool.random() {
+                let blinkTex = self.blinkTexture
+                let walkTex = self.walkTexture
                 let doubleBlink = SKAction.sequence([
                     SKAction.wait(forDuration: 0.18),
-                    SKAction.run { self.texture = self.blinkTexture },
+                    SKAction.setTexture(blinkTex),
                     SKAction.wait(forDuration: 0.10),
-                    SKAction.run { self.texture = self.walkTexture }
+                    SKAction.setTexture(walkTex)
                 ])
                 self.run(doubleBlink)
             }
@@ -153,7 +155,7 @@ class Ladybug: SKSpriteNode {
         let dy = target.y - position.y
         let distance = hypot(dx, dy)
 
-        guard distance > 4 else { return }
+        guard distance > 4, dt > 0 else { return }
 
         let actualSpeed = isGliding ? speed * 1.4 : speed
         let moveSpeed = min(actualSpeed, distance / CGFloat(dt))

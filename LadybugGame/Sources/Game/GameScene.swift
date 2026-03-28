@@ -133,17 +133,26 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let hLogTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 100, height: 36))
         let vLogTexture = TextureGenerator.generateVerticalLogTexture(size: CGSize(width: 36, height: 100))
 
-        let margin: CGFloat = 80
-        let logCount = 4
+        let margin: CGFloat = 60
+        let logCount = 3
+        let usableHeight = size.height - margin * 2
+        guard usableHeight > 60, size.width > margin * 2 else { return }
+
+        let sectionHeight = usableHeight / CGFloat(logCount)
 
         for i in 0..<logCount {
-            let isVertical = (i % 2 == 1) // alternate horizontal/vertical
+            let isVertical = (i % 2 == 1)
             let texture = isVertical ? vLogTexture : hLogTexture
             let log = Log(texture: texture)
 
-            let sectionHeight = (size.height - margin * 2) / CGFloat(logCount)
-            let x = CGFloat.random(in: margin...(size.width - margin))
-            let y = margin + sectionHeight * CGFloat(i) + CGFloat.random(in: 20...sectionHeight - 20)
+            let xMin = margin
+            let xMax = max(margin, size.width - margin)
+            let yInset = min(20, sectionHeight * 0.2)
+            let yMin = yInset
+            let yMax = max(yInset, sectionHeight - yInset)
+
+            let x = CGFloat.random(in: xMin...xMax)
+            let y = margin + sectionHeight * CGFloat(i) + CGFloat.random(in: yMin...yMax)
             log.position = CGPoint(x: x, y: y)
             log.setupPhysics()
             addChild(log)
@@ -185,13 +194,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnSwoopingBird() {
         let bird = Bird(textures: birdTextures)
 
+        let yRange = max(50, size.height - 100)
+        let xRange = max(50, size.width - 100)
+
         let side = Int.random(in: 0...3)
         let startPos: CGPoint
         switch side {
-        case 0: startPos = CGPoint(x: -60, y: CGFloat.random(in: 100...size.height - 100))
-        case 1: startPos = CGPoint(x: size.width + 60, y: CGFloat.random(in: 100...size.height - 100))
-        case 2: startPos = CGPoint(x: CGFloat.random(in: 100...size.width - 100), y: size.height + 60)
-        default: startPos = CGPoint(x: CGFloat.random(in: 100...size.width - 100), y: -60)
+        case 0: startPos = CGPoint(x: -60, y: CGFloat.random(in: 50...yRange))
+        case 1: startPos = CGPoint(x: size.width + 60, y: CGFloat.random(in: 50...yRange))
+        case 2: startPos = CGPoint(x: CGFloat.random(in: 50...xRange), y: size.height + 60)
+        default: startPos = CGPoint(x: CGFloat.random(in: 50...xRange), y: -60)
         }
 
         bird.position = startPos
@@ -206,6 +218,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let dx = targetPos.x - startPos.x
         let dy = targetPos.y - startPos.y
         let dist = hypot(dx, dy)
+        guard dist > 1 else {
+            bird.removeFromParent()
+            return
+        }
         let endPos = CGPoint(
             x: targetPos.x + (dx / dist) * 200,
             y: targetPos.y + (dy / dist) * 200
@@ -215,9 +231,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func randomPosition(margin: CGFloat) -> CGPoint {
-        CGPoint(
-            x: CGFloat.random(in: margin...(size.width - margin)),
-            y: CGFloat.random(in: margin...(size.height - margin))
+        let xMin = margin
+        let xMax = max(margin, size.width - margin)
+        let yMin = margin
+        let yMax = max(margin, size.height - margin)
+        return CGPoint(
+            x: CGFloat.random(in: xMin...xMax),
+            y: CGFloat.random(in: yMin...yMax)
         )
     }
 
@@ -289,13 +309,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     override func update(_ currentTime: TimeInterval) {
         guard !isGameOver else { return }
 
-        let dt: TimeInterval
         if lastUpdateTime == 0 {
-            dt = 0
-        } else {
-            dt = currentTime - lastUpdateTime
+            lastUpdateTime = currentTime
+            return
         }
+        let dt = currentTime - lastUpdateTime
         lastUpdateTime = currentTime
+        guard dt > 0 else { return }
 
         // Move ladybug toward touch
         if let target = targetPosition {
