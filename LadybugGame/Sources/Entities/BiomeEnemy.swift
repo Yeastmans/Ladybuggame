@@ -42,11 +42,11 @@ class BiomeEnemy: SKSpriteNode {
     func lungeIfNear(playerX: CGFloat) {
         guard !hasLunged else { return }
         let dist = playerX - position.x
-        if dist > -15 && dist < 50 {
+        if dist > -15 && dist < 60 {
             hasLunged = true
-            let lunge = SKAction.moveBy(x: 25, y: 15, duration: 0.12)
+            let lunge = SKAction.moveBy(x: 45, y: 30, duration: 0.15)
             lunge.timingMode = .easeOut
-            let fall = SKAction.moveBy(x: 5, y: -15, duration: 0.15)
+            let fall = SKAction.moveBy(x: 10, y: -30, duration: 0.18)
             fall.timingMode = .easeIn
             run(SKAction.sequence([lunge, fall]))
         }

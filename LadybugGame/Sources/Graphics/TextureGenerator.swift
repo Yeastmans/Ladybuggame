@@ -435,41 +435,34 @@ enum TextureGenerator {
             let w = size.width
             let h = size.height
 
-            let legC = UIColor(red: 0.06, green: 0.04, blue: 0.04, alpha: 1.0).cgColor
+            let legC = UIColor(red: 0.08, green: 0.05, blue: 0.05, alpha: 1.0).cgColor
             cg.setLineCap(.round)
             cg.setLineJoin(.round)
 
-            // === 4 curved legs per side (bezier curves) ===
+            // === 4 simple angular legs per side ===
             cg.setStrokeColor(legC)
-            cg.setLineWidth(1.8)
-            let phase: CGFloat = legPhase == 0 ? 1.0 : -1.0
+            cg.setLineWidth(1.6)
+            let sway: CGFloat = legPhase == 0 ? 0.03 : -0.03
 
-            // Each leg: (body attach X, knee height, foot X offset, foot Y)
-            // Left legs arch UP then curve DOWN to ground
-            let leftLegs: [(bx: CGFloat, kx: CGFloat, ky: CGFloat, fx: CGFloat)] = [
-                (0.38, -0.15, 0.10, -0.05),   // Front
-                (0.32, -0.22, 0.08, -0.12),   // Mid-front
-                (0.26, -0.20, 0.12, -0.08),   // Mid-back
-                (0.20, -0.14, 0.15, -0.02),   // Back
+            // (bodyX, kneeX offset, kneeY, footX offset)
+            let legs: [(bx: CGFloat, kx: CGFloat, ky: CGFloat, fx: CGFloat)] = [
+                (0.40, -0.18, 0.18, -0.10),
+                (0.34, -0.24, 0.14, -0.16),
+                (0.28, -0.22, 0.16, -0.12),
+                (0.22, -0.16, 0.20, -0.06),
             ]
-            for (i, l) in leftLegs.enumerated() {
-                let sway = (i % 2 == 0 ? phase : -phase) * 0.03
-                let bodyPt = CGPoint(x: w * l.bx, y: h * 0.48)
-                let kneePt = CGPoint(x: w * (l.bx + l.kx + sway), y: h * l.ky)
-                let footPt = CGPoint(x: w * (l.bx + l.fx + sway), y: h * 0.94)
-                cg.move(to: bodyPt)
-                cg.addQuadCurve(to: kneePt, control: CGPoint(x: w * (l.bx + l.kx * 0.5), y: h * (0.48 + l.ky) * 0.5))
-                cg.addQuadCurve(to: footPt, control: CGPoint(x: w * (l.kx + l.fx) * 0.5 + kneePt.x * 0.5 + w * l.bx * 0.5, y: h * 0.55))
+            for (i, l) in legs.enumerated() {
+                let s = (i % 2 == 0) ? sway : -sway
+                // Left leg: body → knee (up and out) → foot (down to ground)
+                cg.move(to: CGPoint(x: w * l.bx, y: h * 0.48))
+                cg.addLine(to: CGPoint(x: w * (l.bx + l.kx + s), y: h * l.ky))
+                cg.addLine(to: CGPoint(x: w * (l.bx + l.fx + s), y: h * 0.95))
                 cg.strokePath()
-
-                // Right leg (mirrored)
+                // Right leg (mirrored around body center 0.44)
                 let mx: CGFloat = 0.88 - l.bx
-                let bodyR = CGPoint(x: w * mx, y: h * 0.48)
-                let kneeR = CGPoint(x: w * (mx - l.kx - sway), y: h * l.ky)
-                let footR = CGPoint(x: w * (mx - l.fx - sway), y: h * 0.94)
-                cg.move(to: bodyR)
-                cg.addQuadCurve(to: kneeR, control: CGPoint(x: (bodyR.x + kneeR.x) * 0.5, y: (bodyR.y + kneeR.y) * 0.5))
-                cg.addQuadCurve(to: footR, control: CGPoint(x: (kneeR.x + footR.x) * 0.5, y: h * 0.55))
+                cg.move(to: CGPoint(x: w * mx, y: h * 0.48))
+                cg.addLine(to: CGPoint(x: w * (mx - l.kx - s), y: h * l.ky))
+                cg.addLine(to: CGPoint(x: w * (mx - l.fx - s), y: h * 0.95))
                 cg.strokePath()
             }
 
@@ -497,13 +490,18 @@ enum TextureGenerator {
             cg.setFillColor(UIColor(red: 0.07, green: 0.05, blue: 0.05, alpha: 1.0).cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.46, y: h * 0.28, width: w * 0.30, height: h * 0.38))
 
-            // === Eyes (row of red dots) ===
-            cg.setFillColor(UIColor(red: 0.88, green: 0.10, blue: 0.08, alpha: 0.9).cgColor)
+            // === Eyes (bright green — distinct from red hourglass) ===
+            cg.setFillColor(UIColor(red: 0.20, green: 0.95, blue: 0.30, alpha: 0.9).cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.66, y: h * 0.33, width: w * 0.07, height: w * 0.07))
             cg.fillEllipse(in: CGRect(x: w * 0.66, y: h * 0.44, width: w * 0.07, height: w * 0.07))
-            cg.setFillColor(UIColor(red: 0.70, green: 0.08, blue: 0.05, alpha: 0.6).cgColor)
+            // Smaller secondary eyes
+            cg.setFillColor(UIColor(red: 0.15, green: 0.80, blue: 0.25, alpha: 0.6).cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.37, width: w * 0.04, height: w * 0.04))
             cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.48, width: w * 0.04, height: w * 0.04))
+            // Black pupils on main eyes
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.36, width: w * 0.03, height: w * 0.03))
+            cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.47, width: w * 0.03, height: w * 0.03))
 
             // === Fangs (curved) ===
             cg.setStrokeColor(UIColor(red: 0.12, green: 0.06, blue: 0.04, alpha: 1.0).cgColor)

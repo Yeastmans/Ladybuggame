@@ -1,7 +1,6 @@
 import SpriteKit
 import UIKit
 
-/// Flying enemy that swoops (hawk, owl, toucan) — replaces Bird in non-meadow biomes
 class BiomeSwooper: SKSpriteNode {
 
     let biomeName: String
@@ -30,21 +29,25 @@ class BiomeSwooper: SKSpriteNode {
         physicsBody = body
     }
 
-    func swoopAcross(sceneWidth: CGFloat, ladybugX: CGFloat, targetY: CGFloat, duration: TimeInterval) {
+    /// Dive at player, pull up near ground, exit high off screen
+    func swoopAcross(sceneWidth: CGFloat, ladybugX: CGFloat, targetY: CGFloat, startY: CGFloat, duration: TimeInterval) {
         xScale = -abs(xScale)
 
-        let exitX = -size.width * 3 - position.x
         let diveX = ladybugX - position.x
         let diveY = targetY - position.y
+        let pullUpY = startY - position.y // Go back up to start height
+        let exitX = -size.width * 2 - position.x
 
         let path = UIBezierPath()
         path.move(to: .zero)
-        path.addLine(to: CGPoint(x: diveX, y: diveY))
-        path.addQuadCurve(to: CGPoint(x: exitX, y: diveY + 30),
-                          controlPoint: CGPoint(x: diveX - 80, y: diveY - 20))
+        // Dive down toward player
+        path.addQuadCurve(to: CGPoint(x: diveX, y: diveY),
+                          controlPoint: CGPoint(x: diveX * 0.6, y: diveY * 0.3))
+        // Pull up sharply and exit high
+        path.addQuadCurve(to: CGPoint(x: exitX, y: pullUpY),
+                          controlPoint: CGPoint(x: diveX + exitX * 0.15, y: diveY - 40))
 
         let follow = SKAction.follow(path.cgPath, asOffset: true, orientToPath: false, duration: duration)
-        follow.timingMode = .easeIn
         run(SKAction.sequence([follow, SKAction.removeFromParent()]))
     }
 }

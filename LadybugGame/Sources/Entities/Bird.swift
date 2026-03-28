@@ -26,25 +26,23 @@ class Bird: SKSpriteNode {
         physicsBody = body
     }
 
-    /// Aggressive swoop — dives straight at ladybug position then exits
-    func swoopAcross(sceneWidth: CGFloat, ladybugX: CGFloat, targetY: CGFloat, duration: TimeInterval) {
+    /// Dive at player, pull up near ground, exit high
+    func swoopAcross(sceneWidth: CGFloat, ladybugX: CGFloat, targetY: CGFloat, startY: CGFloat, duration: TimeInterval) {
         xScale = -abs(xScale)
 
         let diveX = ladybugX - position.x
         let diveY = targetY - position.y
-        let exitX = -size.width * 3 - position.x
+        let pullUpY = startY - position.y
+        let exitX = -size.width * 2 - position.x
 
-        // Tighter curve — control point is BELOW the target for a steep dive
         let path = UIBezierPath()
         path.move(to: .zero)
-        // Dive point (at ladybug)
-        path.addLine(to: CGPoint(x: diveX, y: diveY))
-        // Exit low-left
-        path.addQuadCurve(to: CGPoint(x: exitX, y: diveY + 30),
-                          controlPoint: CGPoint(x: diveX - 80, y: diveY - 20))
+        path.addQuadCurve(to: CGPoint(x: diveX, y: diveY),
+                          controlPoint: CGPoint(x: diveX * 0.6, y: diveY * 0.3))
+        path.addQuadCurve(to: CGPoint(x: exitX, y: pullUpY),
+                          controlPoint: CGPoint(x: diveX + exitX * 0.15, y: diveY - 40))
 
-        let followPath = SKAction.follow(path.cgPath, asOffset: true, orientToPath: false, duration: duration)
-        followPath.timingMode = .easeIn
-        run(SKAction.sequence([followPath, SKAction.removeFromParent()]))
+        let follow = SKAction.follow(path.cgPath, asOffset: true, orientToPath: false, duration: duration)
+        run(SKAction.sequence([follow, SKAction.removeFromParent()]))
     }
 }

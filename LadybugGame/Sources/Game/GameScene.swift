@@ -600,7 +600,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...15)
         SoundManager.shared.play("caw")
         bird.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                         targetY: targetY, duration: isNight ? 1.8 + Double.random(in: 0...0.6) : 2.2 + Double.random(in: 0...0.8))
+                         targetY: targetY, startY: bird.position.y,
+                         duration: isNight ? 1.8 + Double.random(in: 0...0.6) : 2.2 + Double.random(in: 0...0.8))
     }
 
     /// Spawns a pond with either a frog or dragonfly (never both)
@@ -1039,7 +1040,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             gnatTimer += dt
             if gnatTimer >= 1.0 { gnatTimer = 0; spawnGnatSwarm() }
             fireflyTimer += dt
-            if fireflyTimer >= 25.0 { fireflyTimer = 0; spawnFirefly() } // Rarer
+            if fireflyTimer >= 12.0 { fireflyTimer = 0; spawnFirefly() }
             spiderTimer += dt
             if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnSpider() }
             birdTimer += dt
@@ -1118,7 +1119,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         SoundManager.shared.play("caw")
         let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...15)
         swooper.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                            targetY: targetY, duration: 2.0 + Double.random(in: 0...0.8))
+                            targetY: targetY, startY: swooper.position.y,
+                            duration: 2.0 + Double.random(in: 0...0.8))
     }
 
     // MARK: - Biome Transitions
