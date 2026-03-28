@@ -12,16 +12,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         static let fruitfly: UInt32   = 0b10000
     }
 
-    // MARK: - Properties
     private var ladybug: Ladybug!
     private var groundY: CGFloat = 0
     private var scrollSpeed: CGFloat = 160
     private var distanceTraveled: CGFloat = 0
 
     private var scoreLabel: SKLabelNode!
-    private var score: Int = 0 {
-        didSet { scoreLabel.text = "\(score)" }
-    }
+    private var score: Int = 0 { didSet { scoreLabel.text = "\(score)" } }
     private var lives: Int = 3
     private var livesLabel: SKLabelNode!
 
@@ -36,7 +33,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var birdTimer: TimeInterval = 0
     private var envTimer: TimeInterval = 0
 
-    // Cached textures
     private var birdTextures: [SKTexture] = []
     private var fruitFlyFrames: [SKTexture] = []
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
@@ -45,21 +41,17 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     override func didMove(to view: SKView) {
         backgroundColor = SKColor(red: 0.55, green: 0.80, blue: 0.95, alpha: 1.0)
-
         physicsWorld.gravity = .zero
         physicsWorld.contactDelegate = self
-
         groundY = size.height * 0.28
 
-        // Cache textures
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
         logTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 60, height: 50))
         fruitFlyFrames = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22))
         for color in [TextureGenerator.AphidColor.green, .yellow, .red] {
             aphidFrames[color] = TextureGenerator.generateAphidWalkFrames(size: CGSize(width: 22, height: 22), color: color)
         }
-
-        _ = SoundManager.shared // Init sounds
+        _ = SoundManager.shared
 
         setupSky()
         setupGround()
@@ -70,7 +62,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Setup
 
     private func setupSky() {
-        // Gradient sky using layered rects
         let skyColors: [(y: CGFloat, h: CGFloat, r: CGFloat, g: CGFloat, b: CGFloat)] = [
             (0.95, 0.10, 0.40, 0.68, 0.92),
             (0.85, 0.10, 0.48, 0.75, 0.94),
@@ -85,7 +76,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             addChild(band)
         }
 
-        // Fluffy clouds (layered circles)
         for i in 0..<5 {
             let cloudGroup = SKNode()
             let numPuffs = Int.random(in: 3...5)
@@ -96,14 +86,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 puff.position = CGPoint(x: CGFloat(j) * CGFloat.random(in: 14...22), y: CGFloat.random(in: -5...5))
                 cloudGroup.addChild(puff)
             }
-            let x = CGFloat(i) * size.width * 0.22 + CGFloat.random(in: 0...80)
-            cloudGroup.position = CGPoint(x: x, y: size.height * CGFloat.random(in: 0.68...0.92))
+            cloudGroup.position = CGPoint(x: CGFloat(i) * size.width * 0.22 + CGFloat.random(in: 0...80),
+                                          y: size.height * CGFloat.random(in: 0.68...0.92))
             cloudGroup.zPosition = -6
             cloudGroup.name = "cloud"
             addChild(cloudGroup)
         }
 
-        // Distant hills
         for i in 0..<4 {
             let hill = SKShapeNode()
             let path = UIBezierPath()
@@ -134,21 +123,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             addChild(tile)
             groundTiles.append(tile)
 
-            // Dirt
             let dirt = SKShapeNode(rectOf: CGSize(width: tileWidth, height: groundY * 0.45))
             dirt.fillColor = SKColor(red: 0.50, green: 0.35, blue: 0.18, alpha: 1.0)
             dirt.strokeColor = .clear
             dirt.position = CGPoint(x: tileWidth / 2, y: groundY * 0.225)
             tile.addChild(dirt)
 
-            // Grass line
             let grass = SKShapeNode(rectOf: CGSize(width: tileWidth, height: 4))
             grass.fillColor = SKColor(red: 0.32, green: 0.55, blue: 0.20, alpha: 1.0)
             grass.strokeColor = .clear
             grass.position = CGPoint(x: tileWidth / 2, y: groundY)
             tile.addChild(grass)
 
-            // Grass tufts
             for _ in 0..<10 {
                 let tuft = SKShapeNode()
                 let tp = UIBezierPath()
@@ -214,7 +200,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let body = SKPhysicsBody(circleOfRadius: bugSize.width / 2 * 0.6)
         body.isDynamic = true
         body.categoryBitMask = PhysicsCategory.ladybug
-        body.contactTestBitMask = PhysicsCategory.aphid | PhysicsCategory.bird | PhysicsCategory.log | PhysicsCategory.fruitfly
+        body.contactTestBitMask = PhysicsCategory.aphid | PhysicsCategory.bird | PhysicsCategory.fruitfly
         body.collisionBitMask = PhysicsCategory.none
         body.allowsRotation = false
         body.affectedByGravity = false
@@ -258,7 +244,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     override func update(_ currentTime: TimeInterval) {
         guard !isGameOver else { return }
-
         if lastUpdateTime == 0 { lastUpdateTime = currentTime; return }
         let dt = currentTime - lastUpdateTime
         lastUpdateTime = currentTime
@@ -267,11 +252,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ladybug.targetY = isTouching ? touchY : nil
 
         let bugGroundY = groundY + ladybug.size.height / 2
-        let ceilingY = size.height - ladybug.size.height / 2 - 10
-        ladybug.updatePhysics(dt: dt, groundY: bugGroundY, ceilingY: ceilingY)
+        var ceilingY = size.height - ladybug.size.height / 2 - 10
 
-        // Log collision (on ground only)
-        checkLogCollisions()
+        // Check if inside a log — clamp ceiling to log top
+        checkLogTube(bugGroundY: bugGroundY, ceilingY: &ceilingY)
+
+        ladybug.updatePhysics(dt: dt, groundY: bugGroundY, ceilingY: ceilingY)
 
         // Scrolling
         distanceTraveled += scrollSpeed * CGFloat(dt)
@@ -285,34 +271,57 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Spawns
         aphidTimer += dt
         if aphidTimer >= 1.2 { aphidTimer = 0; spawnAphid() }
-
         flyTimer += dt
         if flyTimer >= 1.5 { flyTimer = 0; spawnFruitFly() }
-
         logTimer += dt
         let li = max(2.5, 5.0 - Double(distanceTraveled) * 0.0003)
         if logTimer >= li { logTimer = 0; spawnLog() }
-
         birdTimer += dt
         let bi = max(2.0, 5.0 - Double(distanceTraveled) * 0.0004)
         if birdTimer >= bi { birdTimer = 0; spawnBird() }
-
         envTimer += dt
         if envTimer >= 1.5 { envTimer = 0; spawnEnvironment() }
     }
 
-    private func checkLogCollisions() {
-        guard ladybug.isOnGround, !ladybug.isInvincible else { return }
+    // MARK: - Log Tube Mechanic
+
+    private func checkLogTube(bugGroundY: CGFloat, ceilingY: inout CGFloat) {
+        var insideAny = false
+
         for child in children {
             guard let log = child as? Log else { continue }
-            let logLeft = log.position.x - log.size.width * 0.4
-            let logRight = log.position.x + log.size.width * 0.4
-            let bugRight = ladybug.position.x + ladybug.size.width * 0.3
-            if bugRight > logLeft && ladybug.position.x < logRight {
-                takeDamage()
-                break
+            let tube = log.tubeRect
+            let bugCenter = ladybug.position
+
+            // Check if ladybug X overlaps the log
+            let bugHalfW = ladybug.size.width * 0.3
+            let bugRight = bugCenter.x + bugHalfW
+            let bugLeft = bugCenter.x - bugHalfW
+
+            if bugRight > tube.minX && bugLeft < tube.maxX {
+                if ladybug.isOnGround {
+                    // Walking through the log — sheltered!
+                    insideAny = true
+                    log.showSeeThrough()
+
+                    // Clamp ceiling so can't fly out the top
+                    let logTopY = log.position.y + log.size.height * 0.3
+                    ceilingY = min(ceilingY, logTopY)
+                } else if bugCenter.y < log.position.y + log.size.height * 0.4 {
+                    // Flying low through log area
+                    insideAny = true
+                    log.showSeeThrough()
+                    let logTopY = log.position.y + log.size.height * 0.3
+                    ceilingY = min(ceilingY, logTopY)
+                } else {
+                    log.showOpaque()
+                }
+            } else {
+                log.showOpaque()
             }
         }
+
+        ladybug.isInsideLog = insideAny
     }
 
     // MARK: - Scrolling
@@ -356,7 +365,21 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     // MARK: - Spawning
 
+    private func isInsideAnyLog(x: CGFloat) -> Bool {
+        for child in children {
+            guard let log = child as? Log else { continue }
+            let logLeft = log.position.x - log.size.width * 0.5
+            let logRight = log.position.x + log.size.width * 0.5
+            if x > logLeft && x < logRight { return true }
+        }
+        return false
+    }
+
     private func spawnAphid() {
+        let spawnX = size.width + 30
+        // Don't spawn inside a log
+        if isInsideAnyLog(x: spawnX) { return }
+
         let roll = Int.random(in: 0..<100)
         let color: TextureGenerator.AphidColor
         if roll < 55 { color = .green }
@@ -365,7 +388,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         guard let frames = aphidFrames[color] else { return }
         let aphid = Aphid(walkFrames: frames, colorType: color)
-        aphid.position = CGPoint(x: size.width + 30, y: groundY + aphid.size.height / 2)
+        aphid.position = CGPoint(x: spawnX, y: groundY + aphid.size.height / 2)
         aphid.setupPhysics()
         aphid.startMoving()
         addChild(aphid)
@@ -383,7 +406,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func spawnLog() {
         let log = Log(texture: logTexture)
-        // Log sits ON the ground (bottom touching ground line)
         log.position = CGPoint(x: size.width + 50, y: groundY + log.size.height / 2)
         log.setupPhysics()
         addChild(log)
@@ -392,7 +414,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnBird() {
         let bird = Bird(textures: birdTextures)
         bird.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.55...0.85))
-        bird.xScale = -1 // Face left
+        bird.xScale = -1
         bird.setupPhysics()
         addChild(bird)
 
@@ -442,7 +464,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if collision == PhysicsCategory.ladybug | PhysicsCategory.aphid {
             if let aphid = (contact.bodyA.node as? Aphid) ?? (contact.bodyB.node as? Aphid) {
                 score += aphid.points
-                showFloatingScore(aphid.points, at: aphid.position, color: aphid.colorType == .red ? .red : (aphid.colorType == .yellow ? .yellow : .green))
+                showFloatingScore(aphid.points, at: aphid.position,
+                    color: aphid.colorType == .red ? .red : (aphid.colorType == .yellow ? .yellow : .green))
                 aphid.removeFromParent()
                 ladybug.pulse()
                 SoundManager.shared.play("eat")
@@ -460,6 +483,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         if collision == PhysicsCategory.ladybug | PhysicsCategory.bird {
+            // Safe inside log!
+            if ladybug.isSheltered { return }
             if !ladybug.isInvincible {
                 let birdNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird) ? contact.bodyA.node : contact.bodyB.node
                 birdNode?.removeFromParent()
@@ -492,12 +517,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if lives <= 0 { gameOver() }
     }
 
-    // MARK: - Game Over
-
     private func gameOver() {
         isGameOver = true
         SoundManager.shared.play("gameOver")
-
         if score > MenuScene.highScore { MenuScene.highScore = score }
 
         let overlay = SKShapeNode(rectOf: size)
