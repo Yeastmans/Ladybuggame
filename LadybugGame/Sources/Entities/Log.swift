@@ -1,5 +1,7 @@
 import SpriteKit
 
+/// Bush — walkthrough cover that hides ladybug from birds.
+/// Replaces log. Entities avoid flying through bushes.
 class Log: SKSpriteNode {
 
     var isLadybugInside = false
@@ -7,7 +9,7 @@ class Log: SKSpriteNode {
     init(texture: SKTexture, width: CGFloat) {
         let scaledSize = CGSize(width: width, height: texture.size().height * (width / texture.size().width))
         super.init(texture: texture, color: .clear, size: scaledSize)
-        anchorPoint = CGPoint(x: 0.5, y: 0.0) // Bottom-anchored — sits on ground
+        anchorPoint = CGPoint(x: 0.5, y: 0.0)
         zPosition = 4
     }
 
@@ -17,7 +19,6 @@ class Log: SKSpriteNode {
 
     func setupPhysics() {}
 
-    /// The tube rect the ladybug walks through
     var tubeRect: CGRect {
         CGRect(
             x: position.x - size.width * 0.45,

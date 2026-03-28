@@ -3,7 +3,6 @@ import UIKit
 
 class Frog: SKSpriteNode {
 
-    private var tongueNode: SKShapeNode?
     private var hasAttacked = false
 
     init(texture: SKTexture) {
@@ -19,59 +18,78 @@ class Frog: SKSpriteNode {
         guard !hasAttacked else { return }
         hasAttacked = true
 
-        // Direction from frog center to target
-        let dirX = sceneTarget.x - position.x
-        let dirY = sceneTarget.y - position.y
+        // Direction from frog to target
+        var dx = sceneTarget.x - position.x
+        var dy = sceneTarget.y - position.y
+        if dy < 0 { dy = 0 } // Never aim down
+        if abs(dx) < 5 { dx = xScale > 0 ? 30 : -30 }
 
-        // Never aim down
-        let aimY = max(dirY, 0)
-        let aimX = dirX
-
-        let dist = hypot(aimX, aimY)
+        let dist = hypot(dx, dy)
         guard dist > 5 else { return }
+        let tongueLen = min(dist, 100.0)
+        let nx = dx / dist
+        let ny = dy / dist
 
-        let tongueLen = min(dist, 110.0)
-        let nx = aimX / dist
-        let ny = aimY / dist
+        // Mouth position in frog's local coords
+        let mouthLocalX = xScale > 0 ? size.width * 0.40 : -size.width * 0.40
+        let mouthLocalY = size.height * 0.10
 
-        // Tongue in scene coordinates (add as child of scene parent, not frog)
-        guard let parentNode = self.parent else { return }
+        // Tip position relative to mouth
+        let tipOffsetX = nx * tongueLen
+        let tipOffsetY = max(0, ny * tongueLen) // Clamp above ground relative
 
-        let startPt = CGPoint(x: position.x, y: position.y + size.height * 0.15)
-        let endPt = CGPoint(x: startPt.x + nx * tongueLen, y: max(groundY + 2, startPt.y + ny * tongueLen))
-
+        // Tongue line (child of frog so it moves with frog)
         let tongue = SKShapeNode()
-        let path = UIBezierPath()
-        path.move(to: startPt)
-        path.addLine(to: endPt)
-        tongue.path = path.cgPath
-        tongue.strokeColor = SKColor(red: 0.90, green: 0.30, blue: 0.35, alpha: 1.0)
-        tongue.lineWidth = 2.5
-        tongue.zPosition = 6
-        parentNode.addChild(tongue)
-        tongueNode = tongue
-
-        // Tip with hitbox
-        let tip = SKShapeNode(circleOfRadius: 7)
-        tip.fillColor = SKColor(red: 0.95, green: 0.35, blue: 0.40, alpha: 1.0)
-        tip.strokeColor = .clear
-        tip.position = endPt
-        tip.zPosition = 6
         let tipBody = SKPhysicsBody(circleOfRadius: 7)
         tipBody.isDynamic = false
         tipBody.categoryBitMask = GameScene.PhysicsCategory.bird
         tipBody.contactTestBitMask = GameScene.PhysicsCategory.ladybug
-        tip.physicsBody = tipBody
-        parentNode.addChild(tip)
 
-        // Animate: appear, hold, retract
-        tongue.alpha = 0
-        tip.alpha = 0
-        let fadeIn = SKAction.fadeIn(withDuration: 0.06)
-        let hold = SKAction.wait(forDuration: 0.25)
-        let fadeOut = SKAction.fadeOut(withDuration: 0.10)
-        let removeTongue = SKAction.removeFromParent()
-        tongue.run(SKAction.sequence([fadeIn, hold, fadeOut, removeTongue]))
-        tip.run(SKAction.sequence([fadeIn, hold, fadeOut, SKAction.removeFromParent()]))
+        // Animate: grow the tongue outward then retract
+        // Phase 1: extend
+        let extend = SKAction.customAction(withDuration: 0.10) { [weak self] _, elapsed in
+            guard let self = self else { return }
+            let progress = elapsed / 0.10
+            let curTipX = mouthLocalX + tipOffsetX * progress
+            let curTipY = mouthLocalY + tipOffsetY * progress
+
+            let path = UIBezierPath()
+            path.move(to: CGPoint(x: mouthLocalX, y: mouthLocalY))
+            path.addLine(to: CGPoint(x: curTipX, y: curTipY))
+            tongue.path = path.cgPath
+
+            // Move physics body to tip
+            tongue.position = .zero
+            tongue.removeAllChildren()
+            let tipNode = SKNode()
+            tipNode.position = CGPoint(x: curTipX, y: curTipY)
+            if progress > 0.8 { tipNode.physicsBody = tipBody }
+            tongue.addChild(tipNode)
+        }
+
+        let hold = SKAction.wait(forDuration: 0.18)
+
+        // Phase 2: retract
+        let retract = SKAction.customAction(withDuration: 0.08) { _, elapsed in
+            let progress = 1.0 - elapsed / 0.08
+            let curTipX = mouthLocalX + tipOffsetX * progress
+            let curTipY = mouthLocalY + tipOffsetY * progress
+
+            let path = UIBezierPath()
+            path.move(to: CGPoint(x: mouthLocalX, y: mouthLocalY))
+            path.addLine(to: CGPoint(x: curTipX, y: curTipY))
+            tongue.path = path.cgPath
+        }
+
+        let remove = SKAction.run {
+            tongue.removeFromParent()
+        }
+
+        tongue.strokeColor = SKColor(red: 0.90, green: 0.30, blue: 0.35, alpha: 1.0)
+        tongue.lineWidth = 2.5
+        tongue.zPosition = -1
+        addChild(tongue)
+
+        tongue.run(SKAction.sequence([extend, hold, retract, remove]))
     }
 }

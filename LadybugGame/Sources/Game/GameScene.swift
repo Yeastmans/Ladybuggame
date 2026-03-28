@@ -63,7 +63,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         groundY = size.height * 0.28
 
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
-        logTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 100, height: 55))
+        logTexture = TextureGenerator.generateLogTexture(size: CGSize(width: 80, height: 60))
         frogTexture = TextureGenerator.generateFrogTexture(size: CGSize(width: 36, height: 32))
         dragonflyFrames = TextureGenerator.generateDragonflyFrames(size: CGSize(width: 48, height: 28))
         fireflyFrames = TextureGenerator.generateFireflyFrames(size: CGSize(width: 24, height: 24))

@@ -644,85 +644,48 @@ enum TextureGenerator {
     // MARK: - Log (hollow tube, side view — open ends for walking through)
 
     static func generateLogTexture(size: CGSize) -> SKTexture {
+        // Now generates a BUSH texture (walkthrough cover)
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
             let w = size.width
             let h = size.height
 
-            let bark = UIColor(red: 0.545, green: 0.41, blue: 0.10, alpha: 1.0)
-            let barkDk = UIColor(red: 0.40, green: 0.30, blue: 0.06, alpha: 1.0)
+            let leafDark = UIColor(red: 0.22, green: 0.48, blue: 0.15, alpha: 1.0)
+            let leafMid = UIColor(red: 0.30, green: 0.60, blue: 0.20, alpha: 1.0)
+            let leafLight = UIColor(red: 0.40, green: 0.72, blue: 0.28, alpha: 1.0)
 
-            // Dark hollow interior — bottom flush with bottom edge
-            cg.setFillColor(UIColor(red: 0.12, green: 0.08, blue: 0.02, alpha: 1.0).cgColor)
-            cg.fill(CGRect(x: w * 0.06, y: h * 0.40, width: w * 0.88, height: h * 0.60))
+            // Main bush body — layered circles for organic look
+            // Bottom layer (dark)
+            cg.setFillColor(leafDark.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.02, y: h * 0.20, width: w * 0.50, height: h * 0.75))
+            cg.fillEllipse(in: CGRect(x: w * 0.30, y: h * 0.15, width: w * 0.50, height: h * 0.80))
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.22, width: w * 0.44, height: h * 0.72))
 
-            // Top bark — half-pipe arch
-            let top = UIBezierPath()
-            top.move(to: CGPoint(x: 0, y: h * 0.40))
-            top.addQuadCurve(to: CGPoint(x: w, y: h * 0.40),
-                              controlPoint: CGPoint(x: w * 0.5, y: -h * 0.10))
-            top.addLine(to: CGPoint(x: w, y: h * 0.40))
-            top.close()
-            cg.setFillColor(bark.cgColor)
-            cg.addPath(top.cgPath)
-            cg.fillPath()
-            // Arch outline
-            let archLine = UIBezierPath()
-            archLine.move(to: CGPoint(x: 0, y: h * 0.40))
-            archLine.addQuadCurve(to: CGPoint(x: w, y: h * 0.40),
-                                   controlPoint: CGPoint(x: w * 0.5, y: -h * 0.10))
-            cg.setStrokeColor(barkDk.cgColor)
-            cg.setLineWidth(1.0)
-            cg.addPath(archLine.cgPath)
-            cg.strokePath()
+            // Mid layer
+            cg.setFillColor(leafMid.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.08, y: h * 0.10, width: w * 0.42, height: h * 0.65))
+            cg.fillEllipse(in: CGRect(x: w * 0.35, y: h * 0.05, width: w * 0.40, height: h * 0.70))
+            cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * 0.12, width: w * 0.38, height: h * 0.60))
 
-            // Bark texture
-            cg.setStrokeColor(UIColor(red: 0.42, green: 0.31, blue: 0.08, alpha: 0.25).cgColor)
-            cg.setLineWidth(0.5)
-            for lx in [0.20, 0.38, 0.55, 0.72, 0.88] as [CGFloat] {
-                cg.move(to: CGPoint(x: w * lx, y: h * 0.02))
-                cg.addLine(to: CGPoint(x: w * lx, y: h * 0.38))
-                cg.strokePath()
-            }
+            // Top highlights
+            cg.setFillColor(leafLight.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.15, y: h * 0.05, width: w * 0.30, height: h * 0.40))
+            cg.fillEllipse(in: CGRect(x: w * 0.42, y: h * 0.02, width: w * 0.28, height: h * 0.35))
+            cg.fillEllipse(in: CGRect(x: w * 0.65, y: h * 0.08, width: w * 0.25, height: h * 0.35))
 
-            // Wood grain
-            cg.setStrokeColor(UIColor(red: 0.65, green: 0.50, blue: 0.20, alpha: 0.3).cgColor)
-            cg.setLineWidth(0.5)
-            cg.move(to: CGPoint(x: w * 0.10, y: h * 0.18))
-            cg.addLine(to: CGPoint(x: w * 0.35, y: h * 0.18))
-            cg.strokePath()
-            cg.move(to: CGPoint(x: w * 0.50, y: h * 0.12))
-            cg.addLine(to: CGPoint(x: w * 0.80, y: h * 0.12))
-            cg.strokePath()
+            // Small berries/flowers
+            cg.setFillColor(UIColor(red: 0.90, green: 0.25, blue: 0.20, alpha: 0.6).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.20, y: h * 0.15, width: 4, height: 4))
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.10, width: 3, height: 3))
+            cg.fillEllipse(in: CGRect(x: w * 0.75, y: h * 0.20, width: 4, height: 4))
 
-            // Moss on top
-            cg.setFillColor(UIColor(red: 0.29, green: 0.55, blue: 0.16, alpha: 0.50).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.22, y: h * 0.01, width: w * 0.14, height: h * 0.08))
-            cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * -0.01, width: w * 0.18, height: h * 0.07))
+            // Yellow flowers
+            cg.setFillColor(UIColor(red: 1.0, green: 0.90, blue: 0.30, alpha: 0.5).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.35, y: h * 0.08, width: 3, height: 3))
+            cg.fillEllipse(in: CGRect(x: w * 0.82, y: h * 0.15, width: 3, height: 3))
 
-            // Right end — half-circle cross section (top half only since bottom is ground)
-            let endPath = UIBezierPath()
-            endPath.move(to: CGPoint(x: w, y: h))
-            endPath.addArc(withCenter: CGPoint(x: w * 0.94, y: h * 0.70),
-                           radius: h * 0.42,
-                           startAngle: .pi / 2,
-                           endAngle: -.pi / 2,
-                           clockwise: true)
-            endPath.addLine(to: CGPoint(x: w, y: h * 0.28))
-            endPath.close()
-            cg.setFillColor(UIColor(red: 0.60, green: 0.47, blue: 0.16, alpha: 1.0).cgColor)
-            cg.addPath(endPath.cgPath)
-            cg.fillPath()
-            cg.setStrokeColor(barkDk.cgColor)
-            cg.setLineWidth(0.8)
-            cg.addPath(endPath.cgPath)
-            cg.strokePath()
-            // Rings
-            cg.setStrokeColor(UIColor(red: 0.72, green: 0.58, blue: 0.28, alpha: 0.35).cgColor)
-            cg.setLineWidth(0.4)
-            cg.strokeEllipse(in: CGRect(x: w * 0.88, y: h * 0.45, width: w * 0.10, height: h * 0.30))
-            cg.strokeEllipse(in: CGRect(x: w * 0.90, y: h * 0.52, width: w * 0.06, height: h * 0.18))
+            // (bush complete)
         }
         return SKTexture(image: image)
     }
