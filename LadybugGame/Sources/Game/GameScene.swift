@@ -118,8 +118,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         spawnLadybug()
 
         if startFromCheckpoint {
-            score = GameScene.checkpointScore
-            currentBiome = Biome.biome(for: score)
+            let cpScore = GameScene.checkpointScore
+            // Start at exact biome threshold
+            let biome = Biome.biome(for: cpScore)
+            score = biome.scoreThreshold
+            currentBiome = biome
+            // Apply biome visuals immediately
+            if biome != .meadowDay {
+                transitionToBiome(biome)
+            }
         }
     }
 
