@@ -222,9 +222,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnLadybug() {
         let bugSize = CGSize(width: 48, height: 48)
         let walkTex = TextureGenerator.generateLadybugTexture(size: bugSize)
-        let glideTex = TextureGenerator.generateLadybugGlideTexture(size: bugSize)
         let blinkTex = TextureGenerator.generateLadybugBlinkTexture(size: bugSize)
-        ladybug = Ladybug(walkTexture: walkTex, glideTexture: glideTex, blinkTexture: blinkTex)
+        ladybug = Ladybug(walkTexture: walkTex, blinkTexture: blinkTex)
         ladybug.position = CGPoint(x: size.width * 0.18, y: groundY + bugSize.height / 2)
 
         let body = SKPhysicsBody(circleOfRadius: bugSize.width / 2 * 0.6)
@@ -250,7 +249,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         guard let touch = touches.first else { return }
         isTouching = true
         touchY = touch.location(in: self).y
-        ladybug.startFlying()
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -261,13 +259,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         isTouching = false
         touchY = nil
-        ladybug.stopFlying()
+        ladybug.targetY = nil
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         isTouching = false
         touchY = nil
-        ladybug.stopFlying()
+        ladybug.targetY = nil
     }
 
     // MARK: - Update

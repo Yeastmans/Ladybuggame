@@ -3,7 +3,6 @@ import SpriteKit
 class Ladybug: SKSpriteNode {
 
     private let walkTexture: SKTexture
-    private let glideTexture: SKTexture
     private let blinkTexture: SKTexture
 
     private(set) var isFlying = false
@@ -12,19 +11,17 @@ class Ladybug: SKSpriteNode {
     var velocityY: CGFloat = 0
     var targetY: CGFloat?
     private var invincibleTimer: TimeInterval = 0
-    private var baseGroundY: CGFloat = 0
     private var walkBobTime: CGFloat = 0
 
     let gravity: CGFloat = -600
-    let followStrength: CGFloat = 3.5  // Much gentler follow
-    let damping: CGFloat = 0.93        // Heavier damping for smooth feel
+    let followStrength: CGFloat = 3.5
+    let damping: CGFloat = 0.93
 
     var isInvincible: Bool { invincibleTimer > 0 }
     var isSheltered: Bool { isInsideLog && isOnGround }
 
-    init(walkTexture: SKTexture, glideTexture: SKTexture, blinkTexture: SKTexture) {
+    init(walkTexture: SKTexture, blinkTexture: SKTexture) {
         self.walkTexture = walkTexture
-        self.glideTexture = glideTexture
         self.blinkTexture = blinkTexture
         super.init(texture: walkTexture, color: .clear, size: walkTexture.size())
         zPosition = 10
@@ -51,30 +48,41 @@ class Ladybug: SKSpriteNode {
         run(SKAction.repeatForever(SKAction.sequence([wait, close, holdClosed, open])), withKey: "blink")
     }
 
-    // MARK: - Flight
-
-    func startFlying() {
-        guard !isInsideLog else { return }
-        if isOnGround {
-            isOnGround = false
-            velocityY = 250 // Gentler initial jump
-            SoundManager.shared.play("jump")
-        }
-        isFlying = true
-        texture = glideTexture
-        // No abrupt scale change — keep it subtle
-        run(SKAction.scale(to: 1.05, duration: 0.15), withKey: "flyScale")
-    }
-
-    func stopFlying() {
-        isFlying = false
-    }
+    // MARK: - Physics
 
     func updatePhysics(dt: TimeInterval, groundY: CGFloat, ceilingY: CGFloat) {
         if invincibleTimer > 0 { invincibleTimer -= dt }
-        baseGroundY = groundY
 
-        // Walk bob when on ground (using action offset, not position override)
+        if let ty = targetY, !isInsideLog {
+            // Finger is on screen — follow it smoothly
+            if isOnGround && ty > groundY + 10 {
+                // Lift off — finger is above ground
+                isOnGround = false
+                isFlying = true
+                velocityY = 0
+                texture = walkTexture
+                SoundManager.shared.play("jump")
+            }
+
+            if !isOnGround {
+                isFlying = true
+                let diff = ty - position.y
+                velocityY += diff * followStrength
+                velocityY *= damping
+
+                // Gentle tilt
+                let tilt = max(-0.15, min(0.15, velocityY * 0.0003))
+                zRotation = -tilt
+            }
+        } else if !isOnGround {
+            // No finger — fall with gravity
+            isFlying = false
+            velocityY += gravity * CGFloat(dt)
+            let tilt = max(-0.2, min(0, velocityY * 0.0004))
+            zRotation = -tilt
+        }
+
+        // Walk bob when on ground
         if isOnGround {
             walkBobTime += CGFloat(dt) * 6
             let bob = sin(walkBobTime) * 1.2
@@ -82,20 +90,6 @@ class Ladybug: SKSpriteNode {
             zRotation = sin(walkBobTime * 0.5) * 0.015
             return
         }
-
-        if isFlying, let ty = targetY {
-            // Smooth follow — spring-like with heavy damping
-            let diff = ty - position.y
-            velocityY += diff * followStrength
-            velocityY *= damping
-        } else {
-            // Falling — gravity only
-            velocityY += gravity * CGFloat(dt)
-        }
-
-        // Gentle tilt based on velocity
-        let tiltAmount = max(-0.2, min(0.2, velocityY * 0.0004))
-        zRotation = -tiltAmount
 
         position.y += velocityY * CGFloat(dt)
 
@@ -107,20 +101,15 @@ class Ladybug: SKSpriteNode {
 
         // Hit ground
         if position.y <= groundY {
-            land(at: groundY)
+            position.y = groundY
+            velocityY = 0
+            isOnGround = true
+            isFlying = false
+            zRotation = 0
+            walkBobTime = 0
+            texture = walkTexture
+            SoundManager.shared.play("land")
         }
-    }
-
-    func land(at groundY: CGFloat) {
-        position.y = groundY
-        velocityY = 0
-        isOnGround = true
-        isFlying = false
-        zRotation = 0
-        walkBobTime = 0
-        texture = walkTexture
-        run(SKAction.scale(to: 1.0, duration: 0.1), withKey: "flyScale")
-        SoundManager.shared.play("land")
     }
 
     func makeInvincible(duration: TimeInterval = 1.5) {
