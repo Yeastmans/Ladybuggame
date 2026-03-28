@@ -34,7 +34,7 @@ class MenuScene: SKScene {
         addButton("Start Game", name: "startButton",
                   color: SKColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0),
                   y: size.height * 0.52)
-        addButton("Bug Tracker", name: "bugTracker",
+        addButton("Bugopedia", name: "bugTracker",
                   color: SKColor(red: 0.55, green: 0.35, blue: 0.70, alpha: 1.0),
                   y: size.height * 0.40)
         addButton("Leaderboards", name: "leaderboard",
@@ -98,6 +98,8 @@ class MenuScene: SKScene {
                 }
             }
 
+            if node.name == "tabFood" { showBugPage(.food); return }
+            if node.name == "tabEnemy" { showBugPage(.enemy); return }
             if node.name == "overlay" || node.name == "closeOverlay" {
                 childNode(withName: "overlay")?.removeFromParent()
                 return
@@ -131,58 +133,95 @@ class MenuScene: SKScene {
         addTapToClose(overlay)
     }
 
+    private var currentBugPage: BugTracker.Category = .food
+
     private func showBugTracker() {
+        showBugPage(.food)
+    }
+
+    private func showBugPage(_ page: BugTracker.Category) {
+        currentBugPage = page
         childNode(withName: "overlay")?.removeFromParent()
         let overlay = makeOverlay()
 
         let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        title.text = "Bug Tracker"
-        title.fontSize = 24
+        title.text = "Bugopedia"
+        title.fontSize = 22
         title.fontColor = .white
-        title.position = CGPoint(x: 0, y: size.height * 0.28)
+        title.position = CGPoint(x: 0, y: size.height * 0.30)
         overlay.addChild(title)
 
+        // Tab buttons
+        let foodTab = SKShapeNode(rectOf: CGSize(width: 90, height: 28), cornerRadius: 6)
+        foodTab.fillColor = page == .food ? SKColor(red: 0.45, green: 0.72, blue: 0.30, alpha: 1) : SKColor(white: 0.25, alpha: 1)
+        foodTab.strokeColor = .clear
+        foodTab.position = CGPoint(x: -55, y: size.height * 0.22)
+        foodTab.name = "tabFood"
+        overlay.addChild(foodTab)
+        let foodLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        foodLabel.text = "Snacks"
+        foodLabel.fontSize = 13
+        foodLabel.fontColor = .white
+        foodLabel.verticalAlignmentMode = .center
+        foodLabel.name = "tabFood"
+        foodTab.addChild(foodLabel)
+
+        let enemyTab = SKShapeNode(rectOf: CGSize(width: 90, height: 28), cornerRadius: 6)
+        enemyTab.fillColor = page == .enemy ? SKColor(red: 0.80, green: 0.20, blue: 0.20, alpha: 1) : SKColor(white: 0.25, alpha: 1)
+        enemyTab.strokeColor = .clear
+        enemyTab.position = CGPoint(x: 55, y: size.height * 0.22)
+        enemyTab.name = "tabEnemy"
+        overlay.addChild(enemyTab)
+        let enemyLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        enemyLabel.text = "Threats"
+        enemyLabel.fontSize = 13
+        enemyLabel.fontColor = .white
+        enemyLabel.verticalAlignmentMode = .center
+        enemyLabel.name = "tabEnemy"
+        enemyTab.addChild(enemyLabel)
+
+        // Bug grid
+        let bugs = page == .food ? BugTracker.foodBugs : BugTracker.enemyBugs
         let tracker = BugTracker.shared
-        let bugs = BugTracker.BugType.allCases
         let cols = 4
         let cellSize: CGFloat = 50
-        let startX = -CGFloat(cols - 1) * cellSize / 2
-        let startY = size.height * 0.15
+        let startX = -CGFloat(min(cols, bugs.count) - 1) * cellSize / 2
+        let startY = size.height * 0.10
 
         for (i, bug) in bugs.enumerated() {
             let col = i % cols
             let row = i / cols
             let x = startX + CGFloat(col) * cellSize
-            let y = startY - CGFloat(row) * (cellSize + 16)
+            let y = startY - CGFloat(row) * (cellSize + 14)
 
             let tex = tracker.texture(for: bug, size: CGSize(width: 32, height: 32))
             let sprite = SKSpriteNode(texture: tex, size: CGSize(width: 32, height: 32))
             sprite.position = CGPoint(x: x, y: y)
             sprite.name = "bug_\(bug.rawValue)"
-            sprite.isUserInteractionEnabled = false
             overlay.addChild(sprite)
 
             let label = SKLabelNode(fontNamed: "AvenirNext-Medium")
             label.text = tracker.isUnlocked(bug) ? bug.rawValue : "???"
-            label.fontSize = 8
+            label.fontSize = 7
             label.fontColor = tracker.isUnlocked(bug) ? .white : SKColor(white: 0.5, alpha: 1)
             label.position = CGPoint(x: x, y: y - 22)
             label.name = "bug_\(bug.rawValue)"
             overlay.addChild(label)
         }
 
+        let allBugs = BugTracker.BugType.allCases
+        let unlocked = allBugs.filter { tracker.isUnlocked($0) }.count
         let countLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        let unlocked = bugs.filter { tracker.isUnlocked($0) }.count
-        countLabel.text = "\(unlocked)/\(bugs.count) discovered"
-        countLabel.fontSize = 14
-        countLabel.fontColor = SKColor(white: 0.8, alpha: 1)
+        countLabel.text = "\(unlocked)/\(allBugs.count) discovered"
+        countLabel.fontSize = 12
+        countLabel.fontColor = SKColor(white: 0.7, alpha: 1)
         countLabel.position = CGPoint(x: 0, y: -size.height * 0.28)
         overlay.addChild(countLabel)
 
         let hint = SKLabelNode(fontNamed: "AvenirNext-Regular")
-        hint.text = "Tap a bug for details  |  Tap outside to close"
-        hint.fontSize = 10
-        hint.fontColor = SKColor(white: 1.0, alpha: 0.4)
+        hint.text = "Tap bug for details  |  Tap outside to close"
+        hint.fontSize = 9
+        hint.fontColor = SKColor(white: 1.0, alpha: 0.35)
         hint.position = CGPoint(x: 0, y: -size.height * 0.33)
         overlay.addChild(hint)
     }

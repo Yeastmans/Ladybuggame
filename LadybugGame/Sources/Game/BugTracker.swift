@@ -1,9 +1,10 @@
 import SpriteKit
 import UIKit
 
-/// Tracks which bugs the player has caught. Persists via UserDefaults.
 final class BugTracker: @unchecked Sendable {
     static let shared = BugTracker()
+
+    enum Category: String { case food = "Snacks", enemy = "Threats" }
 
     enum BugType: String, CaseIterable {
         case greenAphid = "Green Aphid"
@@ -14,17 +15,36 @@ final class BugTracker: @unchecked Sendable {
         case purpleFly = "Purple Fly"
         case firefly = "Firefly"
         case heartBug = "Heart Bug"
+        case bird = "Bird"
+        case frog = "Frog"
+        case dragonfly = "Dragonfly"
+        case ant = "Ant"
+        case spider = "Spider"
+
+        var category: Category {
+            switch self {
+            case .greenAphid, .yellowAphid, .redAphid, .brownFly, .blueFly, .purpleFly, .firefly, .heartBug:
+                return .food
+            case .bird, .frog, .dragonfly, .ant, .spider:
+                return .enemy
+            }
+        }
 
         var description: String {
             switch self {
-            case .greenAphid: return "Common garden pest. Worth 10 points. Scurries along the ground."
-            case .yellowAphid: return "Rarer yellow variant. Worth 25 points. Faster than green."
-            case .redAphid: return "Elusive red aphid. Worth 50 points. Hard to spot!"
-            case .brownFly: return "Common fruit fly. Worth 15 points. Bobs erratically in the air."
-            case .blueFly: return "Rare blue fruit fly. Worth 30 points. Quick and agile."
-            case .purpleFly: return "Mythical purple fly. Worth 50 points. Very rare spawn."
-            case .firefly: return "Magical firefly. Worth 100 points. Grants 10s invincibility!"
-            case .heartBug: return "Heart-shaped healer. Worth 50 points. Restores one life!"
+            case .greenAphid: return "Common garden pest. Scurries along the ground."
+            case .yellowAphid: return "Rarer yellow variant. Faster than green."
+            case .redAphid: return "Elusive red aphid. Hard to spot!"
+            case .brownFly: return "Common fruit fly. Bobs erratically in the air."
+            case .blueFly: return "Rare blue fruit fly. Quick and agile."
+            case .purpleFly: return "Mythical purple fly. Very rare spawn."
+            case .firefly: return "Magical firefly. Grants 10s invincibility!"
+            case .heartBug: return "Heart-shaped healer. Restores one life!"
+            case .bird: return "Swoops from the sky to attack. Dodge or hide!"
+            case .frog: return "Sits by ponds. Shoots tongue at you!"
+            case .dragonfly: return "Hovers menacingly. Hard to avoid in the air."
+            case .ant: return "Patrols the ground. Bites if you get close!"
+            case .spider: return "Lurks on the ground. Can hide in bushes!"
             }
         }
 
@@ -36,8 +56,9 @@ final class BugTracker: @unchecked Sendable {
             case .brownFly: return "15 pts"
             case .blueFly: return "30 pts"
             case .purpleFly: return "50 pts"
-            case .firefly: return "100 pts"
+            case .firefly: return "100 pts + Shield"
             case .heartBug: return "50 pts + ♥"
+            case .bird, .frog, .dragonfly, .ant, .spider: return "Danger!"
             }
         }
     }
@@ -59,12 +80,11 @@ final class BugTracker: @unchecked Sendable {
         unlocked.contains(bug.rawValue)
     }
 
-    /// Generate a colored silhouette or the real texture
     func texture(for bug: BugType, size: CGSize) -> SKTexture {
         if isUnlocked(bug) {
             return coloredTexture(for: bug, size: size)
         } else {
-            return silhouetteTexture(for: bug, size: size)
+            return silhouetteTexture(size: size)
         }
     }
 
@@ -78,28 +98,31 @@ final class BugTracker: @unchecked Sendable {
         case .purpleFly: return TextureGenerator.generateFruitFlyFrames(size: size, color: .purple).first!
         case .firefly: return TextureGenerator.generateFireflyFrames(size: size).first!
         case .heartBug: return TextureGenerator.generateHeartBugFrames(size: size).first!
+        case .bird: return TextureGenerator.generateBirdTextures(size: size).first!
+        case .frog: return TextureGenerator.generateFrogTexture(size: size)
+        case .dragonfly: return TextureGenerator.generateDragonflyFrames(size: size).first!
+        case .ant: return TextureGenerator.generateAntFrames(size: size).first!
+        case .spider: return TextureGenerator.generateSpiderFrames(size: size).first!
         }
     }
 
-    private func silhouetteTexture(for bug: BugType, size: CGSize) -> SKTexture {
-        // Draw a dark silhouette with a question mark
+    private func silhouetteTexture(size: CGSize) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
-            let w = size.width
-            let h = size.height
-
             cg.setFillColor(UIColor(white: 0.15, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.10, width: w * 0.80, height: h * 0.80))
-
-            // Question mark
+            cg.fillEllipse(in: CGRect(x: size.width * 0.10, y: size.height * 0.10,
+                                       width: size.width * 0.80, height: size.height * 0.80))
             let qm = NSAttributedString(string: "?", attributes: [
-                .font: UIFont.boldSystemFont(ofSize: h * 0.4),
+                .font: UIFont.boldSystemFont(ofSize: size.height * 0.4),
                 .foregroundColor: UIColor(white: 0.35, alpha: 1.0)
             ])
-            let qmSize = qm.size()
-            qm.draw(at: CGPoint(x: (w - qmSize.width) / 2, y: (h - qmSize.height) / 2))
+            let qs = qm.size()
+            qm.draw(at: CGPoint(x: (size.width - qs.width) / 2, y: (size.height - qs.height) / 2))
         }
         return SKTexture(image: image)
     }
+
+    static var foodBugs: [BugType] { BugType.allCases.filter { $0.category == .food } }
+    static var enemyBugs: [BugType] { BugType.allCases.filter { $0.category == .enemy } }
 }

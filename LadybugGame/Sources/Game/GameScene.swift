@@ -47,12 +47,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var dragonflyFrames: [SKTexture] = []
     private var fireflyFrames: [SKTexture] = []
     private var heartBugFrames: [SKTexture] = []
+    private var antFrames: [SKTexture] = []
+    private var spiderFrames: [SKTexture] = []
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
     private var frogTimer: TimeInterval = 0
     private var dragonflyTimer: TimeInterval = 0
     private var fireflyTimer: TimeInterval = 0
+    private var antTimer: TimeInterval = 0
+    private var spiderTimer: TimeInterval = 0
     private var heartBugTimer: TimeInterval = 0
     private var groundTiles: [SKSpriteNode] = []
 
@@ -68,6 +72,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         dragonflyFrames = TextureGenerator.generateDragonflyFrames(size: CGSize(width: 48, height: 28))
         fireflyFrames = TextureGenerator.generateFireflyFrames(size: CGSize(width: 24, height: 24))
         heartBugFrames = TextureGenerator.generateHeartBugFrames(size: CGSize(width: 36, height: 36))
+        antFrames = TextureGenerator.generateAntFrames(size: CGSize(width: 20, height: 18))
+        spiderFrames = TextureGenerator.generateSpiderFrames(size: CGSize(width: 26, height: 22))
         for fc in [TextureGenerator.FlyColor.brown, .blue, .purple] {
             flyFrames[fc] = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: fc)
         }
@@ -340,6 +346,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         heartBugTimer += dt
         if heartBugTimer >= 20.0 && lives < 3 { heartBugTimer = 0; spawnHeartBug() }
 
+        antTimer += dt
+        let ai = max(3.0, 6.0 - Double(distanceTraveled) * 0.0003)
+        if antTimer >= ai { antTimer = 0; spawnAnt() }
+
+        spiderTimer += dt
+        let si = max(5.0, 10.0 - Double(distanceTraveled) * 0.0003)
+        if spiderTimer >= si { spiderTimer = 0; spawnSpider() }
+
         if envTimer >= 0.6 { envTimer = 0; spawnEnvironment() }
     }
 
@@ -428,7 +442,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func scrollWorldObjects(delta: CGFloat) {
         for child in children {
-            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug {
+            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider {
                 child.position.x -= delta
                 if child.position.x < -120 { child.removeFromParent() }
             }
@@ -522,7 +536,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func isNearGroundObject(x: CGFloat, range: CGFloat) -> Bool {
         for child in children {
-            if child is Log || child is Frog {
+            if child is Log || child is Frog || child is Ant || child is Spider {
                 if abs(child.position.x - x) < range { return true }
             }
         }
@@ -531,27 +545,26 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func spawnBird() {
         let bird = Bird(textures: birdTextures)
-        bird.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.50...0.88))
+        bird.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.45...0.82))
         bird.xScale = -1
         bird.setupPhysics()
         addChild(bird)
 
-        // Faster, more aggressive swoop — targets ladybug directly
-        let targetY = ladybug.position.y
+        // Swoop lower toward ground, slightly slower
+        let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...20)
         SoundManager.shared.play("caw")
         bird.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                         targetY: targetY, duration: 1.4 + Double.random(in: 0...0.6))
+                         targetY: targetY, duration: 2.0 + Double.random(in: 0...0.8))
 
-        // Sometimes send a second bird right after
         if distanceTraveled > 2000 && Bool.random() {
             let bird2 = Bird(textures: birdTextures)
-            bird2.position = CGPoint(x: size.width + 120, y: size.height * CGFloat.random(in: 0.50...0.85))
+            bird2.position = CGPoint(x: size.width + 120, y: size.height * CGFloat.random(in: 0.45...0.80))
             bird2.xScale = -1
             bird2.setupPhysics()
             addChild(bird2)
             bird2.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                             targetY: ladybug.position.y + CGFloat.random(in: -30...30),
-                             duration: 1.6 + Double.random(in: 0...0.5))
+                             targetY: targetY + CGFloat.random(in: -20...20),
+                             duration: 2.2 + Double.random(in: 0...0.6))
         }
     }
 
@@ -604,6 +617,26 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
         let wait = SKAction.wait(forDuration: 0.3)
         frog.run(SKAction.repeatForever(SKAction.sequence([wait, checkDistance])), withKey: "checkAttack")
+    }
+
+    private func spawnAnt() {
+        let spawnX = size.width + 30
+        if isNearGroundObject(x: spawnX, range: 60) { return }
+        let ant = Ant(walkFrames: antFrames)
+        ant.position = CGPoint(x: spawnX, y: groundY + ant.size.height / 2)
+        ant.setupPhysics()
+        ant.startPatrolling()
+        addChild(ant)
+    }
+
+    private func spawnSpider() {
+        let spawnX = size.width + 40
+        if isNearGroundObject(x: spawnX, range: 80) { return }
+        let spider = Spider(walkFrames: spiderFrames)
+        spider.position = CGPoint(x: spawnX, y: groundY + spider.size.height / 2)
+        spider.setupPhysics()
+        spider.startCrawling()
+        addChild(spider)
     }
 
     private func spawnEnvironment() {
@@ -779,11 +812,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         if collision == PhysicsCategory.ladybug | PhysicsCategory.bird {
-            // Safe inside log!
             if ladybug.isSheltered { return }
             if !ladybug.isInvincible {
-                let birdNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird) ? contact.bodyA.node : contact.bodyB.node
-                birdNode?.removeFromParent()
+                let enemyNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird) ? contact.bodyA.node : contact.bodyB.node
+                if enemyNode is Bird { BugTracker.shared.unlock(.bird) }
+                else if enemyNode is Dragonfly { BugTracker.shared.unlock(.dragonfly) }
+                else if enemyNode is Ant { BugTracker.shared.unlock(.ant) }
+                else if enemyNode is Spider { BugTracker.shared.unlock(.spider) }
+                else if enemyNode?.parent is Frog { BugTracker.shared.unlock(.frog) }
+                enemyNode?.removeFromParent()
                 takeDamage()
             }
         }

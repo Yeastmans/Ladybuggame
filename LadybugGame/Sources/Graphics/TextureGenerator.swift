@@ -335,6 +335,131 @@ enum TextureGenerator {
         }
     }
 
+    // MARK: - Ant (side view, two walk frames)
+
+    static func generateAntFrames(size: CGSize) -> [SKTexture] {
+        return [drawAnt(size: size, legPhase: 0), drawAnt(size: size, legPhase: 1)]
+    }
+
+    private static func drawAnt(size: CGSize, legPhase: Int) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+            let dark = UIColor(red: 0.12, green: 0.08, blue: 0.06, alpha: 1.0)
+
+            // Legs (3 pairs, alternating)
+            cg.setStrokeColor(dark.cgColor)
+            cg.setLineWidth(0.7)
+            cg.setLineCap(.round)
+            let fwd: CGFloat = legPhase == 0 ? 0.04 : -0.04
+            for (i, lx) in ([0.28, 0.45, 0.62] as [CGFloat]).enumerated() {
+                let off = (i % 2 == 0) ? fwd : -fwd
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.60))
+                cg.addLine(to: CGPoint(x: w * (lx + off), y: h * 0.85))
+                cg.addLine(to: CGPoint(x: w * (lx + off + 0.03), y: h * 0.92))
+                cg.strokePath()
+            }
+
+            // Abdomen
+            cg.setFillColor(UIColor(red: 0.15, green: 0.10, blue: 0.08, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.02, y: h * 0.30, width: w * 0.35, height: h * 0.40))
+            // Thorax
+            cg.fillEllipse(in: CGRect(x: w * 0.30, y: h * 0.32, width: w * 0.25, height: h * 0.32))
+            // Head
+            cg.setFillColor(UIColor(red: 0.18, green: 0.12, blue: 0.08, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.28, width: w * 0.30, height: h * 0.34))
+
+            // Mandibles
+            cg.setStrokeColor(UIColor(red: 0.35, green: 0.18, blue: 0.10, alpha: 1.0).cgColor)
+            cg.setLineWidth(1.0)
+            cg.move(to: CGPoint(x: w * 0.82, y: h * 0.38))
+            cg.addLine(to: CGPoint(x: w * 0.95, y: h * 0.34))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.82, y: h * 0.52))
+            cg.addLine(to: CGPoint(x: w * 0.95, y: h * 0.56))
+            cg.strokePath()
+
+            // Eye
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.34, width: w * 0.08, height: w * 0.08))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.74, y: h * 0.36, width: w * 0.04, height: w * 0.04))
+
+            // Antenna
+            cg.setStrokeColor(dark.cgColor)
+            cg.setLineWidth(0.5)
+            cg.move(to: CGPoint(x: w * 0.75, y: h * 0.30))
+            cg.addLine(to: CGPoint(x: w * 0.90, y: h * 0.15))
+            cg.strokePath()
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Spider (side view, two walk frames)
+
+    static func generateSpiderFrames(size: CGSize) -> [SKTexture] {
+        return [drawSpider(size: size, legPhase: 0), drawSpider(size: size, legPhase: 1)]
+    }
+
+    private static func drawSpider(size: CGSize, legPhase: Int) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            let legColor = UIColor(red: 0.20, green: 0.15, blue: 0.12, alpha: 1.0).cgColor
+            cg.setStrokeColor(legColor)
+            cg.setLineWidth(0.8)
+            cg.setLineCap(.round)
+
+            // 4 pairs of legs (spiders have 8)
+            let fwd: CGFloat = legPhase == 0 ? 0.05 : -0.05
+            let legXs: [CGFloat] = [0.25, 0.38, 0.52, 0.65]
+            for (i, lx) in legXs.enumerated() {
+                let off = (i % 2 == 0) ? fwd : -fwd
+                // Upper leg
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.50))
+                cg.addLine(to: CGPoint(x: w * (lx + off - 0.08), y: h * 0.30))
+                // Lower leg
+                cg.addLine(to: CGPoint(x: w * (lx + off - 0.05), y: h * 0.88))
+                cg.strokePath()
+            }
+
+            // Abdomen (big, round)
+            cg.setFillColor(UIColor(red: 0.22, green: 0.18, blue: 0.15, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.05, y: h * 0.25, width: w * 0.45, height: h * 0.50))
+            // Pattern on abdomen
+            cg.setFillColor(UIColor(red: 0.35, green: 0.25, blue: 0.18, alpha: 0.5).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.15, y: h * 0.32, width: w * 0.12, height: h * 0.15))
+            cg.fillEllipse(in: CGRect(x: w * 0.28, y: h * 0.35, width: w * 0.10, height: h * 0.12))
+
+            // Cephalothorax
+            cg.setFillColor(UIColor(red: 0.25, green: 0.20, blue: 0.16, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.45, y: h * 0.30, width: w * 0.35, height: h * 0.38))
+
+            // Eyes (multiple!)
+            cg.setFillColor(UIColor(red: 0.90, green: 0.15, blue: 0.10, alpha: 0.8).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.35, width: w * 0.08, height: w * 0.08))
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.44, width: w * 0.06, height: w * 0.06))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.70, y: h * 0.37, width: w * 0.04, height: w * 0.04))
+
+            // Fangs
+            cg.setStrokeColor(UIColor(red: 0.40, green: 0.25, blue: 0.15, alpha: 1.0).cgColor)
+            cg.setLineWidth(1.0)
+            cg.move(to: CGPoint(x: w * 0.78, y: h * 0.48))
+            cg.addLine(to: CGPoint(x: w * 0.88, y: h * 0.58))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.78, y: h * 0.52))
+            cg.addLine(to: CGPoint(x: w * 0.88, y: h * 0.62))
+            cg.strokePath()
+        }
+        return SKTexture(image: image)
+    }
+
     // MARK: - HeartBug (heart with wings and legs)
 
     static func generateHeartBugFrames(size: CGSize) -> [SKTexture] {
