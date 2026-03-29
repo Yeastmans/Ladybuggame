@@ -83,6 +83,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private var birdTextures: [SKTexture] = []
     private var batFrames: [SKTexture] = []
+    private var vultureFrames: [SKTexture] = []
     private var hawkFrames: [SKTexture] = []
     private var owlFrames: [SKTexture] = []
     private var toucanFrames: [SKTexture] = []
@@ -114,6 +115,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         groundY = size.height * 0.28
 
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
+        vultureFrames = TextureGenerator.generateVultureFrames(size: CGSize(width: 56, height: 40))
         batFrames = TextureGenerator.generateBatFrames(size: CGSize(width: 50, height: 36))
         hawkFrames = TextureGenerator.generateHawkFrames(size: CGSize(width: 54, height: 38))
         owlFrames = TextureGenerator.generateOwlFrames(size: CGSize(width: 50, height: 38))
@@ -1089,6 +1091,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 else if let swooper = enemyNode as? BiomeSwooper {
                     switch swooper.biomeName {
                     case "Bat": unlockBug(.bat)
+                    case "Vulture": unlockBug(.vulture)
                     case "Hawk": unlockBug(.hawk)
                     case "Snow Owl": unlockBug(.snowOwl)
                     case "Toucan": unlockBug(.toucan)
@@ -1206,6 +1209,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if spiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateRattlesnakeTexture(size: CGSize(width: 44, height: 28)), name: "Rattlesnake") }
             birdTimer += dt // Hawks
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Hawk") }
+            frogTimer += dt // Vultures
+            if frogTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnBiomeSwooper(name: "Vulture") }
 
         case .snow:
             aphidTimer += dt // Snow fleas
@@ -1258,6 +1263,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnBiomeSwooper(name: String) {
         let frames: [SKTexture]
         switch name {
+        case "Vulture": frames = vultureFrames
         case "Bat": frames = batFrames
         case "Hawk": frames = hawkFrames
         case "Snow Owl": frames = owlFrames
@@ -1271,6 +1277,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(swooper)
         // Biome-specific swooper sound
         switch name {
+        case "Vulture": SoundManager.shared.play("screech")
         case "Bat": SoundManager.shared.play("screech")
         case "Hawk": SoundManager.shared.play("screech")
         case "Snow Owl": SoundManager.shared.play("hoot")
@@ -1355,14 +1362,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             run(SKAction.repeatForever(SKAction.sequence([snowfall, SKAction.wait(forDuration: 0.15)])), withKey: "snowfall")
         }
 
-        // Desert: orange-to-purple gradient sky
+        // Desert: warm orange gradient sky
         if biome == .desert {
             let bands: [(y: CGFloat, h: CGFloat, r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat)] = [
-                (0.95, 0.15, 0.40, 0.15, 0.50, 0.7),  // Top — deep purple
-                (0.80, 0.15, 0.55, 0.20, 0.45, 0.6),  // Upper — purple
-                (0.65, 0.15, 0.75, 0.30, 0.35, 0.5),  // Mid — warm magenta
-                (0.50, 0.15, 0.90, 0.45, 0.20, 0.4),  // Lower — orange
-                (0.38, 0.10, 0.95, 0.60, 0.15, 0.3),  // Horizon — golden
+                (0.95, 0.15, 0.85, 0.40, 0.10, 0.7),  // Top — deep orange
+                (0.80, 0.15, 0.90, 0.48, 0.12, 0.6),  // Upper — orange
+                (0.65, 0.15, 0.95, 0.55, 0.15, 0.5),  // Mid — warm orange
+                (0.50, 0.15, 0.98, 0.65, 0.18, 0.4),  // Lower — light orange
+                (0.38, 0.10, 1.00, 0.75, 0.25, 0.3),  // Horizon — golden
             ]
             for band in bands {
                 let stripe = SKShapeNode(rectOf: CGSize(width: size.width + 10, height: size.height * band.h))

@@ -1002,6 +1002,94 @@ enum TextureGenerator {
         return SKTexture(image: image)
     }
 
+    // MARK: - Vulture (two flap frames — dark brown, bald red head, wide ragged wings)
+
+    static func generateVultureFrames(size: CGSize) -> [SKTexture] {
+        return [drawVulture(size: size, wingsUp: true), drawVulture(size: size, wingsUp: false)]
+    }
+
+    private static func drawVulture(size: CGSize, wingsUp: Bool) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width
+            let h = size.height
+
+            // Wide ragged wings (dark brown/black)
+            cg.setFillColor(UIColor(red: 0.20, green: 0.15, blue: 0.10, alpha: 1.0).cgColor)
+            if wingsUp {
+                cg.move(to: CGPoint(x: w * 0.42, y: h * 0.45))
+                cg.addLine(to: CGPoint(x: w * 0.05, y: h * 0.05))
+                cg.addLine(to: CGPoint(x: w * 0.12, y: h * 0.15))
+                cg.addLine(to: CGPoint(x: w * 0.08, y: h * 0.08))
+                cg.addLine(to: CGPoint(x: w * 0.18, y: h * 0.18))
+                cg.addLine(to: CGPoint(x: w * 0.15, y: h * 0.12))
+                cg.addLine(to: CGPoint(x: w * 0.30, y: h * 0.28))
+                cg.addLine(to: CGPoint(x: w * 0.55, y: h * 0.42))
+                cg.closePath(); cg.fillPath()
+            } else {
+                cg.move(to: CGPoint(x: w * 0.42, y: h * 0.50))
+                cg.addLine(to: CGPoint(x: w * 0.05, y: h * 0.88))
+                cg.addLine(to: CGPoint(x: w * 0.12, y: h * 0.78))
+                cg.addLine(to: CGPoint(x: w * 0.08, y: h * 0.92))
+                cg.addLine(to: CGPoint(x: w * 0.18, y: h * 0.80))
+                cg.addLine(to: CGPoint(x: w * 0.30, y: h * 0.72))
+                cg.addLine(to: CGPoint(x: w * 0.55, y: h * 0.55))
+                cg.closePath(); cg.fillPath()
+            }
+            // Feather detail on wings
+            cg.setFillColor(UIColor(red: 0.30, green: 0.22, blue: 0.14, alpha: 0.5).cgColor)
+            if wingsUp {
+                cg.fillEllipse(in: CGRect(x: w * 0.08, y: h * 0.06, width: w * 0.12, height: h * 0.10))
+            } else {
+                cg.fillEllipse(in: CGRect(x: w * 0.06, y: h * 0.82, width: w * 0.14, height: h * 0.10))
+            }
+
+            // Tail (short, fan-shaped)
+            cg.setFillColor(UIColor(red: 0.18, green: 0.12, blue: 0.08, alpha: 1.0).cgColor)
+            cg.move(to: CGPoint(x: w * 0.05, y: h * 0.40))
+            cg.addLine(to: CGPoint(x: -w * 0.06, y: h * 0.32))
+            cg.addLine(to: CGPoint(x: -w * 0.05, y: h * 0.50))
+            cg.addLine(to: CGPoint(x: -w * 0.06, y: h * 0.60))
+            cg.addLine(to: CGPoint(x: w * 0.08, y: h * 0.56))
+            cg.closePath(); cg.fillPath()
+
+            // Hunched body (dark brown)
+            cg.setFillColor(UIColor(red: 0.25, green: 0.18, blue: 0.12, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.12, y: h * 0.28, width: w * 0.48, height: h * 0.42))
+
+            // White ruff/collar around neck
+            cg.setFillColor(UIColor(red: 0.90, green: 0.88, blue: 0.82, alpha: 0.8).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.52, y: h * 0.32, width: w * 0.16, height: h * 0.22))
+
+            // Bald head (small, pinkish-red, wrinkly)
+            cg.setFillColor(UIColor(red: 0.80, green: 0.35, blue: 0.30, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.30, width: w * 0.20, height: h * 0.24))
+            // Wrinkle lines
+            cg.setStrokeColor(UIColor(red: 0.60, green: 0.25, blue: 0.20, alpha: 0.5).cgColor)
+            cg.setLineWidth(0.5)
+            cg.move(to: CGPoint(x: w * 0.66, y: h * 0.35))
+            cg.addLine(to: CGPoint(x: w * 0.72, y: h * 0.34))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.67, y: h * 0.40))
+            cg.addLine(to: CGPoint(x: w * 0.74, y: h * 0.39))
+            cg.strokePath()
+
+            // Hooked beak (dark, heavy)
+            cg.setFillColor(UIColor(red: 0.20, green: 0.15, blue: 0.10, alpha: 1.0).cgColor)
+            cg.move(to: CGPoint(x: w * 0.80, y: h * 0.38))
+            cg.addLine(to: CGPoint(x: w * 0.96, y: h * 0.44))
+            cg.addLine(to: CGPoint(x: w * 0.90, y: h * 0.52))
+            cg.addLine(to: CGPoint(x: w * 0.80, y: h * 0.48))
+            cg.closePath(); cg.fillPath()
+
+            // Beady eye
+            cg.setFillColor(UIColor(red: 0.15, green: 0.12, blue: 0.08, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.74, y: h * 0.35, width: w * 0.05, height: w * 0.05))
+        }
+        return SKTexture(image: image)
+    }
+
     // MARK: - Bat (two flap frames — dark purple/brown, pointed ears, webbed wings)
 
     static func generateBatFrames(size: CGSize) -> [SKTexture] {
