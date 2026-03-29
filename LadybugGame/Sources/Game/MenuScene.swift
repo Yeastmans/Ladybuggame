@@ -41,18 +41,12 @@ class MenuScene: SKScene {
                   color: SKColor(red: 0.25, green: 0.50, blue: 0.75, alpha: 1.0),
                   y: size.height * 0.28)
 
-        // Per-biome checkpoint buttons
+        // Checkpoints button (opens submenu)
         let unlocked = GameScene.unlockedBiomes.compactMap { Biome(rawValue: $0) }.sorted { $0.rawValue < $1.rawValue }
         if !unlocked.isEmpty {
-            let btnY = size.height * 0.16
-            let btnSpacing: CGFloat = 34
-            let totalH = CGFloat(unlocked.count) * btnSpacing
-            for (i, biome) in unlocked.enumerated() {
-                let y = btnY - CGFloat(i) * btnSpacing + totalH / 2 - btnSpacing / 2
-                addButton("Resume: \(biome.name)", name: "checkpoint_\(biome.rawValue)",
-                          color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
-                          y: y)
-            }
+            addButton("Checkpoints", name: "checkpointsMenu",
+                      color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
+                      y: size.height * 0.16)
         }
 
         let hsLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
@@ -107,8 +101,9 @@ class MenuScene: SKScene {
                 view?.presentScene(bugopedia, transition: .fade(withDuration: 0.3))
                 return
             }
-            if let name = node.name, name.hasPrefix("checkpoint_") {
-                let biomeRaw = Int(name.replacingOccurrences(of: "checkpoint_", with: "")) ?? 0
+            if node.name == "checkpointsMenu" { showCheckpoints(); return }
+            if let name = node.name, name.hasPrefix("cp_") {
+                let biomeRaw = Int(name.replacingOccurrences(of: "cp_", with: "")) ?? 0
                 let game = GameScene(size: size)
                 game.scaleMode = scaleMode
                 game.startFromCheckpoint = true
@@ -157,6 +152,59 @@ class MenuScene: SKScene {
         score.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0)
         score.position = CGPoint(x: 0, y: size.height * 0.05)
         overlay.addChild(score)
+
+        addTapToClose(overlay)
+    }
+
+    private func showCheckpoints() {
+        childNode(withName: "overlay")?.removeFromParent()
+        let overlay = makeOverlay()
+
+        let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        title.text = "Checkpoints"
+        title.fontSize = 24
+        title.fontColor = .white
+        title.position = CGPoint(x: 0, y: size.height * 0.22)
+        overlay.addChild(title)
+
+        let subtitle = SKLabelNode(fontNamed: "AvenirNext-Regular")
+        subtitle.text = "Resume from a biome you've reached"
+        subtitle.fontSize = 11
+        subtitle.fontColor = SKColor(white: 0.7, alpha: 1)
+        subtitle.position = CGPoint(x: 0, y: size.height * 0.15)
+        overlay.addChild(subtitle)
+
+        let biomes = GameScene.unlockedBiomes.compactMap { Biome(rawValue: $0) }.sorted { $0.rawValue < $1.rawValue }
+        let spacing: CGFloat = 46
+        let startY = size.height * 0.06
+        for (i, biome) in biomes.enumerated() {
+            let y = startY - CGFloat(i) * spacing
+            let btn = SKShapeNode(rectOf: CGSize(width: 180, height: 36), cornerRadius: 8)
+            btn.fillColor = biome.skyColor.withAlphaComponent(0.8)
+            btn.strokeColor = SKColor(white: 1.0, alpha: 0.3)
+            btn.lineWidth = 1
+            btn.position = CGPoint(x: 0, y: y)
+            btn.name = "cp_\(biome.rawValue)"
+            overlay.addChild(btn)
+
+            let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            label.text = biome.name
+            label.fontSize = 16
+            label.fontColor = .white
+            label.verticalAlignmentMode = .center
+            label.name = "cp_\(biome.rawValue)"
+            btn.addChild(label)
+
+            let scoreHint = SKLabelNode(fontNamed: "AvenirNext-Regular")
+            scoreHint.text = "\(biome.scoreThreshold) pts"
+            scoreHint.fontSize = 9
+            scoreHint.fontColor = SKColor(white: 1.0, alpha: 0.5)
+            scoreHint.horizontalAlignmentMode = .right
+            scoreHint.verticalAlignmentMode = .center
+            scoreHint.position = CGPoint(x: 75, y: 0)
+            scoreHint.name = "cp_\(biome.rawValue)"
+            btn.addChild(scoreHint)
+        }
 
         addTapToClose(overlay)
     }
