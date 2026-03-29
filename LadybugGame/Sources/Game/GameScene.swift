@@ -1075,7 +1075,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if !ladybug.isInvincible {
                 let enemyNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird) ? contact.bodyA.node : contact.bodyB.node
                 if enemyNode is Bird { unlockBug(.bird) }
-                else if enemyNode is Dragonfly { unlockBug(.dragonfly) }
+                else if let df = enemyNode as? Dragonfly {
+                    if df.name == "vulture" { unlockBug(.vulture) }
+                    else { unlockBug(.dragonfly) }
+                }
                 else if enemyNode is Ant { unlockBug(.ant) }
                 else if enemyNode is Spider {
                     if currentBiome == .jungle { unlockBug(.jungleSpider) }
@@ -1091,7 +1094,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 else if let swooper = enemyNode as? BiomeSwooper {
                     switch swooper.biomeName {
                     case "Bat": unlockBug(.bat)
-                    case "Vulture": unlockBug(.vulture)
                     case "Hawk": unlockBug(.hawk)
                     case "Snow Owl": unlockBug(.snowOwl)
                     case "Toucan": unlockBug(.toucan)
@@ -1210,7 +1212,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             birdTimer += dt // Hawks
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Hawk") }
             frogTimer += dt // Vultures
-            if frogTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnBiomeSwooper(name: "Vulture") }
+            if frogTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnVulture() }
 
         case .snow:
             aphidTimer += dt // Snow fleas
@@ -1263,7 +1265,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnBiomeSwooper(name: String) {
         let frames: [SKTexture]
         switch name {
-        case "Vulture": frames = vultureFrames
         case "Bat": frames = batFrames
         case "Hawk": frames = hawkFrames
         case "Snow Owl": frames = owlFrames
@@ -1277,7 +1278,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(swooper)
         // Biome-specific swooper sound
         switch name {
-        case "Vulture": SoundManager.shared.play("screech")
         case "Bat": SoundManager.shared.play("screech")
         case "Hawk": SoundManager.shared.play("screech")
         case "Snow Owl": SoundManager.shared.play("hoot")
@@ -1288,6 +1288,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         swooper.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
                             targetY: targetY, startY: swooper.position.y,
                             duration: 2.0 + Double.random(in: 0...0.8))
+    }
+
+    private func spawnVulture() {
+        let vulture = Dragonfly(textures: vultureFrames)
+        vulture.position = CGPoint(x: size.width + 60, y: groundY + CGFloat.random(in: 60...size.height * 0.55))
+        vulture.name = "vulture"
+        vulture.setupPhysics()
+        vulture.startHovering(minY: groundY + 50, maxY: size.height * 0.65, playerX: ladybug.position.x)
+        addChild(vulture)
+        SoundManager.shared.play("screech")
     }
 
     private func spawnJungleSpider() {
