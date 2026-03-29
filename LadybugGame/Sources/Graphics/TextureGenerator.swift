@@ -1014,10 +1014,10 @@ enum TextureGenerator {
             let cg = ctx.cgContext
             let w = size.width
             let h = size.height
-            let bodyC = UIColor(red: 0.18, green: 0.10, blue: 0.28, alpha: 1.0)
+            let bodyC = UIColor(red: 0.45, green: 0.30, blue: 0.60, alpha: 1.0)
 
             // Webbed wings (jagged edge)
-            cg.setFillColor(UIColor(red: 0.22, green: 0.12, blue: 0.30, alpha: 0.9).cgColor)
+            cg.setFillColor(UIColor(red: 0.50, green: 0.35, blue: 0.65, alpha: 0.9).cgColor)
             if wingsUp {
                 let wp = UIBezierPath()
                 wp.move(to: CGPoint(x: w * 0.45, y: h * 0.45))
@@ -1040,7 +1040,7 @@ enum TextureGenerator {
                 cg.addPath(wp.cgPath); cg.fillPath()
             }
             // Wing membrane veins
-            cg.setStrokeColor(UIColor(red: 0.30, green: 0.18, blue: 0.38, alpha: 0.4).cgColor)
+            cg.setStrokeColor(UIColor(red: 0.55, green: 0.40, blue: 0.70, alpha: 0.5).cgColor)
             cg.setLineWidth(0.5)
             if wingsUp {
                 cg.move(to: CGPoint(x: w * 0.45, y: h * 0.45))
@@ -1053,7 +1053,7 @@ enum TextureGenerator {
             cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * 0.30, width: w * 0.40, height: h * 0.40))
 
             // Head
-            cg.setFillColor(UIColor(red: 0.20, green: 0.12, blue: 0.30, alpha: 1.0).cgColor)
+            cg.setFillColor(UIColor(red: 0.48, green: 0.32, blue: 0.62, alpha: 1.0).cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * 0.30, width: w * 0.25, height: h * 0.28))
 
             // Pointed ears
