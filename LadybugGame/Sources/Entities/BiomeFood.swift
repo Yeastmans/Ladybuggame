@@ -46,6 +46,13 @@ class BiomeFood: SKSpriteNode {
                 }
             }
             run(SKAction.repeatForever(SKAction.sequence([bob, SKAction.wait(forDuration: 0.3), clamp])), withKey: "fly")
+
+            // Gentle body tilt while flying
+            let tilt = SKAction.sequence([
+                SKAction.rotate(toAngle: 0.12, duration: 0.4),
+                SKAction.rotate(toAngle: -0.12, duration: 0.4),
+            ])
+            run(SKAction.repeatForever(tilt), withKey: "tilt")
         } else {
             let dist = CGFloat.random(in: 8...18)
             let right = SKAction.sequence([
@@ -58,6 +65,20 @@ class BiomeFood: SKSpriteNode {
             ])
             let pause = SKAction.wait(forDuration: Double.random(in: 0.3...0.6))
             run(SKAction.repeatForever(SKAction.sequence([right, pause, left, pause])), withKey: "crawl")
+
+            // Walking bob
+            let walkBob = SKAction.sequence([
+                SKAction.moveBy(x: 0, y: 2, duration: 0.15),
+                SKAction.moveBy(x: 0, y: -2, duration: 0.15),
+            ])
+            run(SKAction.repeatForever(walkBob), withKey: "walkBob")
+
+            // Squash/stretch while walking
+            let squash = SKAction.sequence([
+                SKAction.group([SKAction.scaleX(to: 1.08, duration: 0.18), SKAction.scaleY(to: 0.94, duration: 0.18)]),
+                SKAction.group([SKAction.scaleX(to: 0.95, duration: 0.18), SKAction.scaleY(to: 1.06, duration: 0.18)]),
+            ])
+            run(SKAction.repeatForever(squash), withKey: "walkSquash")
         }
     }
 }

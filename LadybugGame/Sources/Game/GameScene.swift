@@ -458,6 +458,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             guard let self = self else { return }
             let pondHalfW = node.frame.width / 2
             if abs(node.position.x - self.ladybug.position.x) < pondHalfW {
+                SoundManager.shared.play("splash")
                 self.takeDamage()
                 stop.pointee = true
             }
@@ -653,6 +654,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         bird.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
                          targetY: targetY, groundY: groundY,
                          duration: isNight ? 1.4 + Double.random(in: 0...0.4) : 1.6 + Double.random(in: 0...0.5))
+        bird.run(SKAction.sequence([SKAction.wait(forDuration: 0.4), SKAction.run {
+            SoundManager.shared.play("whoosh")
+        }]))
     }
 
     /// Spawns a pond with either a frog or dragonfly (never both)
@@ -997,18 +1001,25 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if let food = (contact.bodyA.node as? BiomeFood) ?? (contact.bodyB.node as? BiomeFood) {
                 score += food.points
                 showFloatingScore(food.points, at: food.position, color: .cyan)
+                showEatParticles(at: food.position)
                 food.removeFromParent()
                 ladybug.pulse()
-                SoundManager.shared.play("munch")
+                SoundManager.shared.play("pop")
+                switch food.biomeName {
+                case "Desert Beetle", "Jungle Beetle": SoundManager.shared.play("skitter")
+                case "Sand Fly", "Ice Moth", "Butterfly": SoundManager.shared.play("flutter")
+                default: break
+                }
                 return
             }
             if let aphid = (contact.bodyA.node as? Aphid) ?? (contact.bodyB.node as? Aphid) {
                 score += aphid.points
                 showFloatingScore(aphid.points, at: aphid.position,
                     color: aphid.colorType == .red ? .red : (aphid.colorType == .yellow ? .yellow : .green))
+                showEatParticles(at: aphid.position)
                 aphid.removeFromParent()
                 ladybug.pulse()
-                SoundManager.shared.play("munch")
+                SoundManager.shared.play("pop")
                 switch aphid.colorType {
                 case .green: unlockBug(.greenAphid)
                 case .yellow: unlockBug(.yellowAphid)
@@ -1022,9 +1033,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if let gs = (contact.bodyA.node as? GnatSwarm) ?? (contact.bodyB.node as? GnatSwarm) {
                 score += 20
                 showFloatingScore(20, at: gs.position, color: SKColor(white: 0.9, alpha: 1))
+                showEatParticles(at: gs.position)
                 gs.removeFromParent()
                 ladybug.pulse()
-                SoundManager.shared.play("munch")
+                SoundManager.shared.play("pop")
                 return
             }
             // HeartBug — restore a life
@@ -1032,9 +1044,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 if lives < 3 { lives += 1; updateLivesDisplay() }
                 score += 50
                 showFloatingScore(50, at: hb.position, color: SKColor(red: 1.0, green: 0.3, blue: 0.4, alpha: 1.0))
+                showEatParticles(at: hb.position)
                 hb.removeFromParent()
                 ladybug.pulse()
-                SoundManager.shared.play("eatRare")
+                SoundManager.shared.play("powerup")
                 unlockBug(.heartBug)
                 return
             }
@@ -1042,10 +1055,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if let ff = (contact.bodyA.node as? Firefly) ?? (contact.bodyB.node as? Firefly) {
                 score += 100
                 showFloatingScore(100, at: ff.position, color: SKColor(red: 1.0, green: 0.95, blue: 0.3, alpha: 1.0))
+                showEatParticles(at: ff.position)
                 ff.removeFromParent()
                 ladybug.makeInvincible(duration: 10.0)
                 ladybug.pulse()
-                SoundManager.shared.play("eatRare")
+                SoundManager.shared.play("powerup")
                 unlockBug(.firefly)
 
                 // Visual: golden glow while invincible
@@ -1068,9 +1082,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 score += fly.points
                 let c: SKColor = fly.colorType == .purple ? .purple : (fly.colorType == .blue ? .cyan : .orange)
                 showFloatingScore(fly.points, at: fly.position, color: c)
+                showEatParticles(at: fly.position)
                 fly.removeFromParent()
                 ladybug.pulse()
-                SoundManager.shared.play("eatRare")
+                SoundManager.shared.play("pop")
                 switch fly.colorType {
                 case .brown: unlockBug(.brownFly)
                 case .blue: unlockBug(.blueFly)
@@ -1136,6 +1151,27 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             SKAction.group([SKAction.moveBy(x: 0, y: 30, duration: 0.5), SKAction.fadeOut(withDuration: 0.5)]),
             SKAction.removeFromParent()
         ]))
+    }
+
+    private func showEatParticles(at pos: CGPoint) {
+        for _ in 0..<6 {
+            let p = SKShapeNode(circleOfRadius: CGFloat.random(in: 1.5...3))
+            p.fillColor = [SKColor.white, SKColor.yellow, SKColor.green].randomElement()!
+            p.strokeColor = .clear
+            p.position = pos
+            p.zPosition = 55
+            addChild(p)
+            let dx = CGFloat.random(in: -20...20)
+            let dy = CGFloat.random(in: 5...25)
+            p.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.moveBy(x: dx, y: dy, duration: 0.3),
+                    SKAction.fadeOut(withDuration: 0.3),
+                    SKAction.scale(to: 0.2, duration: 0.3),
+                ]),
+                SKAction.removeFromParent()
+            ]))
+        }
     }
 
     private func unlockBug(_ bug: BugTracker.BugType) {
@@ -1293,6 +1329,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Toucan": SoundManager.shared.play("squawk")
         default: SoundManager.shared.play("caw")
         }
+        // Delayed whoosh as it dives
+        swooper.run(SKAction.sequence([SKAction.wait(forDuration: 0.5), SKAction.run {
+            SoundManager.shared.play("whoosh")
+        }]))
         let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...15)
         swooper.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
                             targetY: targetY, groundY: groundY,

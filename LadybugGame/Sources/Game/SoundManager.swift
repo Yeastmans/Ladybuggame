@@ -29,6 +29,14 @@ final class SoundManager: @unchecked Sendable {
         prepareSound("hoot", frequency: 350, duration: 0.20, volume: 0.25, sweep: 250) // owl
         prepareSound("squawk", frequency: 700, duration: 0.15, volume: 0.25, sweep: 450) // toucan
         prepareSound("crunch", frequency: 500, duration: 0.08, volume: 0.3, sweep: 200) // spider
+        prepareSound("splash", frequency: 200, duration: 0.18, volume: 0.25, sweep: 80) // pond
+        prepareSound("whoosh", frequency: 350, duration: 0.12, volume: 0.2, sweep: 600) // swooper dive
+        prepareSound("snap", frequency: 900, duration: 0.05, volume: 0.3) // scorpion pincer
+        prepareSound("rattle", frequency: 1800, duration: 0.20, volume: 0.2, sweep: 2200) // rattlesnake
+        prepareSound("flutter", frequency: 700, duration: 0.10, volume: 0.15, sweep: 900) // butterfly/moth
+        prepareSound("skitter", frequency: 1200, duration: 0.06, volume: 0.15, sweep: 800) // beetle scurry
+        prepareSound("pop", frequency: 1000, duration: 0.04, volume: 0.25) // food eaten
+        prepareSound("powerup", frequency: 500, duration: 0.25, volume: 0.35, sweep: 1500) // firefly/heartbug
         prepareSound("newBug", frequency: 600, duration: 0.15, volume: 0.35, sweep: 1000) // bugopedia unlock
         prepareMusic()
     }
