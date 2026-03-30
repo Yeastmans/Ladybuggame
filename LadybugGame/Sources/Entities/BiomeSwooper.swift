@@ -29,23 +29,26 @@ class BiomeSwooper: SKSpriteNode {
         physicsBody = body
     }
 
-    /// Dive at player, pull up near ground, exit high off screen
-    func swoopAcross(sceneWidth: CGFloat, ladybugX: CGFloat, targetY: CGFloat, startY: CGFloat, duration: TimeInterval) {
+    /// Dive from top-right toward player near ground, pull up sharply, exit left
+    func swoopAcross(sceneWidth: CGFloat, ladybugX: CGFloat, targetY: CGFloat, groundY: CGFloat, duration: TimeInterval) {
         xScale = -abs(xScale)
 
-        let diveX = ladybugX - position.x
-        let diveY = targetY - position.y
-        let pullUpY = startY - position.y // Go back up to start height
-        let exitX = -size.width * 2 - position.x
+        let diveTargetX = ladybugX + CGFloat.random(in: -20...20)
+        let diveTargetY = targetY
+        let diveDx = diveTargetX - position.x
+        let diveDy = diveTargetY - position.y
+
+        let exitX: CGFloat = -100
+        let exitY = position.y * 0.8
+        let pullDx = exitX - diveTargetX
+        let pullDy = exitY - diveTargetY
 
         let path = UIBezierPath()
         path.move(to: .zero)
-        // Dive down toward player
-        path.addQuadCurve(to: CGPoint(x: diveX, y: diveY),
-                          controlPoint: CGPoint(x: diveX * 0.6, y: diveY * 0.3))
-        // Pull up sharply and exit high
-        path.addQuadCurve(to: CGPoint(x: exitX, y: pullUpY),
-                          controlPoint: CGPoint(x: diveX + exitX * 0.15, y: diveY - 40))
+        path.addQuadCurve(to: CGPoint(x: diveDx, y: diveDy),
+                          controlPoint: CGPoint(x: diveDx * 0.3, y: diveDy * 0.85))
+        path.addQuadCurve(to: CGPoint(x: diveDx + pullDx, y: diveDy + pullDy),
+                          controlPoint: CGPoint(x: diveDx + pullDx * 0.3, y: diveDy - 15))
 
         let follow = SKAction.follow(path.cgPath, asOffset: true, orientToPath: false, duration: duration)
         run(SKAction.sequence([follow, SKAction.removeFromParent()]))

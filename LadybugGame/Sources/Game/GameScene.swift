@@ -636,7 +636,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func spawnBird() {
         let bird = Bird(textures: birdTextures)
-        bird.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.50...0.85))
+        bird.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.70...0.95))
         bird.xScale = -1
         bird.setupPhysics()
 
@@ -651,8 +651,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...15)
         SoundManager.shared.play("caw")
         bird.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                         targetY: targetY, startY: bird.position.y,
-                         duration: isNight ? 1.8 + Double.random(in: 0...0.6) : 2.2 + Double.random(in: 0...0.8))
+                         targetY: targetY, groundY: groundY,
+                         duration: isNight ? 1.4 + Double.random(in: 0...0.4) : 1.6 + Double.random(in: 0...0.5))
     }
 
     /// Spawns a pond with either a frog or dragonfly (never both)
@@ -865,49 +865,40 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnSnowDecor(x: CGFloat) {
         let roll = Int.random(in: 0...4)
         switch roll {
-        case 0: // Pine tree (tall)
-            let trunkH: CGFloat = 28
-            let trunk = SKShapeNode(rectOf: CGSize(width: 6, height: trunkH))
-            trunk.fillColor = SKColor(red: 0.45, green: 0.30, blue: 0.15, alpha: 0.8)
+        case 0: // Tall pine tree with snow
+            let trunkH: CGFloat = CGFloat.random(in: 70...100)
+            let trunk = SKShapeNode(rectOf: CGSize(width: 10, height: trunkH))
+            trunk.fillColor = SKColor(red: 0.40, green: 0.25, blue: 0.12, alpha: 0.9)
             addDecor(trunk, x: x, y: groundY + trunkH / 2)
-            // Bottom tier (widest)
-            let t1 = SKShapeNode()
-            let p1 = UIBezierPath()
-            p1.move(to: CGPoint(x: 0, y: 0))
-            p1.addLine(to: CGPoint(x: -18, y: -22))
-            p1.addLine(to: CGPoint(x: 18, y: -22))
-            p1.close()
-            t1.path = p1.cgPath
-            t1.fillColor = SKColor(red: 0.12, green: 0.35, blue: 0.18, alpha: 0.9)
-            t1.strokeColor = .clear
-            addDecor(t1, x: x, y: groundY + trunkH + 10)
-            // Middle tier
-            let t2 = SKShapeNode()
-            let p2 = UIBezierPath()
-            p2.move(to: CGPoint(x: 0, y: 0))
-            p2.addLine(to: CGPoint(x: -14, y: -18))
-            p2.addLine(to: CGPoint(x: 14, y: -18))
-            p2.close()
-            t2.path = p2.cgPath
-            t2.fillColor = SKColor(red: 0.15, green: 0.40, blue: 0.20, alpha: 0.9)
-            t2.strokeColor = .clear
-            addDecor(t2, x: x, y: groundY + trunkH + 26)
-            // Top tier
-            let t3 = SKShapeNode()
-            let p3 = UIBezierPath()
-            p3.move(to: CGPoint(x: 0, y: 0))
-            p3.addLine(to: CGPoint(x: -9, y: -14))
-            p3.addLine(to: CGPoint(x: 9, y: -14))
-            p3.close()
-            t3.path = p3.cgPath
-            t3.fillColor = SKColor(red: 0.18, green: 0.45, blue: 0.22, alpha: 0.9)
-            t3.strokeColor = .clear
-            addDecor(t3, x: x, y: groundY + trunkH + 38)
-            // Snow on branches
-            let snow = SKShapeNode(ellipseOf: CGSize(width: 20, height: 5))
-            snow.fillColor = SKColor(white: 0.98, alpha: 0.7)
-            snow.strokeColor = .clear
-            addDecor(snow, x: x, y: groundY + trunkH + 24)
+            // 4 tiers of branches, widest at bottom
+            let tiers: [(w: CGFloat, h: CGFloat, yOff: CGFloat, g: CGFloat)] = [
+                (40, 35, trunkH * 0.30, 0.30),
+                (34, 30, trunkH * 0.50, 0.35),
+                (26, 26, trunkH * 0.70, 0.40),
+                (18, 22, trunkH * 0.90, 0.45),
+            ]
+            for tier in tiers {
+                let t = SKShapeNode()
+                let p = UIBezierPath()
+                p.move(to: CGPoint(x: 0, y: 0))
+                p.addLine(to: CGPoint(x: -tier.w, y: -tier.h))
+                p.addLine(to: CGPoint(x: tier.w, y: -tier.h))
+                p.close()
+                t.path = p.cgPath
+                t.fillColor = SKColor(red: 0.10, green: tier.g, blue: 0.16, alpha: 0.9)
+                t.strokeColor = .clear
+                addDecor(t, x: x, y: groundY + tier.yOff + tier.h)
+                // Snow on each tier
+                let snow = SKShapeNode(ellipseOf: CGSize(width: tier.w * 1.1, height: 5))
+                snow.fillColor = SKColor(white: 0.97, alpha: 0.75)
+                snow.strokeColor = .clear
+                addDecor(snow, x: x, y: groundY + tier.yOff + tier.h - 2)
+            }
+            // Snow cap on top
+            let cap = SKShapeNode(circleOfRadius: 6)
+            cap.fillColor = SKColor(white: 0.98, alpha: 0.8)
+            cap.strokeColor = .clear
+            addDecor(cap, x: x, y: groundY + trunkH + 8)
         case 1: // Snowdrift
             let drift = SKShapeNode()
             let dp = UIBezierPath()
@@ -936,25 +927,43 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnJungleDecor(x: CGFloat) {
         let roll = Int.random(in: 0...4)
         switch roll {
-        case 0: // Jungle tree with vines
-            let trunkH: CGFloat = CGFloat.random(in: 40...60)
-            let trunk = SKShapeNode(rectOf: CGSize(width: 8, height: trunkH))
-            trunk.fillColor = SKColor(red: 0.35, green: 0.22, blue: 0.10, alpha: 0.9)
+        case 0: // Massive jungle tree with canopy and vines
+            let trunkH: CGFloat = CGFloat.random(in: 80...120)
+            let trunk = SKShapeNode(rectOf: CGSize(width: 14, height: trunkH))
+            trunk.fillColor = SKColor(red: 0.32, green: 0.20, blue: 0.08, alpha: 0.9)
             addDecor(trunk, x: x, y: groundY + trunkH / 2)
-            // Leafy canopy (layered)
-            let c1 = SKShapeNode(circleOfRadius: CGFloat.random(in: 18...26))
-            c1.fillColor = SKColor(red: 0.15, green: CGFloat.random(in: 0.50...0.65), blue: 0.12, alpha: 0.8)
-            addDecor(c1, x: x - 8, y: groundY + trunkH + 8)
-            let c2 = SKShapeNode(circleOfRadius: CGFloat.random(in: 16...22))
-            c2.fillColor = SKColor(red: 0.18, green: CGFloat.random(in: 0.55...0.70), blue: 0.15, alpha: 0.8)
-            addDecor(c2, x: x + 10, y: groundY + trunkH + 12)
-            let c3 = SKShapeNode(circleOfRadius: CGFloat.random(in: 14...18))
-            c3.fillColor = SKColor(red: 0.22, green: CGFloat.random(in: 0.60...0.75), blue: 0.18, alpha: 0.7)
-            addDecor(c3, x: x, y: groundY + trunkH + 20)
-            // Hanging vine
-            let vine = SKShapeNode(rectOf: CGSize(width: 2, height: CGFloat.random(in: 20...35)))
-            vine.fillColor = SKColor(red: 0.18, green: 0.48, blue: 0.12, alpha: 0.6)
-            addDecor(vine, x: x + 5, y: groundY + trunkH - vine.frame.height / 2 + 5)
+            // Exposed roots at base
+            for r in [-12, -6, 6, 10] as [CGFloat] {
+                let root = SKShapeNode(rectOf: CGSize(width: 3, height: CGFloat.random(in: 8...14)))
+                root.fillColor = SKColor(red: 0.30, green: 0.18, blue: 0.08, alpha: 0.7)
+                root.zRotation = r > 0 ? -0.3 : 0.3
+                addDecor(root, x: x + r, y: groundY + 4)
+            }
+            // Big layered canopy (5 overlapping circles)
+            let canopyBase = groundY + trunkH
+            let canopyPuffs: [(dx: CGFloat, dy: CGFloat, r: CGFloat, g: CGFloat)] = [
+                (-22, 5, 28, 0.48), (20, 8, 26, 0.52), (0, 18, 30, 0.55),
+                (-14, 22, 24, 0.58), (12, 25, 22, 0.62),
+            ]
+            for puff in canopyPuffs {
+                let c = SKShapeNode(circleOfRadius: puff.r)
+                c.fillColor = SKColor(red: 0.12, green: puff.g, blue: 0.10, alpha: 0.85)
+                c.strokeColor = .clear
+                addDecor(c, x: x + puff.dx, y: canopyBase + puff.dy)
+            }
+            // Hanging vines from canopy
+            for vx in [CGFloat(-18), -5, 8, 20] {
+                let vineH = CGFloat.random(in: 30...60)
+                let vine = SKShapeNode(rectOf: CGSize(width: 2, height: vineH))
+                vine.fillColor = SKColor(red: 0.15, green: CGFloat.random(in: 0.42...0.55), blue: 0.10, alpha: 0.6)
+                vine.strokeColor = .clear
+                addDecor(vine, x: x + vx, y: canopyBase - vineH / 2 + 5)
+            }
+            // Orchid on trunk
+            let orchid = SKShapeNode(circleOfRadius: 3)
+            orchid.fillColor = [SKColor.magenta, SKColor.orange, SKColor.yellow].randomElement()!
+            orchid.strokeColor = .clear
+            addDecor(orchid, x: x + 8, y: groundY + trunkH * 0.4)
         case 1: // Giant leaf
             let leaf = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 12...22), height: CGFloat.random(in: 6...10)))
             leaf.fillColor = SKColor(red: 0.18, green: CGFloat.random(in: 0.55...0.72), blue: 0.15, alpha: 0.7)
@@ -1202,13 +1211,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         case .desert:
             aphidTimer += dt // Desert beetles
-            if aphidTimer >= 1.4 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateDesertBeetleTexture(size: CGSize(width: 20, height: 18)), pts: 15, flying: false, name: "Desert Beetle") }
+            if aphidTimer >= 1.4 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateDesertBeetleTexture(size: CGSize(width: 28, height: 24)), pts: 15, flying: false, name: "Desert Beetle") }
             flyTimer += dt // Desert flies (with wings via FruitFly frames)
             if flyTimer >= 1.8 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 18, height: 18), color: .brown).first!, pts: 20, flying: true, name: "Sand Fly") }
             dragonflyTimer += dt // Scorpions
-            if dragonflyTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateScorpionTexture(size: CGSize(width: 36, height: 28)), name: "Scorpion") }
+            if dragonflyTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateScorpionTexture(size: CGSize(width: 44, height: 34)), name: "Scorpion") }
             spiderTimer += dt // Rattlesnake
-            if spiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateRattlesnakeTexture(size: CGSize(width: 44, height: 28)), name: "Rattlesnake") }
+            if spiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateRattlesnakeTexture(size: CGSize(width: 52, height: 34)), name: "Rattlesnake") }
             birdTimer += dt // Hawks
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Hawk") }
             frogTimer += dt // Vultures
@@ -1216,11 +1225,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         case .snow:
             aphidTimer += dt // Snow fleas
-            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSnowFleaTexture(size: CGSize(width: 18, height: 16)), pts: 15, flying: false, name: "Snow Flea") }
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSnowFleaTexture(size: CGSize(width: 24, height: 20)), pts: 15, flying: false, name: "Snow Flea") }
             flyTimer += dt // Ice moths
             if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 20, height: 20), color: .blue).first!, pts: 25, flying: true, name: "Ice Moth") }
             spiderTimer += dt // Ice spiders
-            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 32, height: 28), bodyColor: UIColor(red: 0.50, green: 0.60, blue: 0.80, alpha: 1.0), eyeColor: UIColor(red: 0.20, green: 0.80, blue: 1.0, alpha: 1.0), legCount: 4), name: "Ice Spider") }
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateIceSpiderTexture(size: CGSize(width: 44, height: 36)), name: "Ice Spider") }
             birdTimer += dt // Snow owls
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Snow Owl") }
             fireflyTimer += dt // Hot cocoa (rare power-up)
@@ -1228,7 +1237,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         case .jungle:
             aphidTimer += dt // Jungle beetles
-            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateJungleBeetleTexture(size: CGSize(width: 22, height: 20)), pts: 30, flying: false, name: "Jungle Beetle") }
+            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateJungleBeetleTexture(size: CGSize(width: 28, height: 24)), pts: 30, flying: false, name: "Jungle Beetle") }
             flyTimer += dt // Tropical butterflies
             if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: .purple).first!, pts: 20, flying: true, name: "Butterfly") }
             dragonflyTimer += dt // Poison dart frogs at ponds
@@ -1272,7 +1281,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         default: frames = birdTextures
         }
         let swooper = BiomeSwooper(textures: frames, biomeName: name)
-        swooper.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.50...0.85))
+        swooper.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.70...0.95))
         swooper.xScale = -1
         swooper.setupPhysics()
         addChild(swooper)
@@ -1286,8 +1295,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
         let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...15)
         swooper.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                            targetY: targetY, startY: swooper.position.y,
-                            duration: 2.0 + Double.random(in: 0...0.8))
+                            targetY: targetY, groundY: groundY,
+                            duration: 1.5 + Double.random(in: 0...0.5))
     }
 
     private func spawnVulture() {

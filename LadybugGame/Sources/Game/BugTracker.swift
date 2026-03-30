@@ -176,7 +176,7 @@ final class BugTracker: @unchecked Sendable {
         case .rattlesnake: return TextureGenerator.generateRattlesnakeTexture(size: size)
         case .vulture: return TextureGenerator.generateVultureFrames(size: size).first!
         case .hawk: return TextureGenerator.generateHawkFrames(size: size).first!
-        case .iceSpider: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.50, green: 0.60, blue: 0.80, alpha: 1), eyeColor: UIColor(red: 0.20, green: 0.80, blue: 1.0, alpha: 1), legCount: 4)
+        case .iceSpider: return TextureGenerator.generateIceSpiderTexture(size: size)
         case .snowOwl: return TextureGenerator.generateOwlFrames(size: size).first!
         case .poisonDartFrog: return TextureGenerator.generatePoisonDartFrogTexture(size: size)
         case .jungleSpider: return TextureGenerator.generateJungleSpiderFrames(size: size).first!
