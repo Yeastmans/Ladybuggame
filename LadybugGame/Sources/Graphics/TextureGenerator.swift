@@ -972,32 +972,102 @@ enum TextureGenerator {
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
             let w = size.width; let h = size.height
-            let body = UIColor(red: 0.65, green: 0.45, blue: 0.20, alpha: 1.0)
-            cg.setStrokeColor(body.cgColor); cg.setLineWidth(1.2); cg.setLineCap(.round)
-            cg.move(to: CGPoint(x: w * 0.10, y: h * 0.50))
-            cg.addQuadCurve(to: CGPoint(x: w * 0.18, y: h * 0.10), control: CGPoint(x: w * 0.02, y: h * 0.20))
+            let bodyC = UIColor(red: 0.62, green: 0.42, blue: 0.18, alpha: 1.0)
+            let darkC = UIColor(red: 0.45, green: 0.30, blue: 0.12, alpha: 1.0)
+            cg.setLineCap(.round); cg.setLineJoin(.round)
+
+            // === Tail (curled up, segmented) ===
+            cg.setStrokeColor(bodyC.cgColor)
+            cg.setLineWidth(w * 0.08)
+            cg.move(to: CGPoint(x: w * 0.12, y: h * 0.50))
+            cg.addCurve(to: CGPoint(x: w * 0.22, y: h * 0.08),
+                        control1: CGPoint(x: w * 0.02, y: h * 0.30),
+                        control2: CGPoint(x: w * 0.08, y: h * 0.05))
             cg.strokePath()
-            cg.setFillColor(UIColor(red: 0.20, green: 0.10, blue: 0.05, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.15, y: h * 0.05, width: 4, height: 4))
-            cg.setFillColor(body.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.15, y: h * 0.35, width: w * 0.55, height: h * 0.35))
-            cg.setStrokeColor(body.cgColor); cg.setLineWidth(1.5)
-            cg.move(to: CGPoint(x: w * 0.68, y: h * 0.42))
-            cg.addLine(to: CGPoint(x: w * 0.85, y: h * 0.30))
-            cg.addLine(to: CGPoint(x: w * 0.92, y: h * 0.38))
-            cg.strokePath()
-            cg.move(to: CGPoint(x: w * 0.68, y: h * 0.58))
-            cg.addLine(to: CGPoint(x: w * 0.85, y: h * 0.65))
-            cg.addLine(to: CGPoint(x: w * 0.92, y: h * 0.58))
-            cg.strokePath()
-            cg.setLineWidth(0.8)
-            for lx in [0.30, 0.42, 0.54, 0.64] as [CGFloat] {
-                cg.move(to: CGPoint(x: w * lx, y: h * 0.68))
-                cg.addLine(to: CGPoint(x: w * (lx - 0.03), y: h * 0.88))
+            // Tail segments
+            cg.setStrokeColor(darkC.cgColor)
+            cg.setLineWidth(0.6)
+            for t in [0.38, 0.28, 0.20, 0.14] as [CGFloat] {
+                cg.move(to: CGPoint(x: w * (0.06 + t * 0.2), y: h * t - 2))
+                cg.addLine(to: CGPoint(x: w * (0.06 + t * 0.2) + 3, y: h * t + 2))
                 cg.strokePath()
             }
+            // Stinger (dark, pointed)
+            cg.setFillColor(UIColor(red: 0.20, green: 0.08, blue: 0.02, alpha: 1.0).cgColor)
+            cg.move(to: CGPoint(x: w * 0.19, y: h * 0.06))
+            cg.addLine(to: CGPoint(x: w * 0.26, y: h * 0.02))
+            cg.addLine(to: CGPoint(x: w * 0.24, y: h * 0.12))
+            cg.closePath(); cg.fillPath()
+
+            // === 4 legs per side ===
+            cg.setStrokeColor(bodyC.cgColor)
+            cg.setLineWidth(1.2)
+            for (i, lx) in [0.30, 0.40, 0.50, 0.60].enumerated() as EnumeratedSequence<[Double]> {
+                let knee = CGFloat(i) * 0.02
+                // Left legs (going down)
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.62))
+                cg.addLine(to: CGPoint(x: w * (lx - 0.06 - knee), y: h * 0.78))
+                cg.addLine(to: CGPoint(x: w * (lx - 0.04), y: h * 0.94))
+                cg.strokePath()
+            }
+
+            // === Body (segmented, armored) ===
+            // Abdomen
+            cg.setFillColor(bodyC.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.14, y: h * 0.32, width: w * 0.35, height: h * 0.38))
+            // Body segments
+            cg.setStrokeColor(darkC.cgColor)
+            cg.setLineWidth(0.7)
+            cg.move(to: CGPoint(x: w * 0.26, y: h * 0.34))
+            cg.addLine(to: CGPoint(x: w * 0.26, y: h * 0.68))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.36, y: h * 0.34))
+            cg.addLine(to: CGPoint(x: w * 0.36, y: h * 0.68))
+            cg.strokePath()
+            // Armored shine
+            cg.setFillColor(UIColor(red: 0.75, green: 0.55, blue: 0.28, alpha: 0.3).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.18, y: h * 0.36, width: w * 0.15, height: h * 0.14))
+
+            // === Cephalothorax (head section) ===
+            cg.setFillColor(UIColor(red: 0.58, green: 0.38, blue: 0.15, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.48, y: h * 0.34, width: w * 0.24, height: h * 0.32))
+
+            // === Pincers (large, detailed) ===
+            cg.setStrokeColor(bodyC.cgColor)
+            cg.setLineWidth(2.0)
+            // Upper pincer arm
+            cg.move(to: CGPoint(x: w * 0.68, y: h * 0.38))
+            cg.addLine(to: CGPoint(x: w * 0.82, y: h * 0.25))
+            cg.strokePath()
+            // Upper pincer claw (open)
+            cg.setLineWidth(1.8)
+            cg.move(to: CGPoint(x: w * 0.82, y: h * 0.25))
+            cg.addLine(to: CGPoint(x: w * 0.94, y: h * 0.20))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.82, y: h * 0.25))
+            cg.addLine(to: CGPoint(x: w * 0.92, y: h * 0.32))
+            cg.strokePath()
+            // Lower pincer arm
+            cg.setLineWidth(2.0)
+            cg.move(to: CGPoint(x: w * 0.68, y: h * 0.62))
+            cg.addLine(to: CGPoint(x: w * 0.82, y: h * 0.72))
+            cg.strokePath()
+            // Lower pincer claw
+            cg.setLineWidth(1.8)
+            cg.move(to: CGPoint(x: w * 0.82, y: h * 0.72))
+            cg.addLine(to: CGPoint(x: w * 0.94, y: h * 0.68))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.82, y: h * 0.72))
+            cg.addLine(to: CGPoint(x: w * 0.92, y: h * 0.78))
+            cg.strokePath()
+
+            // === Eyes (small, dark, menacing) ===
             cg.setFillColor(UIColor.black.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.42, width: 3, height: 3))
+            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.38, width: w * 0.05, height: w * 0.05))
+            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.52, width: w * 0.05, height: w * 0.05))
+            // Eye shine
+            cg.setFillColor(UIColor(red: 0.85, green: 0.70, blue: 0.30, alpha: 0.5).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.63, y: h * 0.39, width: w * 0.02, height: w * 0.02))
         }
         return SKTexture(image: image)
     }

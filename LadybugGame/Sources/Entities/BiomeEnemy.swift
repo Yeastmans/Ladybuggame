@@ -63,8 +63,8 @@ class BiomeEnemy: SKSpriteNode {
             ])
 
             // BIG jump — high arc
-            let jumpH: CGFloat = biomeName == "Rattlesnake" ? 80 : 65
-            let jumpX: CGFloat = biomeName == "Rattlesnake" ? 55 : 45
+            let jumpH: CGFloat = biomeName == "Rattlesnake" ? 110 : 100
+            let jumpX: CGFloat = biomeName == "Rattlesnake" ? 60 : 50
             let jumpUp = SKAction.group([
                 SKAction.moveBy(x: jumpX * 0.6, y: jumpH, duration: 0.22),
                 SKAction.scaleX(to: 0.9, duration: 0.22),

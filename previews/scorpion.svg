@@ -1,17 +1,46 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
-  <!-- Scorpion -->
-  <path d="M 6,28 Q 3,14 8,8" stroke="#a67333" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-  <circle cx="8" cy="7" r="2" fill="#331a08"/>
-  <ellipse cx="20" cy="26" rx="14" ry="8" fill="#a67333"/>
-  <line x1="34" y1="22" x2="40" y2="18" stroke="#a67333" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="40" y1="18" x2="44" y2="22" stroke="#a67333" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="34" y1="30" x2="40" y2="34" stroke="#a67333" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="40" y1="34" x2="44" y2="30" stroke="#a67333" stroke-width="1.5" stroke-linecap="round"/>
-  <g stroke="#a67333" stroke-width="0.8" stroke-linecap="round">
-    <line x1="14" y1="34" x2="12" y2="42"/>
-    <line x1="20" y1="34" x2="18" y2="42"/>
-    <line x1="26" y1="34" x2="24" y2="42"/>
-    <line x1="32" y1="32" x2="30" y2="42"/>
+  <!-- Scorpion — detailed, armored, segmented -->
+
+  <!-- Curled tail with segments -->
+  <path d="M 6,26 C 2,16 4,4 11,4" stroke="#a06830" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <line x1="5" y1="20" x2="7" y2="22" stroke="#73501e" stroke-width="0.6"/>
+  <line x1="4.5" y1="15" x2="6.5" y2="17" stroke="#73501e" stroke-width="0.6"/>
+  <line x1="5.5" y1="10" x2="7.5" y2="11" stroke="#73501e" stroke-width="0.6"/>
+  <!-- Stinger -->
+  <polygon points="11,3 14,1 13,7" fill="#331408"/>
+
+  <!-- Legs (4 with knee joints) -->
+  <g stroke="#a06830" stroke-width="1.2" fill="none" stroke-linecap="round">
+    <polyline points="15,32 11,36 12,44"/>
+    <polyline points="20,32 17,38 18,44"/>
+    <polyline points="26,32 24,38 25,44"/>
+    <polyline points="31,30 30,37 31,44"/>
   </g>
-  <circle cx="34" cy="24" r="1.5" fill="black"/>
+
+  <!-- Abdomen (segmented) -->
+  <ellipse cx="20" cy="26" rx="12" ry="8" fill="#a06830"/>
+  <line x1="15" y1="19" x2="15" y2="33" stroke="#73501e" stroke-width="0.7" opacity="0.6"/>
+  <line x1="22" y1="19" x2="22" y2="33" stroke="#73501e" stroke-width="0.7" opacity="0.6"/>
+  <!-- Armor shine -->
+  <ellipse cx="17" cy="22" rx="4" ry="3" fill="#c08838" opacity="0.3"/>
+
+  <!-- Cephalothorax -->
+  <ellipse cx="33" cy="26" rx="6" ry="7" fill="#946028"/>
+
+  <!-- Pincers (large, open claws) -->
+  <g stroke="#a06830" stroke-width="2" stroke-linecap="round" fill="none">
+    <!-- Upper pincer -->
+    <line x1="37" y1="22" x2="42" y2="16"/>
+    <line x1="42" y1="16" x2="47" y2="13"/>
+    <line x1="42" y1="16" x2="46" y2="20"/>
+    <!-- Lower pincer -->
+    <line x1="37" y1="30" x2="42" y2="35"/>
+    <line x1="42" y1="35" x2="47" y2="33"/>
+    <line x1="42" y1="35" x2="46" y2="38"/>
+  </g>
+
+  <!-- Eyes -->
+  <circle cx="35" cy="22" r="1.3" fill="black"/>
+  <circle cx="35" cy="29" r="1.3" fill="black"/>
+  <circle cx="35.3" cy="22.3" r="0.4" fill="#d9aa44" opacity="0.5"/>
 </svg>
