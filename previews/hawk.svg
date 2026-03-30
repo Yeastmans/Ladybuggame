@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Hawk -->
+  <path d="M 20,22 Q 10,8 6,2 L 14,6 Q 22,14 26,20" fill="#805228"/>
+  <ellipse cx="8" cy="4" rx="4" ry="2.5" fill="#593818" opacity="0.6"/>
+  <polygon points="2,20 -2,18 -1,26 -3,30 4,27" fill="#6b4828"/>
+  <ellipse cx="14" cy="24" rx="14" ry="9" fill="#8c6030"/>
+  <ellipse cx="18" cy="28" rx="8" ry="4" fill="#ebd8c8" opacity="0.7"/>
+  <circle cx="30" cy="22" r="7" fill="#734d28"/>
+  <path d="M 38,22 L 44,24 Q 44,27 42,28 L 38,26 Z" fill="#40301a"/>
+  <circle cx="33" cy="20" r="2.5" fill="#ffd900"/>
+  <circle cx="34" cy="20.5" r="1.2" fill="black"/>
+  <line x1="30" y1="17" x2="36" y2="19" stroke="#4d3014" stroke-width="2" stroke-linecap="round"/>
+</svg>

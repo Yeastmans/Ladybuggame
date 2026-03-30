@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Snow Flea -->
+  <polyline points="12,30 6,22 4,42" stroke="#2e2038" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <line x1="26" y1="32" x2="25" y2="42" stroke="#2e2038" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="32" y1="30" x2="32" y2="40" stroke="#2e2038" stroke-width="0.8" stroke-linecap="round"/>
+  <ellipse cx="20" cy="24" rx="13" ry="10" fill="#261e38"/>
+  <ellipse cx="14" cy="20" rx="5" ry="4" fill="#4d4066" opacity="0.3"/>
+  <circle cx="34" cy="22" r="6" fill="#2e2440"/>
+  <circle cx="38" cy="20" r="2.5" fill="#99ccff"/>
+  <circle cx="39" cy="20.5" r="1.2" fill="black"/>
+  <line x1="40" y1="16" x2="44" y2="10" stroke="#2e2440" stroke-width="0.6" stroke-linecap="round"/>
+</svg>

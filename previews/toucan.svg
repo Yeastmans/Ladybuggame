@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Toucan — black body, massive colorful beak -->
+  <path d="M 18,22 Q 10,6 6,2 Q 14,10 24,20" fill="#14141e"/>
+  <polygon points="2,20 -4,18 -3,26 -3,30 4,27" fill="#1a1420"/>
+  <ellipse cx="14" cy="24" rx="13" ry="9" fill="#1a1a1e"/>
+  <ellipse cx="18" cy="28" rx="6" ry="4" fill="#fff2d9" opacity="0.9"/>
+  <circle cx="28" cy="22" r="7" fill="#1a1a1e"/>
+  <path d="M 34,18 Q 42,16 48,24 Q 42,30 34,28 Z" fill="#fa9908"/>
+  <ellipse cx="42" cy="22" rx="4" ry="2.5" fill="#ffe61a" opacity="0.7"/>
+  <circle cx="46" cy="23" r="2" fill="#e6261a" opacity="0.8"/>
+  <line x1="35" y1="23" x2="46" y2="23.5" stroke="#4d2e08" stroke-width="0.6" opacity="0.5"/>
+  <circle cx="31" cy="20" r="2.5" fill="#3380d9"/>
+  <circle cx="32" cy="20.5" r="1.2" fill="black"/>
+  <circle cx="30.5" cy="19" r="0.5" fill="white"/>
+</svg>

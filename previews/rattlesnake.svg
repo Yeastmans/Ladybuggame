@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Rattlesnake -->
+  <path d="M 4,32 C 10,18 20,42 28,30 C 32,24 36,28 38,22" stroke="#997338" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <circle cx="8" cy="30" r="2.5" fill="#997338" opacity="0.6"/>
+  <circle cx="18" cy="34" r="2" fill="#735828" opacity="0.6"/>
+  <circle cx="26" cy="30" r="2" fill="#735828" opacity="0.6"/>
+  <polygon points="36,20 44,24 44,28 36,28" fill="#8c6630"/>
+  <circle cx="41" cy="22" r="1.5" fill="#f2d933"/>
+  <rect x="41.5" y="21" width="0.7" height="3" fill="black"/>
+  <line x1="44" y1="25" x2="47" y2="23" stroke="#d93340" stroke-width="1" stroke-linecap="round"/>
+  <line x1="44" y1="25" x2="47" y2="27" stroke="#d93340" stroke-width="1" stroke-linecap="round"/>
+  <ellipse cx="3" cy="32" rx="2" ry="2.5" fill="#b3955a"/>
+  <ellipse cx="1.5" cy="33" rx="1.5" ry="2" fill="#b3955a"/>
+</svg>

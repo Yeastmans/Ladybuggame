@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Fruit Fly side view -->
+  <ellipse cx="22" cy="18" rx="10" ry="7" fill="#aabbcc" opacity="0.35"/>
+  <ellipse cx="22" cy="26" rx="10" ry="9" fill="#6b4a2e"/>
+  <ellipse cx="22" cy="30" rx="6" ry="4" fill="#8b6a4e" opacity="0.5"/>
+  <circle cx="34" cy="24" r="5" fill="#5a3a1e"/>
+  <circle cx="38" cy="22" r="2.5" fill="#cc3322"/>
+  <circle cx="39" cy="22.5" r="1" fill="black"/>
+  <line x1="14" y1="34" x2="12" y2="40" stroke="#5a3a1e" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="20" y1="34" x2="19" y2="40" stroke="#5a3a1e" stroke-width="0.8" stroke-linecap="round"/>
+</svg>

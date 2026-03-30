@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Toad — brown, warty -->
+  <ellipse cx="10" cy="32" rx="7" ry="6" fill="#614d30"/>
+  <ellipse cx="22" cy="24" rx="14" ry="12" fill="#6b5634"/>
+  <circle cx="18" cy="22" r="2" fill="#584828" opacity="0.6"/>
+  <circle cx="28" cy="20" r="1.5" fill="#584828" opacity="0.6"/>
+  <circle cx="24" cy="28" r="1.8" fill="#584828" opacity="0.6"/>
+  <ellipse cx="22" cy="30" rx="9" ry="4.5" fill="#a69468" opacity="0.8"/>
+  <ellipse cx="36" cy="20" rx="9" ry="9" fill="#665030"/>
+  <circle cx="42" cy="12" r="5" fill="#d9b326"/>
+  <circle cx="43.5" cy="13" r="2.5" fill="black"/>
+  <line x1="40" y1="24" x2="46" y2="23" stroke="#4d3a1e" stroke-width="1.2" stroke-linecap="round"/>
+  <ellipse cx="34" cy="36" rx="4" ry="5" fill="#614d30"/>
+  <ellipse cx="36" cy="42" rx="5" ry="2.5" fill="#614d30"/>
+  <ellipse cx="6" cy="42" rx="5" ry="2.5" fill="#614d30"/>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Black Widow Spider side view -->
+  <g stroke="#1a0d0d" stroke-width="1.6" stroke-linecap="round" fill="none">
+    <polyline points="18,24 10,10 8,40"/>
+    <polyline points="16,24 6,12 4,40"/>
+    <polyline points="14,24 4,14 2,40"/>
+    <polyline points="12,24 2,18 1,40"/>
+    <polyline points="30,24 38,10 40,40"/>
+    <polyline points="32,24 42,12 44,40"/>
+    <polyline points="34,24 44,14 46,40"/>
+    <polyline points="36,24 46,18 47,40"/>
+  </g>
+  <ellipse cx="14" cy="24" rx="12" ry="11" fill="#0d0808"/>
+  <ellipse cx="10" cy="20" rx="5" ry="4" fill="#2e2830" opacity="0.4"/>
+  <polygon points="12,21 16,21 14,25" fill="#eb1410"/>
+  <polygon points="12,27 16,27 14,25" fill="#eb1410"/>
+  <ellipse cx="30" cy="24" rx="8" ry="8" fill="#121010"/>
+  <circle cx="34" cy="20" r="2" fill="#33f24d" opacity="0.9"/>
+  <circle cx="34" cy="26" r="2" fill="#33f24d" opacity="0.9"/>
+  <circle cx="35" cy="21" r="0.8" fill="black"/>
+  <circle cx="35" cy="27" r="0.8" fill="black"/>
+</svg>

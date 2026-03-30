@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Bush (shelter) -->
+  <ellipse cx="12" cy="28" rx="13" ry="16" fill="#387a26"/>
+  <ellipse cx="28" cy="26" rx="14" ry="18" fill="#4d9933"/>
+  <ellipse cx="40" cy="28" rx="11" ry="15" fill="#387a26"/>
+  <ellipse cx="16" cy="22" rx="10" ry="12" fill="#4d9933"/>
+  <ellipse cx="34" cy="20" rx="10" ry="10" fill="#66b846"/>
+  <ellipse cx="22" cy="18" rx="8" ry="9" fill="#66b846"/>
+  <circle cx="18" cy="16" r="2" fill="#e64040" opacity="0.6"/>
+  <circle cx="34" cy="14" r="1.5" fill="#e64040" opacity="0.6"/>
+  <circle cx="42" cy="20" r="2" fill="#e64040" opacity="0.6"/>
+  <circle cx="26" cy="12" r="1.5" fill="#ffe64d" opacity="0.5"/>
+</svg>

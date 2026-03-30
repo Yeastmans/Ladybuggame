@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Dragonfly side view -->
+  <ellipse cx="20" cy="18" rx="12" ry="4" fill="#aaccdd" opacity="0.35"/>
+  <line x1="20" y1="18" x2="28" y2="14" stroke="#8899aa" stroke-width="0.4" opacity="0.3"/>
+  <ellipse cx="22" cy="26" rx="14" ry="5" fill="#2266aa"/>
+  <ellipse cx="22" cy="28" rx="8" ry="3" fill="#55aadd" opacity="0.4"/>
+  <circle cx="38" cy="24" r="5" fill="#1a5588"/>
+  <circle cx="42" cy="22" r="3" fill="#22ccff"/>
+  <circle cx="43" cy="22.5" r="1.5" fill="black"/>
+  <circle cx="42" cy="20" r="3" fill="#22ccff"/>
+  <circle cx="43" cy="20.5" r="1.5" fill="black"/>
+  <rect x="2" y="25" width="10" height="2" rx="1" fill="#1a5588" opacity="0.7"/>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Desert Beetle -->
+  <g stroke="#40301a" stroke-width="1" stroke-linecap="round">
+    <line x1="14" y1="32" x2="12" y2="42"/>
+    <line x1="22" y1="32" x2="20" y2="42"/>
+    <line x1="30" y1="30" x2="28" y2="40"/>
+  </g>
+  <ellipse cx="18" cy="24" rx="14" ry="11" fill="#4d381a"/>
+  <line x1="18" y1="14" x2="18" y2="34" stroke="#33260d" stroke-width="0.8" opacity="0.6"/>
+  <ellipse cx="14" cy="20" rx="5" ry="4" fill="#665028" opacity="0.3"/>
+  <circle cx="34" cy="22" r="6" fill="#382810"/>
+  <circle cx="38" cy="20" r="2.5" fill="white"/>
+  <circle cx="39" cy="20.5" r="1.2" fill="black"/>
+  <line x1="38" y1="16" x2="42" y2="10" stroke="#382810" stroke-width="0.8" stroke-linecap="round"/>
+</svg>

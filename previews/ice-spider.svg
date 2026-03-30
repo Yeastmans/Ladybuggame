@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Ice Spider -->
+  <g stroke="#6688bb" stroke-width="1.6" stroke-linecap="round" fill="none">
+    <polyline points="18,24 10,10 8,40"/>
+    <polyline points="16,24 6,12 4,40"/>
+    <polyline points="14,24 4,14 2,40"/>
+    <polyline points="12,24 2,18 1,40"/>
+    <polyline points="30,24 38,10 40,40"/>
+    <polyline points="32,24 42,12 44,40"/>
+    <polyline points="34,24 44,14 46,40"/>
+    <polyline points="36,24 46,18 47,40"/>
+  </g>
+  <circle cx="4" cy="40" r="2" fill="#bfe6ff" opacity="0.6"/>
+  <circle cx="44" cy="40" r="2" fill="#bfe6ff" opacity="0.6"/>
+  <ellipse cx="14" cy="24" rx="12" ry="11" fill="#7394c6"/>
+  <ellipse cx="10" cy="20" rx="5" ry="4" fill="#b3d9ff" opacity="0.4"/>
+  <g stroke="#cce6ff" stroke-width="0.8" opacity="0.6">
+    <line x1="14" y1="22" x2="20" y2="18"/>
+    <line x1="14" y1="22" x2="8" y2="18"/>
+    <line x1="14" y1="22" x2="14" y2="16"/>
+  </g>
+  <ellipse cx="30" cy="24" rx="8" ry="8" fill="#6180b3"/>
+  <circle cx="34" cy="20" r="2" fill="#33d9ff"/>
+  <circle cx="34" cy="27" r="2" fill="#33d9ff"/>
+  <circle cx="35" cy="20.5" r="0.6" fill="white"/>
+  <circle cx="35" cy="27.5" r="0.6" fill="white"/>
+  <line x1="36" y1="23" x2="42" y2="27" stroke="#b3d9ff" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+  <line x1="36" y1="26" x2="42" y2="30" stroke="#b3d9ff" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+</svg>

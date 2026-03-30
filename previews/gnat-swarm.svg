@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Gnat Swarm -->
+  <circle cx="20" cy="20" r="2" fill="#ddd" opacity="0.7"/>
+  <circle cx="28" cy="18" r="1.5" fill="#ccc" opacity="0.6"/>
+  <circle cx="24" cy="26" r="2" fill="#ddd" opacity="0.7"/>
+  <circle cx="16" cy="24" r="1.5" fill="#bbb" opacity="0.6"/>
+  <circle cx="30" cy="28" r="1.8" fill="#ddd" opacity="0.7"/>
+  <circle cx="22" cy="14" r="1.5" fill="#ccc" opacity="0.6"/>
+  <circle cx="18" cy="30" r="1.8" fill="#ddd" opacity="0.7"/>
+  <circle cx="32" cy="22" r="1.5" fill="#bbb" opacity="0.5"/>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Jungle Beetle — iridescent green -->
+  <g stroke="#145c1e" stroke-width="1" stroke-linecap="round">
+    <line x1="14" y1="32" x2="12" y2="42"/>
+    <line x1="22" y1="32" x2="20" y2="42"/>
+    <line x1="30" y1="30" x2="28" y2="40"/>
+  </g>
+  <ellipse cx="18" cy="24" rx="14" ry="11" fill="#148c38"/>
+  <line x1="18" y1="14" x2="18" y2="34" stroke="#0d5926" stroke-width="0.8" opacity="0.6"/>
+  <ellipse cx="14" cy="20" rx="6" ry="4.5" fill="#26bf80" opacity="0.3"/>
+  <circle cx="16" cy="26" r="2" fill="#ffd900" opacity="0.5"/>
+  <circle cx="24" cy="22" r="1.5" fill="#ffd900" opacity="0.5"/>
+  <circle cx="34" cy="22" r="6" fill="#0d6126"/>
+  <circle cx="38" cy="20" r="2.5" fill="#ffd900"/>
+  <circle cx="39" cy="20.5" r="1.2" fill="black"/>
+  <line x1="40" y1="22" x2="45" y2="20" stroke="#0d6126" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="40" y1="26" x2="45" y2="28" stroke="#0d6126" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

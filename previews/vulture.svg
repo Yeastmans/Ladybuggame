@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Vulture -->
+  <path d="M 20,22 L 4,4 8,10 2,6 10,14 6,8 16,18 24,20 Z" fill="#33261a"/>
+  <polygon points="2,20 -3,18 -2,26 -3,30 4,27" fill="#2e1e12"/>
+  <ellipse cx="14" cy="24" rx="13" ry="8" fill="#402e1e"/>
+  <ellipse cx="26" cy="22" rx="4" ry="5" fill="#e6e0d4" opacity="0.8"/>
+  <circle cx="32" cy="20" r="5" fill="#cc5a4d"/>
+  <line x1="30" y1="18" x2="34" y2="18" stroke="#994030" stroke-width="0.5" opacity="0.5"/>
+  <line x1="30" y1="21" x2="35" y2="20.5" stroke="#994030" stroke-width="0.5" opacity="0.5"/>
+  <polygon points="36,20 42,23 40,27 36,25" fill="#33261a"/>
+  <circle cx="34" cy="19" r="1.2" fill="#261e14"/>
+</svg>

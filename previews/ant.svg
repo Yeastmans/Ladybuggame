@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 48 48">
+  <!-- Ant side view -->
+  <line x1="14" y1="28" x2="10" y2="38" stroke="#2a1a0a" stroke-width="1" stroke-linecap="round"/>
+  <line x1="22" y1="28" x2="20" y2="38" stroke="#2a1a0a" stroke-width="1" stroke-linecap="round"/>
+  <line x1="30" y1="26" x2="30" y2="36" stroke="#2a1a0a" stroke-width="1" stroke-linecap="round"/>
+  <ellipse cx="12" cy="22" rx="8" ry="7" fill="#3a1a0a"/>
+  <ellipse cx="24" cy="22" rx="6" ry="5" fill="#4a2a12"/>
+  <circle cx="34" cy="20" r="5" fill="#3a1a0a"/>
+  <circle cx="38" cy="17" r="2" fill="white"/>
+  <circle cx="39" cy="17.5" r="1" fill="black"/>
+  <path d="M 36 14 Q 40 8 42 5" stroke="#3a1a0a" stroke-width="1" fill="none"/>
+  <path d="M 37 15 Q 42 10 44 8" stroke="#3a1a0a" stroke-width="1" fill="none"/>
+  <line x1="38" y1="22" x2="44" y2="20" stroke="#3a1a0a" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
