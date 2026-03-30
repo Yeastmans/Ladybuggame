@@ -26,33 +26,34 @@ class Bird: SKSpriteNode {
         physicsBody = body
     }
 
-    /// Dive from top-right toward player near ground, pull up sharply, exit left
+    /// Steep dive at player, then pull up and exit
     func swoopAcross(sceneWidth: CGFloat, ladybugX: CGFloat, targetY: CGFloat, groundY: CGFloat, duration: TimeInterval) {
-        // Bird starts top-right, facing left
         xScale = -abs(xScale)
 
-        // Phase 1: Steep diagonal dive toward player at ground level
-        let diveTargetX = ladybugX + CGFloat.random(in: -20...20)
+        let diveTargetX = ladybugX + CGFloat.random(in: -15...15)
         let diveTargetY = targetY
+
+        // Phase 1: Dive — steep curve, accelerating down
+        let divePath = UIBezierPath()
+        divePath.move(to: .zero)
         let diveDx = diveTargetX - position.x
         let diveDy = diveTargetY - position.y
+        // Control point near top-center: bird drops almost straight down first, then arcs toward player
+        divePath.addQuadCurve(to: CGPoint(x: diveDx, y: diveDy),
+                              controlPoint: CGPoint(x: diveDx * 0.12, y: diveDy * 0.7))
+        let dive = SKAction.follow(divePath.cgPath, asOffset: true, orientToPath: false, duration: duration * 0.55)
+        dive.timingMode = .easeIn
 
-        // Phase 2: Sharp pull-up and exit off left
-        let exitX: CGFloat = -100
-        let exitY = position.y * 0.8  // Exit high but not quite as high as entry
-        let pullDx = exitX - diveTargetX
-        let pullDy = exitY - diveTargetY
+        // Phase 2: Pull up — fast sweep upward and left off screen
+        let pullPath = UIBezierPath()
+        pullPath.move(to: .zero)
+        let exitDx = -sceneWidth * 0.4
+        let exitDy = -diveDy * 0.7 // Go back up most of the dive height
+        pullPath.addQuadCurve(to: CGPoint(x: exitDx, y: exitDy),
+                              controlPoint: CGPoint(x: exitDx * 0.25, y: -20))
+        let pull = SKAction.follow(pullPath.cgPath, asOffset: true, orientToPath: false, duration: duration * 0.45)
+        pull.timingMode = .easeOut
 
-        let path = UIBezierPath()
-        path.move(to: .zero)
-        // Steep dive — control point pulls the curve to be nearly vertical at first, then curves toward target
-        path.addQuadCurve(to: CGPoint(x: diveDx, y: diveDy),
-                          controlPoint: CGPoint(x: diveDx * 0.3, y: diveDy * 0.85))
-        // Sharp pull-up — control point keeps it low briefly then sweeps up
-        path.addQuadCurve(to: CGPoint(x: diveDx + pullDx, y: diveDy + pullDy),
-                          controlPoint: CGPoint(x: diveDx + pullDx * 0.3, y: diveDy - 15))
-
-        let follow = SKAction.follow(path.cgPath, asOffset: true, orientToPath: false, duration: duration)
-        run(SKAction.sequence([follow, SKAction.removeFromParent()]))
+        run(SKAction.sequence([dive, pull, SKAction.removeFromParent()]))
     }
 }

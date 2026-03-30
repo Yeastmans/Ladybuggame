@@ -29,28 +29,33 @@ class BiomeSwooper: SKSpriteNode {
         physicsBody = body
     }
 
-    /// Dive from top-right toward player near ground, pull up sharply, exit left
+    /// Steep dive at player, then pull up and exit
     func swoopAcross(sceneWidth: CGFloat, ladybugX: CGFloat, targetY: CGFloat, groundY: CGFloat, duration: TimeInterval) {
         xScale = -abs(xScale)
 
-        let diveTargetX = ladybugX + CGFloat.random(in: -20...20)
+        let diveTargetX = ladybugX + CGFloat.random(in: -15...15)
         let diveTargetY = targetY
+
+        // Phase 1: Dive
+        let divePath = UIBezierPath()
+        divePath.move(to: .zero)
         let diveDx = diveTargetX - position.x
         let diveDy = diveTargetY - position.y
+        divePath.addQuadCurve(to: CGPoint(x: diveDx, y: diveDy),
+                              controlPoint: CGPoint(x: diveDx * 0.12, y: diveDy * 0.7))
+        let dive = SKAction.follow(divePath.cgPath, asOffset: true, orientToPath: false, duration: duration * 0.55)
+        dive.timingMode = .easeIn
 
-        let exitX: CGFloat = -100
-        let exitY = position.y * 0.8
-        let pullDx = exitX - diveTargetX
-        let pullDy = exitY - diveTargetY
+        // Phase 2: Pull up
+        let pullPath = UIBezierPath()
+        pullPath.move(to: .zero)
+        let exitDx = -sceneWidth * 0.4
+        let exitDy = -diveDy * 0.7
+        pullPath.addQuadCurve(to: CGPoint(x: exitDx, y: exitDy),
+                              controlPoint: CGPoint(x: exitDx * 0.25, y: -20))
+        let pull = SKAction.follow(pullPath.cgPath, asOffset: true, orientToPath: false, duration: duration * 0.45)
+        pull.timingMode = .easeOut
 
-        let path = UIBezierPath()
-        path.move(to: .zero)
-        path.addQuadCurve(to: CGPoint(x: diveDx, y: diveDy),
-                          controlPoint: CGPoint(x: diveDx * 0.3, y: diveDy * 0.85))
-        path.addQuadCurve(to: CGPoint(x: diveDx + pullDx, y: diveDy + pullDy),
-                          controlPoint: CGPoint(x: diveDx + pullDx * 0.3, y: diveDy - 15))
-
-        let follow = SKAction.follow(path.cgPath, asOffset: true, orientToPath: false, duration: duration)
-        run(SKAction.sequence([follow, SKAction.removeFromParent()]))
+        run(SKAction.sequence([dive, pull, SKAction.removeFromParent()]))
     }
 }

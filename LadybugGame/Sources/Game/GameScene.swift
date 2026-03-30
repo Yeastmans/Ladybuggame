@@ -838,15 +838,38 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnDesertDecor(x: CGFloat) {
         let roll = Int.random(in: 0...4)
         switch roll {
-        case 0: // Cactus
-            let trunk = SKShapeNode(rectOf: CGSize(width: 6, height: CGFloat.random(in: 16...28)), cornerRadius: 2)
-            trunk.fillColor = SKColor(red: 0.30, green: 0.55, blue: 0.22, alpha: 0.9)
-            let th = trunk.frame.height
-            addDecor(trunk, x: x, y: groundY + th / 2)
-            // Arms
-            let arm = SKShapeNode(rectOf: CGSize(width: 4, height: 10), cornerRadius: 2)
-            arm.fillColor = SKColor(red: 0.28, green: 0.52, blue: 0.20, alpha: 0.9)
-            addDecor(arm, x: x - 6, y: groundY + th * 0.6)
+        case 0: // Tall cactus with arms
+            let trunkH = CGFloat.random(in: 45...75)
+            let trunk = SKShapeNode(rectOf: CGSize(width: 12, height: trunkH), cornerRadius: 4)
+            trunk.fillColor = SKColor(red: 0.28, green: 0.55, blue: 0.20, alpha: 0.9)
+            addDecor(trunk, x: x, y: groundY + trunkH / 2)
+            // Left arm
+            let armH1 = CGFloat.random(in: 14...22)
+            let arm1v = SKShapeNode(rectOf: CGSize(width: 8, height: armH1), cornerRadius: 3)
+            arm1v.fillColor = SKColor(red: 0.26, green: 0.52, blue: 0.18, alpha: 0.9)
+            arm1v.strokeColor = .clear
+            addDecor(arm1v, x: x - 10, y: groundY + trunkH * 0.55 + armH1 / 2)
+            let arm1h = SKShapeNode(rectOf: CGSize(width: 10, height: 8), cornerRadius: 3)
+            arm1h.fillColor = SKColor(red: 0.26, green: 0.52, blue: 0.18, alpha: 0.9)
+            arm1h.strokeColor = .clear
+            addDecor(arm1h, x: x - 10, y: groundY + trunkH * 0.55)
+            // Right arm (higher)
+            let armH2 = CGFloat.random(in: 10...18)
+            let arm2v = SKShapeNode(rectOf: CGSize(width: 8, height: armH2), cornerRadius: 3)
+            arm2v.fillColor = SKColor(red: 0.30, green: 0.56, blue: 0.22, alpha: 0.9)
+            arm2v.strokeColor = .clear
+            addDecor(arm2v, x: x + 10, y: groundY + trunkH * 0.70 + armH2 / 2)
+            let arm2h = SKShapeNode(rectOf: CGSize(width: 10, height: 8), cornerRadius: 3)
+            arm2h.fillColor = SKColor(red: 0.30, green: 0.56, blue: 0.22, alpha: 0.9)
+            arm2h.strokeColor = .clear
+            addDecor(arm2h, x: x + 10, y: groundY + trunkH * 0.70)
+            // Spines (tiny lines)
+            for sy in stride(from: CGFloat(0.2), through: 0.9, by: 0.15) {
+                let spine = SKShapeNode(rectOf: CGSize(width: 4, height: 1))
+                spine.fillColor = SKColor(red: 0.22, green: 0.42, blue: 0.15, alpha: 0.5)
+                spine.strokeColor = .clear
+                addDecor(spine, x: x + 8, y: groundY + trunkH * sy)
+            }
         case 1: // Dead bush (brown, spiky)
             let bush = SKShapeNode(circleOfRadius: CGFloat.random(in: 6...12))
             bush.fillColor = SKColor(red: 0.55, green: 0.40, blue: 0.22, alpha: 0.6)
