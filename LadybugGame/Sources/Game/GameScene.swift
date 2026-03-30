@@ -405,7 +405,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         pushEntitiesFromLogs()
         checkPondSplash()
-        pushEntitiesFromPonds()
         checkSpiderJumps()
 
         // Scrolling
@@ -470,26 +469,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
 
-    /// Push ground-walking entities away from ponds so they don't walk into water
-    private func pushEntitiesFromPonds() {
-        for child in children {
-            let isGroundEntity = child is Aphid || child is Ant || child is Spider || child is BiomeEnemy || child is BiomeFood
-            guard isGroundEntity, !(child as? BiomeFood)?.isFlying ?? false else { continue }
-            for pond in children {
-                guard pond.name == "pond" else { continue }
-                let pondHalfW = pond.frame.width / 2 + 10
-                let dx = child.position.x - pond.position.x
-                if abs(dx) < pondHalfW {
-                    // Push entity to nearest pond edge
-                    if dx < 0 {
-                        child.position.x = pond.position.x - pondHalfW
-                    } else {
-                        child.position.x = pond.position.x + pondHalfW
-                    }
-                }
-            }
-        }
-    }
+
 
     private func checkSpiderJumps() {
         for child in children {
