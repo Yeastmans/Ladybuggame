@@ -8,6 +8,10 @@ workflows:
         XCODE_SCHEME: "LadybugGame"
       xcode: latest
     scripts:
+      - name: Generate app icon
+        script: |
+          cd LadybugGame
+          swift Scripts/generate_icon.swift Resources/Assets.xcassets/AppIcon.appiconset
       - name: Install XcodeGen
         script: |
           brew install xcodegen
