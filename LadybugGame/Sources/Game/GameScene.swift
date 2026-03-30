@@ -404,7 +404,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ladybug.updatePhysics(dt: dt, groundY: bugGroundY, ceilingY: ceilingY)
 
         pushEntitiesFromLogs()
-        checkPondDamage()
+        checkPondSplash()
+        pushEntitiesFromPonds()
         checkSpiderJumps()
 
         // Scrolling
@@ -452,15 +453,40 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ladybug.isInsideLog = insideAny
     }
 
-    private func checkPondDamage() {
-        guard ladybug.isOnGround, !ladybug.isInvincible else { return }
+    private var lastSplashTime: TimeInterval = 0
+    private func checkPondSplash() {
+        guard ladybug.isOnGround else { return }
         enumerateChildNodes(withName: "pond") { [weak self] node, stop in
             guard let self = self else { return }
             let pondHalfW = node.frame.width / 2
             if abs(node.position.x - self.ladybug.position.x) < pondHalfW {
-                SoundManager.shared.play("splash")
-                self.takeDamage()
+                // Cosmetic splash only — no damage
+                if self.lastUpdateTime - self.lastSplashTime > 1.0 {
+                    self.lastSplashTime = self.lastUpdateTime
+                    SoundManager.shared.play("splash")
+                }
                 stop.pointee = true
+            }
+        }
+    }
+
+    /// Push ground-walking entities away from ponds so they don't walk into water
+    private func pushEntitiesFromPonds() {
+        for child in children {
+            let isGroundEntity = child is Aphid || child is Ant || child is Spider || child is BiomeEnemy || child is BiomeFood
+            guard isGroundEntity, !(child as? BiomeFood)?.isFlying ?? false else { continue }
+            for pond in children {
+                guard pond.name == "pond" else { continue }
+                let pondHalfW = pond.frame.width / 2 + 10
+                let dx = child.position.x - pond.position.x
+                if abs(dx) < pondHalfW {
+                    // Push entity to nearest pond edge
+                    if dx < 0 {
+                        child.position.x = pond.position.x - pondHalfW
+                    } else {
+                        child.position.x = pond.position.x + pondHalfW
+                    }
+                }
             }
         }
     }
@@ -628,7 +654,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func isNearGroundObject(x: CGFloat, range: CGFloat) -> Bool {
         for child in children {
-            if child is Log || child is Frog || child is Ant || child is Spider {
+            if child is Log || child is Frog || child is Ant || child is Spider || child.name == "pond" {
                 if abs(child.position.x - x) < range { return true }
             }
         }
@@ -720,11 +746,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             }
             frog.run(SKAction.repeatForever(SKAction.sequence([SKAction.wait(forDuration: 0.3), checkDistance])), withKey: "checkAttack")
         } else {
-            // Dragonfly hovering over the pond
+            // Dragonfly hovering above the pond
             let df = Dragonfly(textures: dragonflyFrames)
-            df.position = CGPoint(x: spawnX, y: groundY + CGFloat.random(in: 50...size.height * 0.45))
+            df.position = CGPoint(x: spawnX, y: groundY + CGFloat.random(in: 80...size.height * 0.55))
             df.setupPhysics()
-            df.startHovering(minY: groundY + 40, maxY: size.height * 0.60, playerX: ladybug.position.x)
+            df.startHovering(minY: groundY + 60, maxY: size.height * 0.65, playerX: ladybug.position.x)
             addChild(df)
         }
     }
