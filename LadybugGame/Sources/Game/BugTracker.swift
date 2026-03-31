@@ -21,6 +21,7 @@ final class BugTracker: @unchecked Sendable {
         // Desert food
         case desertBeetle = "Desert Beetle"
         case sandFly = "Sand Fly"
+        case desertCricket = "Desert Cricket"
         // Snow food
         case snowFlea = "Snow Flea"
         case iceMoth = "Ice Moth"
@@ -41,6 +42,7 @@ final class BugTracker: @unchecked Sendable {
         case rattlesnake = "Rattlesnake"
         case vulture = "Vulture"
         case hawk = "Hawk"
+        case desertWasp = "Desert Wasp"
         // Snow enemies
         case iceSpider = "Ice Spider"
         case snowOwl = "Snow Owl"
@@ -52,11 +54,11 @@ final class BugTracker: @unchecked Sendable {
         var category: Category {
             switch self {
             case .greenAphid, .yellowAphid, .redAphid, .brownFly, .blueFly, .purpleFly,
-                 .firefly, .heartBug, .gnatSwarm, .desertBeetle, .sandFly,
+                 .firefly, .heartBug, .gnatSwarm, .desertBeetle, .sandFly, .desertCricket,
                  .snowFlea, .iceMoth, .jungleBeetle, .butterfly:
                 return .food
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
-                 .scorpion, .rattlesnake, .vulture, .hawk, .iceSpider, .snowOwl,
+                 .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl,
                  .poisonDartFrog, .jungleSpider, .toucan:
                 return .enemy
             }
@@ -75,6 +77,7 @@ final class BugTracker: @unchecked Sendable {
             case .gnatSwarm: return "Cluster of tiny gnats. Night-time snack."
             case .desertBeetle: return "Hardy desert dweller. Crawls through the sand."
             case .sandFly: return "Buzzes through dry desert air."
+            case .desertCricket: return "Chirping desert cricket. Hops through the dunes!"
             case .snowFlea: return "Tiny dark bug that hops on snow."
             case .iceMoth: return "Icy blue moth fluttering through the cold."
             case .jungleBeetle: return "Shiny green beetle in the jungle undergrowth."
@@ -90,6 +93,7 @@ final class BugTracker: @unchecked Sendable {
             case .rattlesnake: return "Coiled danger. Strikes when you get close!"
             case .vulture: return "Circling scavenger. Swoops down with huge wings!"
             case .hawk: return "Desert raptor. Dives fast from above!"
+            case .desertWasp: return "Aggressive desert wasp. Hunts you down through the air!"
             case .iceSpider: return "Frost-covered spider. Slides on ice!"
             case .snowOwl: return "Silent white hunter in the snow."
             case .poisonDartFrog: return "Vibrant and deadly! Toxic tongue attack!"
@@ -111,12 +115,13 @@ final class BugTracker: @unchecked Sendable {
             case .gnatSwarm: return "20 pts"
             case .desertBeetle: return "15 pts"
             case .sandFly: return "20 pts"
+            case .desertCricket: return "50 pts"
             case .snowFlea: return "15 pts"
             case .iceMoth: return "25 pts"
             case .jungleBeetle: return "30 pts"
             case .butterfly: return "20 pts"
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
-                 .scorpion, .rattlesnake, .vulture, .hawk, .iceSpider, .snowOwl,
+                 .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl,
                  .poisonDartFrog, .jungleSpider, .toucan:
                 return "Danger!"
             }
@@ -161,6 +166,7 @@ final class BugTracker: @unchecked Sendable {
         case .gnatSwarm: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(white: 0.8, alpha: 1), eyeColor: .white)
         case .desertBeetle: return TextureGenerator.generateDesertBeetleTexture(size: size)
         case .sandFly: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.70, green: 0.55, blue: 0.25, alpha: 1), eyeColor: .white)
+        case .desertCricket: return TextureGenerator.generateDesertCricketTexture(size: size)
         case .snowFlea: return TextureGenerator.generateSnowFleaTexture(size: size)
         case .iceMoth: return TextureGenerator.generateFruitFlyFrames(size: size, color: .blue).first!
         case .jungleBeetle: return TextureGenerator.generateJungleBeetleTexture(size: size)
@@ -176,6 +182,7 @@ final class BugTracker: @unchecked Sendable {
         case .rattlesnake: return TextureGenerator.generateRattlesnakeTexture(size: size)
         case .vulture: return TextureGenerator.generateVultureFrames(size: size).first!
         case .hawk: return TextureGenerator.generateHawkFrames(size: size).first!
+        case .desertWasp: return TextureGenerator.generateDesertWaspFrames(size: size).first!
         case .iceSpider: return TextureGenerator.generateIceSpiderTexture(size: size)
         case .snowOwl: return TextureGenerator.generateOwlFrames(size: size).first!
         case .poisonDartFrog: return TextureGenerator.generatePoisonDartFrogTexture(size: size)

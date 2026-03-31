@@ -94,6 +94,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var antFrames: [SKTexture] = []
     private var spiderFrames: [SKTexture] = []
     private var jungleSpiderFrames: [SKTexture] = []
+    private var waspFrames: [SKTexture] = []
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
@@ -105,6 +106,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var fireflyTimer: TimeInterval = 0
     private var antTimer: TimeInterval = 0
     private var spiderTimer: TimeInterval = 0
+    private var waspTimer: TimeInterval = 0
     private var heartBugTimer: TimeInterval = 0
     private var groundTiles: [SKSpriteNode] = []
 
@@ -131,6 +133,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         antFrames = TextureGenerator.generateAntFrames(size: CGSize(width: 20, height: 18))
         spiderFrames = TextureGenerator.generateSpiderFrames(size: CGSize(width: 48, height: 40))
         jungleSpiderFrames = TextureGenerator.generateJungleSpiderFrames(size: CGSize(width: 48, height: 40))
+        waspFrames = TextureGenerator.generateDesertWaspFrames(size: CGSize(width: 40, height: 28))
         for fc in [TextureGenerator.FlyColor.brown, .blue, .purple] {
             flyFrames[fc] = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: fc)
         }
@@ -655,11 +658,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         addChild(bird)
 
-        let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...15)
+        let targetY = ladybug.position.y
         SoundManager.shared.play("caw")
         bird.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
                          targetY: targetY, groundY: groundY,
-                         duration: isNight ? 1.4 + Double.random(in: 0...0.4) : 1.6 + Double.random(in: 0...0.5))
+                         duration: isNight ? 2.2 + Double.random(in: 0...0.5) : 2.8 + Double.random(in: 0...0.7))
         bird.run(SKAction.sequence([SKAction.wait(forDuration: 0.4), SKAction.run {
             SoundManager.shared.play("whoosh")
         }]))
@@ -1035,8 +1038,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 ladybug.pulse()
                 SoundManager.shared.play("pop")
                 switch food.biomeName {
-                case "Desert Beetle", "Jungle Beetle": SoundManager.shared.play("skitter")
-                case "Sand Fly", "Ice Moth", "Butterfly": SoundManager.shared.play("flutter")
+                case "Desert Beetle":    unlockBug(.desertBeetle);    SoundManager.shared.play("skitter")
+                case "Sand Fly":         unlockBug(.sandFly);         SoundManager.shared.play("flutter")
+                case "Desert Cricket":   unlockBug(.desertCricket);   SoundManager.shared.play("skitter")
+                case "Snow Flea":        unlockBug(.snowFlea)
+                case "Ice Moth":         unlockBug(.iceMoth);         SoundManager.shared.play("flutter")
+                case "Jungle Beetle":    unlockBug(.jungleBeetle);    SoundManager.shared.play("skitter")
+                case "Butterfly":        unlockBug(.butterfly);       SoundManager.shared.play("flutter")
                 default: break
                 }
                 return
@@ -1066,6 +1074,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 gs.removeFromParent()
                 ladybug.pulse()
                 SoundManager.shared.play("pop")
+                unlockBug(.gnatSwarm)
                 return
             }
             // HeartBug — restore a life
@@ -1150,6 +1159,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Hawk": unlockBug(.hawk)
                     case "Snow Owl": unlockBug(.snowOwl)
                     case "Toucan": unlockBug(.toucan)
+                    case "Desert Wasp": unlockBug(.desertWasp)
                     default: break
                     }
                 }
@@ -1279,14 +1289,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if aphidTimer >= 1.4 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateDesertBeetleTexture(size: CGSize(width: 28, height: 24)), pts: 15, flying: false, name: "Desert Beetle") }
             flyTimer += dt // Desert flies (with wings via FruitFly frames)
             if flyTimer >= 1.8 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 18, height: 18), color: .brown).first!, pts: 20, flying: true, name: "Sand Fly") }
+            gnatTimer += dt // Desert crickets (ground, 50pts, hops)
+            if gnatTimer >= 2.2 { gnatTimer = 0; spawnDesertCricket() }
             dragonflyTimer += dt // Scorpions
-            if dragonflyTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateScorpionTexture(size: CGSize(width: 44, height: 34)), name: "Scorpion") }
+            if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateScorpionTexture(size: CGSize(width: 44, height: 34)), name: "Scorpion") }
             spiderTimer += dt // Rattlesnake
-            if spiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateRattlesnakeTexture(size: CGSize(width: 52, height: 34)), name: "Rattlesnake") }
+            if spiderTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateRattlesnakeTexture(size: CGSize(width: 52, height: 34)), name: "Rattlesnake") }
             birdTimer += dt // Hawks
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Hawk") }
             frogTimer += dt // Vultures
             if frogTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnVulture() }
+            waspTimer += dt // Desert wasps (flying enemy, tracks player)
+            if waspTimer >= max(4.5, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnDesertWasp() }
 
         case .snow:
             aphidTimer += dt // Snow fleas
@@ -1326,9 +1340,17 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(food)
     }
 
+    private func isNearBiomeEnemy(x: CGFloat, range: CGFloat) -> Bool {
+        for child in children {
+            if child is BiomeEnemy, abs(child.position.x - x) < range { return true }
+        }
+        return false
+    }
+
     private func spawnBiomeGroundEnemy(texture: SKTexture, name: String) {
         let spawnX = size.width + 40
         if isNearGroundObject(x: spawnX, range: 80) { return }
+        if isNearBiomeEnemy(x: spawnX, range: 160) { return }
         let enemy = BiomeEnemy(texture: texture, biomeName: name)
         enemy.position = CGPoint(x: spawnX, y: groundY + enemy.size.height / 2)
         enemy.setupPhysics()
@@ -1362,10 +1384,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         swooper.run(SKAction.sequence([SKAction.wait(forDuration: 0.5), SKAction.run {
             SoundManager.shared.play("whoosh")
         }]))
-        let targetY = groundY + ladybug.size.height / 2 + CGFloat.random(in: 0...15)
+        let targetY = ladybug.position.y
         swooper.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
                             targetY: targetY, groundY: groundY,
-                            duration: 1.5 + Double.random(in: 0...0.5))
+                            duration: 2.4 + Double.random(in: 0...0.6))
     }
 
     private func spawnVulture() {
@@ -1373,9 +1395,75 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         vulture.position = CGPoint(x: size.width + 60, y: groundY + CGFloat.random(in: 60...size.height * 0.55))
         vulture.name = "vulture"
         vulture.setupPhysics()
-        vulture.startHovering(minY: groundY + 50, maxY: size.height * 0.65, playerX: ladybug.position.x)
+        vulture.startHovering(minY: groundY + 50, maxY: size.height * 0.94, playerX: ladybug.position.x)
         addChild(vulture)
         SoundManager.shared.play("screech")
+    }
+
+    private func spawnDesertCricket() {
+        let spawnX = size.width + 30
+        if isNearGroundObject(x: spawnX, range: 60) { return }
+        if isNearBiomeEnemy(x: spawnX, range: 140) { return }
+        let texture = TextureGenerator.generateDesertCricketTexture(size: CGSize(width: 28, height: 22))
+        let cricket = BiomeFood(texture: texture, points: 50, biomeName: "Desert Cricket", isFlying: false)
+        cricket.position = CGPoint(x: spawnX, y: groundY + cricket.size.height / 2)
+        cricket.minY = groundY
+        cricket.setupPhysics()
+        addChild(cricket)
+
+        // Hopping animation — squat, leap, land, recover
+        let baseY = groundY + cricket.size.height / 2
+        let hop = SKAction.run { [weak cricket] in
+            guard let cricket = cricket else { return }
+            let dist = CGFloat.random(in: -30...30)
+            let height = CGFloat.random(in: 22...42)
+            let squat = SKAction.group([SKAction.scaleX(to: 1.18, duration: 0.08), SKAction.scaleY(to: 0.82, duration: 0.08)])
+            let launch = SKAction.group([SKAction.scaleX(to: 0.82, duration: 0.14), SKAction.scaleY(to: 1.28, duration: 0.14), SKAction.moveBy(x: dist * 0.5, y: height, duration: 0.18)])
+            let fall = SKAction.group([SKAction.scaleX(to: 1.0, duration: 0.14), SKAction.scaleY(to: 1.0, duration: 0.14), SKAction.moveBy(x: dist * 0.5, y: -height, duration: 0.18)])
+            let land = SKAction.group([SKAction.scaleX(to: 1.14, duration: 0.06), SKAction.scaleY(to: 0.88, duration: 0.06)])
+            let recover = SKAction.group([SKAction.scaleX(to: 1.0, duration: 0.08), SKAction.scaleY(to: 1.0, duration: 0.08)])
+            let fixY = SKAction.run { cricket.position.y = baseY }
+            cricket.run(SKAction.sequence([squat, launch, fall, land, recover, fixY]))
+        }
+        cricket.run(SKAction.repeatForever(SKAction.sequence([hop, SKAction.wait(forDuration: 0.8, withRange: 0.5)])), withKey: "hop")
+    }
+
+    private func spawnDesertWasp() {
+        // Only one wasp on screen at a time
+        for child in children {
+            if let s = child as? BiomeSwooper, s.biomeName == "Desert Wasp" { return }
+        }
+        let wasp = BiomeSwooper(textures: waspFrames, biomeName: "Desert Wasp")
+        // Spawn high — top 30% of sky
+        let spawnY = size.height * CGFloat.random(in: 0.72...0.92)
+        wasp.position = CGPoint(x: size.width + 50, y: spawnY)
+        wasp.xScale = -1
+        wasp.setupPhysics()
+        addChild(wasp)
+        unlockBug(.desertWasp)
+        SoundManager.shared.play("screech")
+
+        // Patrol: move horizontally across screen, bobbing up/down, then exit left
+        let patrolDuration: TimeInterval = 7.0 + Double.random(in: 0...3.0)
+        let minY = size.height * 0.65
+        let maxY = size.height * 0.95
+
+        // Drift slowly left across the screen while bobbing
+        let driftLeft = SKAction.moveBy(x: -(size.width + 100), y: 0, duration: patrolDuration)
+        // Bob up/down randomly
+        let bobStep = SKAction.run { [weak wasp] in
+            guard let wasp = wasp else { return }
+            let targetY = CGFloat.random(in: minY...maxY)
+            let dy = targetY - wasp.position.y
+            let move = SKAction.moveBy(x: 0, y: dy, duration: Double.random(in: 0.6...1.2))
+            move.timingMode = .easeInEaseOut
+            wasp.run(move, withKey: "waspBob")
+        }
+        let bobWait = SKAction.wait(forDuration: 0.8, withRange: 0.4)
+
+        wasp.run(driftLeft)
+        wasp.run(SKAction.repeatForever(SKAction.sequence([bobStep, bobWait])))
+        wasp.run(SKAction.sequence([SKAction.wait(forDuration: patrolDuration + 0.2), SKAction.removeFromParent()]))
     }
 
     private func spawnJungleSpider() {
@@ -1450,26 +1538,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             run(SKAction.repeatForever(SKAction.sequence([snowfall, SKAction.wait(forDuration: 0.15)])), withKey: "snowfall")
         }
 
-        // Desert: warm orange gradient sky
-        if biome == .desert {
-            let bands: [(y: CGFloat, h: CGFloat, r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat)] = [
-                (0.95, 0.15, 0.85, 0.40, 0.10, 0.7),  // Top — deep orange
-                (0.80, 0.15, 0.90, 0.48, 0.12, 0.6),  // Upper — orange
-                (0.65, 0.15, 0.95, 0.55, 0.15, 0.5),  // Mid — warm orange
-                (0.50, 0.15, 0.98, 0.65, 0.18, 0.4),  // Lower — light orange
-                (0.38, 0.10, 1.00, 0.75, 0.25, 0.3),  // Horizon — golden
-            ]
-            for band in bands {
-                let stripe = SKShapeNode(rectOf: CGSize(width: size.width + 10, height: size.height * band.h))
-                stripe.fillColor = SKColor(red: band.r, green: band.g, blue: band.b, alpha: band.a)
-                stripe.strokeColor = .clear
-                stripe.position = CGPoint(x: size.width / 2, y: size.height * band.y)
-                stripe.zPosition = -0.5
-                stripe.alpha = 0
-                addChild(stripe)
-                stripe.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
-            }
-        }
 
         // Jungle: mist
         if biome == .jungle {
