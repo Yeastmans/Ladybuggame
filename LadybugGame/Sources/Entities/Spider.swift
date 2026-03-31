@@ -64,7 +64,7 @@ class Spider: SKSpriteNode {
 
             // Jump stretch
             let jumpUp = SKAction.group([
-                SKAction.moveBy(x: 0, y: 45, duration: 0.18),
+                SKAction.moveBy(x: 0, y: 75, duration: 0.18),
                 SKAction.scaleX(to: 0.85, duration: 0.18),
                 SKAction.scaleY(to: 1.2, duration: 0.18),
             ])
@@ -73,7 +73,7 @@ class Spider: SKSpriteNode {
             let apex = SKAction.wait(forDuration: 0.04)
 
             let jumpDown = SKAction.group([
-                SKAction.moveBy(x: 0, y: -45, duration: 0.22),
+                SKAction.moveBy(x: 0, y: -75, duration: 0.22),
                 SKAction.scaleX(to: 1.0, duration: 0.22),
                 SKAction.scaleY(to: 1.0, duration: 0.22),
             ])

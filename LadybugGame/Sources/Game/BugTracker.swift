@@ -50,6 +50,7 @@ final class BugTracker: @unchecked Sendable {
         case poisonDartFrog = "Poison Dart Frog"
         case jungleSpider = "Jungle Spider"
         case toucan = "Toucan"
+        case monkey = "Monkey"
 
         var category: Category {
             switch self {
@@ -59,7 +60,7 @@ final class BugTracker: @unchecked Sendable {
                 return .food
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl,
-                 .poisonDartFrog, .jungleSpider, .toucan:
+                 .poisonDartFrog, .jungleSpider, .toucan, .monkey:
                 return .enemy
             }
         }
@@ -99,6 +100,7 @@ final class BugTracker: @unchecked Sendable {
             case .poisonDartFrog: return "Vibrant and deadly! Toxic tongue attack!"
             case .jungleSpider: return "Camouflaged in green. Lurks in vines!"
             case .toucan: return "Tropical bird with a massive beak!"
+            case .monkey: return "Mischievous jungle monkey! Climbs trees and swipes at you!"
             }
         }
 
@@ -122,7 +124,7 @@ final class BugTracker: @unchecked Sendable {
             case .butterfly: return "20 pts"
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl,
-                 .poisonDartFrog, .jungleSpider, .toucan:
+                 .poisonDartFrog, .jungleSpider, .toucan, .monkey:
                 return "Danger!"
             }
         }
@@ -188,6 +190,7 @@ final class BugTracker: @unchecked Sendable {
         case .poisonDartFrog: return TextureGenerator.generatePoisonDartFrogTexture(size: size)
         case .jungleSpider: return TextureGenerator.generateJungleSpiderFrames(size: size).first!
         case .toucan: return TextureGenerator.generateToucanFrames(size: size).first!
+        case .monkey: return TextureGenerator.generateMonkeyTexture(size: size)
         }
     }
 

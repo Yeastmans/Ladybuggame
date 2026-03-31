@@ -541,6 +541,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             node.position.x -= delta
             if node.position.x < -80 { node.removeFromParent() }
         }
+        enumerateChildNodes(withName: "monkey") { node, _ in
+            node.position.x -= delta
+            if node.position.x < -60 { node.removeFromParent() }
+        }
     }
 
     private func scrollWorldObjects(delta: CGFloat) {
@@ -963,7 +967,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func spawnJungleDecor(x: CGFloat) {
-        let roll = Int.random(in: 0...4)
+        // Don't place big trees near ponds or other ground objects
+        let nearWater = isNearGroundObject(x: x, range: 110)
+        let roll = nearWater ? Int.random(in: 1...4) : Int.random(in: 0...4)
         switch roll {
         case 0: // Massive jungle tree with canopy and vines
             let trunkH: CGFloat = CGFloat.random(in: 80...120)
@@ -1138,6 +1144,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if ladybug.isSheltered { return }
             if !ladybug.isInvincible {
                 let enemyNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird) ? contact.bodyA.node : contact.bodyB.node
+                // Monkey stays on tree — just damage, don't remove
+                if enemyNode?.name == "monkey" {
+                    unlockBug(.monkey)
+                    takeDamage()
+                    return
+                }
                 if enemyNode is Bird { unlockBug(.bird) }
                 else if let df = enemyNode as? Dragonfly {
                     if df.name == "vulture" { unlockBug(.vulture) }
@@ -1320,13 +1332,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             aphidTimer += dt // Jungle beetles
             if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateJungleBeetleTexture(size: CGSize(width: 28, height: 24)), pts: 30, flying: false, name: "Jungle Beetle") }
             flyTimer += dt // Tropical butterflies
-            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: .purple).first!, pts: 20, flying: true, name: "Butterfly") }
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateButterflyTexture(size: CGSize(width: 30, height: 26)), pts: 20, flying: true, name: "Butterfly") }
             dragonflyTimer += dt // Poison dart frogs at ponds
             if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnPondCreature() }
             spiderTimer += dt // Jungle spiders
             if spiderTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnJungleSpider() }
             birdTimer += dt // Toucans
             if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Toucan") }
+            fireflyTimer += dt // Monkeys (climb trees)
+            if fireflyTimer >= max(5.0, 10.0 - Double(distanceTraveled) * 0.0003) { fireflyTimer = 0; spawnMonkey() }
         }
     }
 
@@ -1480,6 +1494,34 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         unlockBug(.jungleSpider)
     }
 
+    private func spawnMonkey() {
+        let spawnX = size.width + 30
+        if isNearGroundObject(x: spawnX, range: 80) { return }
+        let texture = TextureGenerator.generateMonkeyTexture(size: CGSize(width: 28, height: 32))
+        let monkey = SKSpriteNode(texture: texture, color: .clear, size: texture.size())
+        monkey.name = "monkey"  // handled by scrollWorldObjects
+        monkey.zPosition = 6
+        monkey.xScale = -1
+        let body = SKPhysicsBody(rectangleOf: CGSize(width: texture.size().width * 0.55, height: texture.size().height * 0.65))
+        body.isDynamic = false
+        body.categoryBitMask = GameScene.PhysicsCategory.bird
+        body.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+        monkey.physicsBody = body
+        monkey.position = CGPoint(x: spawnX, y: groundY + monkey.size.height / 2)
+        addChild(monkey)
+        unlockBug(.monkey)
+
+        let climbHeight = CGFloat.random(in: 70...110)
+        let upDur = Double.random(in: 1.4...2.2)
+        let downDur = Double.random(in: 1.4...2.2)
+        let pause = SKAction.wait(forDuration: Double.random(in: 0.3...0.7))
+        let up = SKAction.moveBy(x: 0, y: climbHeight, duration: upDur)
+        up.timingMode = .easeInEaseOut
+        let down = SKAction.moveBy(x: 0, y: -climbHeight, duration: downDur)
+        down.timingMode = .easeInEaseOut
+        monkey.run(SKAction.repeatForever(SKAction.sequence([up, pause, down, pause])), withKey: "climb")
+    }
+
     // MARK: - Biome Transitions
 
     private func transitionToBiome(_ biome: Biome) {
@@ -1487,10 +1529,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         removeAction(forKey: "snowfall")
         removeAction(forKey: "shootingStars")
 
-        // Fade out and remove all initial meadow sky decorations (bands, rays, clouds, hills)
+        // Fade out and remove all previous sky decorations
         for child in children {
-            if child.name == "skyBg" || child.name == "cloud" || child.name == "hill" {
+            switch child.name {
+            case "skyBg", "cloud", "hill", "nightBg", "nightOverlay":
                 child.run(SKAction.sequence([SKAction.fadeOut(withDuration: 1.5), SKAction.removeFromParent()]))
+            default: break
             }
         }
 
@@ -1641,6 +1685,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         moon.position = CGPoint(x: size.width * 0.82, y: size.height * 0.88)
         moon.zPosition = -0.5
         moon.alpha = 0
+        moon.name = "nightBg"
         addChild(moon)
         moon.run(SKAction.fadeAlpha(to: 1.0, duration: 3.0))
         // Moon crater
@@ -1659,6 +1704,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                                      y: CGFloat.random(in: size.height * 0.45...size.height * 0.98))
             star.zPosition = -0.8
             star.alpha = 0
+            star.name = "nightBg"
             addChild(star)
             star.run(SKAction.sequence([
                 SKAction.wait(forDuration: Double.random(in: 0...2)),

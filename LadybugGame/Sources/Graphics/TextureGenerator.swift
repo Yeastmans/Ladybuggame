@@ -2091,4 +2091,169 @@ enum TextureGenerator {
         }
         return SKTexture(image: image)
     }
+
+    // MARK: - Butterfly (proper wings, jungle food)
+
+    static func generateButterflyTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+
+            // Top wings (large, rounded triangles, orange/black monarch style)
+            cg.setFillColor(UIColor(red: 0.92, green: 0.50, blue: 0.08, alpha: 0.95).cgColor)
+            // Left top wing
+            cg.move(to: CGPoint(x: w * 0.44, y: h * 0.50))
+            cg.addCurve(to: CGPoint(x: w * 0.04, y: h * 0.28),
+                        control1: CGPoint(x: w * 0.20, y: h * 0.20),
+                        control2: CGPoint(x: w * 0.06, y: h * 0.10))
+            cg.addCurve(to: CGPoint(x: w * 0.44, y: h * 0.50),
+                        control1: CGPoint(x: w * 0.02, y: h * 0.52),
+                        control2: CGPoint(x: w * 0.22, y: h * 0.58))
+            cg.closePath(); cg.fillPath()
+            // Right top wing
+            cg.move(to: CGPoint(x: w * 0.56, y: h * 0.50))
+            cg.addCurve(to: CGPoint(x: w * 0.96, y: h * 0.28),
+                        control1: CGPoint(x: w * 0.80, y: h * 0.20),
+                        control2: CGPoint(x: w * 0.94, y: h * 0.10))
+            cg.addCurve(to: CGPoint(x: w * 0.56, y: h * 0.50),
+                        control1: CGPoint(x: w * 0.98, y: h * 0.52),
+                        control2: CGPoint(x: w * 0.78, y: h * 0.58))
+            cg.closePath(); cg.fillPath()
+
+            // Bottom wings (smaller, rounder)
+            cg.setFillColor(UIColor(red: 0.88, green: 0.42, blue: 0.05, alpha: 0.90).cgColor)
+            // Left bottom wing
+            cg.move(to: CGPoint(x: w * 0.44, y: h * 0.54))
+            cg.addCurve(to: CGPoint(x: w * 0.08, y: h * 0.82),
+                        control1: CGPoint(x: w * 0.16, y: h * 0.60),
+                        control2: CGPoint(x: w * 0.06, y: h * 0.72))
+            cg.addCurve(to: CGPoint(x: w * 0.44, y: h * 0.62),
+                        control1: CGPoint(x: w * 0.14, y: h * 0.92),
+                        control2: CGPoint(x: w * 0.30, y: h * 0.80))
+            cg.closePath(); cg.fillPath()
+            // Right bottom wing
+            cg.move(to: CGPoint(x: w * 0.56, y: h * 0.54))
+            cg.addCurve(to: CGPoint(x: w * 0.92, y: h * 0.82),
+                        control1: CGPoint(x: w * 0.84, y: h * 0.60),
+                        control2: CGPoint(x: w * 0.94, y: h * 0.72))
+            cg.addCurve(to: CGPoint(x: w * 0.56, y: h * 0.62),
+                        control1: CGPoint(x: w * 0.86, y: h * 0.92),
+                        control2: CGPoint(x: w * 0.70, y: h * 0.80))
+            cg.closePath(); cg.fillPath()
+
+            // Black wing borders
+            cg.setStrokeColor(UIColor(red: 0.08, green: 0.04, blue: 0.0, alpha: 0.85).cgColor)
+            cg.setLineWidth(1.2)
+            // White spots on wing edges
+            cg.setFillColor(UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.7).cgColor)
+            for (dx, dy) in [(-0.35, 0.22), (-0.30, 0.16), (0.35, 0.22), (0.30, 0.16)] as [(CGFloat, CGFloat)] {
+                cg.fillEllipse(in: CGRect(x: w * (0.50 + dx) - 2, y: h * dy, width: 4, height: 4))
+            }
+
+            // Body (dark, elongated)
+            cg.setFillColor(UIColor(red: 0.10, green: 0.06, blue: 0.02, alpha: 1.0).cgColor)
+            let bodyPath = UIBezierPath(roundedRect: CGRect(x: w * 0.44, y: h * 0.18, width: w * 0.12, height: h * 0.64), cornerRadius: w * 0.06)
+            cg.addPath(bodyPath.cgPath); cg.fillPath()
+
+            // Antennae with dot tips
+            cg.setStrokeColor(UIColor(red: 0.10, green: 0.06, blue: 0.02, alpha: 1.0).cgColor)
+            cg.setLineWidth(0.8)
+            cg.move(to: CGPoint(x: w * 0.46, y: h * 0.20))
+            cg.addLine(to: CGPoint(x: w * 0.30, y: h * 0.04))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.54, y: h * 0.20))
+            cg.addLine(to: CGPoint(x: w * 0.70, y: h * 0.04))
+            cg.strokePath()
+            cg.setFillColor(UIColor(red: 0.10, green: 0.06, blue: 0.02, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.26, y: h * 0.01, width: 4, height: 4))
+            cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.01, width: 4, height: 4))
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Monkey (jungle enemy, climbs trees)
+
+    static func generateMonkeyTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+
+            // Tail (long, curved, behind body)
+            cg.setStrokeColor(UIColor(red: 0.45, green: 0.28, blue: 0.12, alpha: 1.0).cgColor)
+            cg.setLineWidth(3.0); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.28, y: h * 0.55))
+            cg.addCurve(to: CGPoint(x: w * 0.10, y: h * 0.90),
+                        control1: CGPoint(x: w * 0.05, y: h * 0.60),
+                        control2: CGPoint(x: w * 0.02, y: h * 0.80))
+            cg.strokePath()
+
+            // Arms reaching up (climbing pose)
+            cg.setLineWidth(4.0)
+            cg.setStrokeColor(UIColor(red: 0.42, green: 0.26, blue: 0.10, alpha: 1.0).cgColor)
+            // Left arm up
+            cg.move(to: CGPoint(x: w * 0.38, y: h * 0.44))
+            cg.addLine(to: CGPoint(x: w * 0.18, y: h * 0.18))
+            cg.strokePath()
+            // Right arm up
+            cg.move(to: CGPoint(x: w * 0.62, y: h * 0.44))
+            cg.addLine(to: CGPoint(x: w * 0.82, y: h * 0.18))
+            cg.strokePath()
+            // Legs (gripping)
+            cg.move(to: CGPoint(x: w * 0.40, y: h * 0.68))
+            cg.addLine(to: CGPoint(x: w * 0.24, y: h * 0.90))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.60, y: h * 0.68))
+            cg.addLine(to: CGPoint(x: w * 0.76, y: h * 0.90))
+            cg.strokePath()
+
+            // Body
+            cg.setFillColor(UIColor(red: 0.52, green: 0.34, blue: 0.14, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.28, y: h * 0.40, width: w * 0.44, height: h * 0.36))
+
+            // Head
+            cg.fillEllipse(in: CGRect(x: w * 0.26, y: h * 0.14, width: w * 0.48, height: h * 0.40))
+
+            // Ears
+            cg.setFillColor(UIColor(red: 0.55, green: 0.36, blue: 0.16, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.18, y: h * 0.20, width: w * 0.14, height: h * 0.14))
+            cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.20, width: w * 0.14, height: h * 0.14))
+            // Inner ear
+            cg.setFillColor(UIColor(red: 0.80, green: 0.55, blue: 0.45, alpha: 0.7).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.21, y: h * 0.23, width: w * 0.08, height: h * 0.08))
+            cg.fillEllipse(in: CGRect(x: w * 0.71, y: h * 0.23, width: w * 0.08, height: h * 0.08))
+
+            // Tan face/muzzle
+            cg.setFillColor(UIColor(red: 0.80, green: 0.62, blue: 0.42, alpha: 0.9).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.34, y: h * 0.30, width: w * 0.32, height: h * 0.24))
+
+            // Eyes (wide, expressive)
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.34, y: h * 0.20, width: w * 0.12, height: h * 0.12))
+            cg.fillEllipse(in: CGRect(x: w * 0.54, y: h * 0.20, width: w * 0.12, height: h * 0.12))
+            cg.setFillColor(UIColor(red: 0.15, green: 0.10, blue: 0.05, alpha: 1.0).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.37, y: h * 0.22, width: w * 0.07, height: h * 0.08))
+            cg.fillEllipse(in: CGRect(x: w * 0.56, y: h * 0.22, width: w * 0.07, height: h * 0.08))
+            // Pupils shine
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.38, y: h * 0.22, width: 2, height: 2))
+            cg.fillEllipse(in: CGRect(x: w * 0.57, y: h * 0.22, width: 2, height: 2))
+
+            // Nostrils
+            cg.setFillColor(UIColor(red: 0.55, green: 0.36, blue: 0.20, alpha: 0.6).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.42, y: h * 0.36, width: w * 0.06, height: h * 0.05))
+            cg.fillEllipse(in: CGRect(x: w * 0.52, y: h * 0.36, width: w * 0.06, height: h * 0.05))
+
+            // Smile
+            cg.setStrokeColor(UIColor(red: 0.40, green: 0.24, blue: 0.10, alpha: 0.7).cgColor)
+            cg.setLineWidth(1.0)
+            cg.move(to: CGPoint(x: w * 0.40, y: h * 0.42))
+            cg.addCurve(to: CGPoint(x: w * 0.60, y: h * 0.42),
+                        control1: CGPoint(x: w * 0.46, y: h * 0.48),
+                        control2: CGPoint(x: w * 0.54, y: h * 0.48))
+            cg.strokePath()
+        }
+        return SKTexture(image: image)
+    }
 }

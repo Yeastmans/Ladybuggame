@@ -67,21 +67,21 @@ class BiomeEnemy: SKSpriteNode {
                 let strike = SKAction.group([
                     SKAction.scaleX(to: 1.35, duration: 0.10),
                     SKAction.scaleY(to: 0.88, duration: 0.10),
-                    SKAction.moveBy(x: 55, y: 0, duration: 0.10),
+                    SKAction.moveBy(x: 80, y: 0, duration: 0.10),
                 ])
                 strike.timingMode = .easeIn
                 let holdStrike = SKAction.wait(forDuration: 0.05)
                 let recoil = SKAction.group([
                     SKAction.scaleX(to: 1.0, duration: 0.18),
                     SKAction.scaleY(to: 1.0, duration: 0.18),
-                    SKAction.moveBy(x: -45, y: 0, duration: 0.18),
+                    SKAction.moveBy(x: -70, y: 0, duration: 0.18),
                 ])
                 recoil.timingMode = .easeOut
                 run(SKAction.sequence([coilBack, strike, holdStrike, recoil]))
             } else {
                 // Scorpion/ice spider: high jump
-                let jumpH: CGFloat = 100
-                let jumpX: CGFloat = 50
+                let jumpH: CGFloat = 130
+                let jumpX: CGFloat = 55
                 let squash = SKAction.group([
                     SKAction.scaleX(to: 1.2, duration: 0.08),
                     SKAction.scaleY(to: 0.8, duration: 0.08),
