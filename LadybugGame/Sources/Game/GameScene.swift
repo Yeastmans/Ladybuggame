@@ -175,6 +175,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             band.strokeColor = .clear
             band.position = CGPoint(x: size.width / 2, y: size.height * sc.y)
             band.zPosition = -10
+            band.name = "skyBg"
             addChild(band)
         }
 
@@ -196,6 +197,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             ray.strokeColor = .clear
             ray.position = CGPoint(x: sunX, y: sunY)
             ray.zPosition = -7
+            ray.name = "skyBg"
             addChild(ray)
         }
 
@@ -1485,6 +1487,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         removeAction(forKey: "snowfall")
         removeAction(forKey: "shootingStars")
 
+        // Fade out and remove all initial meadow sky decorations (bands, rays, clouds, hills)
+        for child in children {
+            if child.name == "skyBg" || child.name == "cloud" || child.name == "hill" {
+                child.run(SKAction.sequence([SKAction.fadeOut(withDuration: 1.5), SKAction.removeFromParent()]))
+            }
+        }
+
         // Notification
         let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
         label.text = biome.name
@@ -1511,7 +1520,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         skyOverlay.zPosition = -1
         skyOverlay.alpha = 0
         addChild(skyOverlay)
-        skyOverlay.run(SKAction.fadeAlpha(to: 0.7, duration: 2.5))
+        skyOverlay.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
 
         // Night-specific effects
         if biome == .meadowNight {
