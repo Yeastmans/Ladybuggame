@@ -2523,7 +2523,7 @@ enum TextureGenerator {
             // Segmented worm body (brown/gray, armored)
             for i in 0..<5 {
                 let sx = w * (0.05 + CGFloat(i) * 0.17)
-                let shade = 0.35 + (CGFloat(i) % 2) * 0.08
+                let shade = 0.35 + CGFloat(i % 2) * 0.08
                 cg.setFillColor(UIColor(red: shade, green: shade - 0.05, blue: shade - 0.10, alpha: 1).cgColor)
                 cg.fillEllipse(in: CGRect(x: sx, y: h * 0.25, width: w * 0.20, height: h * 0.50))
             }
