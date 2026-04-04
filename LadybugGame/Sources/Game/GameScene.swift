@@ -2140,7 +2140,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Darken sky
         let nightOverlay = SKShapeNode(rectOf: CGSize(width: size.width + 20, height: size.height))
-        nightOverlay.fillColor = SKColor(red: 0.06, green: 0.06, blue: 0.18, alpha: 0.0)
+        nightOverlay.fillColor = SKColor(red: 0.08, green: 0.08, blue: 0.20, alpha: 0.0)
         nightOverlay.strokeColor = .clear
         nightOverlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
         nightOverlay.zPosition = -1
@@ -2148,12 +2148,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(nightOverlay)
         nightOverlay.run(SKAction.customAction(withDuration: 3.0) { node, elapsed in
             let p = min(1.0, elapsed / 3.0)
-            (node as? SKShapeNode)?.fillColor = SKColor(red: 0.06, green: 0.06, blue: 0.18, alpha: 0.35 * p)
+            (node as? SKShapeNode)?.fillColor = SKColor(red: 0.08, green: 0.08, blue: 0.20, alpha: 0.20 * p)
         })
 
         // Darken ground
         for tile in groundTiles {
-            tile.run(SKAction.colorize(with: SKColor(red: 0.18, green: 0.35, blue: 0.14, alpha: 1), colorBlendFactor: 0.35, duration: 3.0))
+            tile.run(SKAction.colorize(with: SKColor(red: 0.22, green: 0.40, blue: 0.18, alpha: 1), colorBlendFactor: 0.25, duration: 3.0))
         }
 
         // Moon (fixed position, top-right)
