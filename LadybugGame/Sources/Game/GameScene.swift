@@ -75,6 +75,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var touchY: CGFloat?
     private var lastUpdateTime: TimeInterval = 0
 
+    // Bug discovery queue — shows one banner at a time
+    private var discoveryQueue: [BugTracker.BugType] = []
+    private var isShowingDiscovery = false
+
     private var aphidTimer: TimeInterval = 0
     private var flyTimer: TimeInterval = 0
     private var logTimer: TimeInterval = 0
@@ -423,6 +427,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Biome-aware spawning
         spawnForBiome(dt: dt)
+        processDiscoveryQueue()
     }
 
     // MARK: - Log Tube Mechanic
@@ -1231,20 +1236,31 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let wasNew = !BugTracker.shared.isUnlocked(bug)
         BugTracker.shared.unlock(bug)
         if wasNew {
-            SoundManager.shared.play("newBug")
-            let banner = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            banner.text = "New Discovery: \(bug.rawValue)!"
-            banner.fontSize = 14
-            banner.fontColor = SKColor(red: 1.0, green: 0.90, blue: 0.30, alpha: 1.0)
-            banner.position = CGPoint(x: size.width / 2, y: size.height - 55)
-            banner.zPosition = 120
-            addChild(banner)
-            banner.run(SKAction.sequence([
-                SKAction.wait(forDuration: 1.5),
-                SKAction.fadeOut(withDuration: 0.5),
-                SKAction.removeFromParent()
-            ]))
+            discoveryQueue.append(bug)
         }
+    }
+
+    private func processDiscoveryQueue() {
+        guard !isShowingDiscovery, !discoveryQueue.isEmpty else { return }
+        let bug = discoveryQueue.removeFirst()
+        isShowingDiscovery = true
+        SoundManager.shared.play("newBug")
+
+        let banner = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        banner.text = "New Discovery: \(bug.rawValue)!"
+        banner.fontSize = 14
+        banner.fontColor = SKColor(red: 1.0, green: 0.90, blue: 0.30, alpha: 1.0)
+        banner.position = CGPoint(x: size.width / 2, y: size.height - 55)
+        banner.zPosition = 120
+        banner.alpha = 0
+        addChild(banner)
+        banner.run(SKAction.sequence([
+            SKAction.fadeIn(withDuration: 0.15),
+            SKAction.wait(forDuration: 1.5),
+            SKAction.fadeOut(withDuration: 0.35),
+            SKAction.removeFromParent(),
+            SKAction.run { [weak self] in self?.isShowingDiscovery = false }
+        ]))
     }
 
     private func takeDamage() {
