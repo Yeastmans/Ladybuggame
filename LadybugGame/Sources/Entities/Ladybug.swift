@@ -96,18 +96,18 @@ class Ladybug: SKSpriteNode {
 
         // Walking animation on ground
         if isOnGround {
-            walkBobTime += CGFloat(dt) * 8
-            walkLegTime += CGFloat(dt) * 12
+            walkBobTime += CGFloat(dt) * 9
+            walkLegTime += CGFloat(dt) * 14
 
-            // Bob up and down
-            let bob = sin(walkBobTime) * 2.0
+            // Bob up and down (bigger bounce)
+            let bob = sin(walkBobTime) * 3.5
             position.y = groundY + bob
 
-            // Slight body rock while walking
-            zRotation = sin(walkLegTime) * 0.04
+            // Body rock while walking
+            zRotation = sin(walkLegTime) * 0.06
 
-            // Squash/stretch for walking feel
-            let squash = 1.0 + sin(walkLegTime * 2) * 0.03
+            // Squash/stretch for walking feel (more pronounced)
+            let squash = 1.0 + sin(walkLegTime * 2) * 0.06
             yScale = squash
             xScale = 2.0 - squash
 

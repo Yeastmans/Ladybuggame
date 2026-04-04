@@ -477,6 +477,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 togglePause()
                 return
             }
+            if node.name == "pauseMenuBtn" {
+                SoundManager.shared.stopMusic()
+                let menu = MenuScene(size: size)
+                menu.scaleMode = scaleMode
+                view?.presentScene(menu, transition: .fade(withDuration: 0.4))
+                return
+            }
         }
 
         if isPaused_ { return }
@@ -2260,9 +2267,27 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             resume.zPosition = 141
             resume.name = "resumeLabel"
             addChild(resume)
+
+            // Menu button
+            let menuBg = SKShapeNode(rectOf: CGSize(width: 140, height: 34), cornerRadius: 8)
+            menuBg.fillColor = SKColor(red: 0.55, green: 0.15, blue: 0.15, alpha: 0.9)
+            menuBg.strokeColor = SKColor(white: 1.0, alpha: 0.3)
+            menuBg.lineWidth = 1
+            menuBg.position = CGPoint(x: size.width / 2, y: size.height / 2 - 60)
+            menuBg.zPosition = 141
+            menuBg.name = "pauseMenuBtn"
+            addChild(menuBg)
+            let menuLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            menuLabel.text = "Back to Menu"
+            menuLabel.fontSize = 14
+            menuLabel.fontColor = .white
+            menuLabel.verticalAlignmentMode = .center
+            menuLabel.name = "pauseMenuBtn"
+            menuBg.addChild(menuLabel)
         } else {
             enumerateChildNodes(withName: "pauseOverlay") { node, _ in node.removeFromParent() }
             enumerateChildNodes(withName: "resumeLabel") { node, _ in node.removeFromParent() }
+            enumerateChildNodes(withName: "pauseMenuBtn") { node, _ in node.removeFromParent() }
             lastUpdateTime = 0 // Reset to avoid big dt jump
         }
     }

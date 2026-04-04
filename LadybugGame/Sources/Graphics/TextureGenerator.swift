@@ -57,18 +57,29 @@ enum TextureGenerator {
             }
 
             if let phase = wingPhase {
-                // === Translucent flight wing ===
-                let wingAngle: CGFloat = phase == 0 ? -0.35 : 0.1
-                cg.setFillColor(UIColor(red: 0.78, green: 0.85, blue: 0.91, alpha: 0.4).cgColor)
+                // === Translucent flight wings (larger, more visible) ===
+                let wingAngle: CGFloat = phase == 0 ? -0.40 : 0.12
+                // Back wing (slightly behind, larger)
+                cg.setFillColor(UIColor(red: 0.72, green: 0.82, blue: 0.90, alpha: 0.32).cgColor)
                 cg.saveGState()
-                cg.translateBy(x: w * 0.48, y: h * 0.40)
+                cg.translateBy(x: w * 0.38, y: h * 0.38)
+                cg.rotate(by: wingAngle * 0.8)
+                cg.fillEllipse(in: CGRect(x: -w * 0.22, y: -h * 0.28, width: w * 0.44, height: h * 0.34))
+                cg.restoreGState()
+                // Front wing (main, bright)
+                cg.setFillColor(UIColor(red: 0.80, green: 0.88, blue: 0.95, alpha: 0.50).cgColor)
+                cg.saveGState()
+                cg.translateBy(x: w * 0.48, y: h * 0.36)
                 cg.rotate(by: wingAngle)
-                cg.fillEllipse(in: CGRect(x: -w * 0.20, y: -h * 0.25, width: w * 0.40, height: h * 0.28))
-                // Wing vein
-                cg.setStrokeColor(UIColor(red: 0.63, green: 0.69, blue: 0.75, alpha: 0.3).cgColor)
-                cg.setLineWidth(0.4)
+                cg.fillEllipse(in: CGRect(x: -w * 0.24, y: -h * 0.30, width: w * 0.48, height: h * 0.36))
+                // Wing veins
+                cg.setStrokeColor(UIColor(red: 0.55, green: 0.65, blue: 0.75, alpha: 0.35).cgColor)
+                cg.setLineWidth(0.6)
                 cg.move(to: CGPoint(x: 0, y: 0))
-                cg.addLine(to: CGPoint(x: w * 0.12, y: -h * 0.18))
+                cg.addLine(to: CGPoint(x: w * 0.16, y: -h * 0.22))
+                cg.strokePath()
+                cg.move(to: CGPoint(x: 0, y: 0))
+                cg.addLine(to: CGPoint(x: -w * 0.10, y: -h * 0.20))
                 cg.strokePath()
                 cg.restoreGState()
 
