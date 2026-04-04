@@ -30,6 +30,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var score: Int = 0 {
         didSet {
             scoreLabel.text = "\(score)"
+            if score >= 6000 && !isBossFight && currentBiome == .cave { startBossFight() }
             if score >= 500 && !hasShownRainbow {
                 hasShownRainbow = true
                 showRainbow()
@@ -116,6 +117,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var isCaveBiome: Bool { currentBiome == .cave }
     private var caveSpiderTimer: TimeInterval = 0
     private var fallingRockTimer: TimeInterval = 0
+
+    // Boss fight
+    private var isBossFight = false
+    private var bossNode: SKSpriteNode?
+    private var bossHP = 5
+    private var bossHPLabel: SKLabelNode?
+    private var bossAttackTimer: TimeInterval = 0
+    private var bossAttackPhase = 0
+    private var isBubbleMode = false
+    private var bubbleTimer: TimeInterval = 0
+    private var bubbleDuration: TimeInterval = 0
+    private var bossBerryTimer: TimeInterval = 0
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
@@ -370,7 +383,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func updateLivesDisplay() {
         var h = ""
-        for i in 0..<3 { h += i < lives ? "♥" : "♡"; if i < 2 { h += " " } }
+        for i in 0..<6 { h += i < lives ? "♥" : "♡"; if i < 5 { h += " " } }
         livesLabel.text = h
     }
 
@@ -432,7 +445,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if let hatId = ShopScene.equippedHat {
             let hatNode = SKSpriteNode()
             hatNode.zPosition = 2
-            hatNode.position = CGPoint(x: 15, y: 10) // on top of head (forward, right side)
+            hatNode.position = CGPoint(x: 17, y: 8) // on top of head
             switch hatId {
             case "hat_tophat":
                 let tex = TextureGenerator.generateTopHatTexture(size: CGSize(width: 16, height: 14))
@@ -549,10 +562,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         checkSpiderJumps()
         checkCaveEntities()
 
-        // Scrolling
-        distanceTraveled += scrollSpeed * CGFloat(dt)
-        scrollSpeed = min(300, 160 + distanceTraveled * 0.002)
-        let sd = scrollSpeed * CGFloat(dt)
+        // Scrolling (stops during boss fight)
+        if !isBossFight {
+            distanceTraveled += scrollSpeed * CGFloat(dt)
+            scrollSpeed = min(300, 160 + distanceTraveled * 0.002)
+        }
+        let sd = isBossFight ? 0 : scrollSpeed * CGFloat(dt)
 
         scrollGround(delta: sd)
         scrollParallax(delta: sd)
@@ -564,8 +579,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             terrain.advanceTransition(delta: sd, targetProgress: 1.0)
         }
 
-        // Biome-aware spawning
-        spawnForBiome(dt: dt)
+        // Boss fight or normal spawning
+        if isBossFight {
+            updateBossFight(dt: dt)
+        } else {
+            spawnForBiome(dt: dt)
+        }
         processDiscoveryQueue()
     }
 
@@ -1361,6 +1380,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         if collision == PhysicsCategory.ladybug | PhysicsCategory.fruitfly {
+            // Bubble berry (boss fight power-up)
+            if let berry = (contact.bodyA.node as? SKShapeNode) ?? (contact.bodyB.node as? SKShapeNode),
+               berry.name == "bubbleBerry" {
+                berry.removeFromParent()
+                collectBubbleBerry()
+                return
+            }
             // Gnat swarm
             if let gs = (contact.bodyA.node as? GnatSwarm) ?? (contact.bodyB.node as? GnatSwarm) {
                 score += 30
@@ -1374,7 +1400,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             }
             // HeartBug — restore a life
             if let hb = (contact.bodyA.node as? HeartBug) ?? (contact.bodyB.node as? HeartBug) {
-                if lives < 3 { lives += 1; updateLivesDisplay() }
+                if lives < 6 { lives += 1; updateLivesDisplay() }
                 score += 50
                 showFloatingScore(50, at: hb.position, color: SKColor(red: 1.0, green: 0.3, blue: 0.4, alpha: 1.0))
                 showEatParticles(at: hb.position)
@@ -1624,7 +1650,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         heartBugTimer += dt
-        if heartBugTimer >= 20.0 && lives < 3 { heartBugTimer = 0; spawnHeartBug() }
+        if heartBugTimer >= 20.0 && lives < 6 { heartBugTimer = 0; spawnHeartBug() }
 
         envTimer += dt
         if envTimer >= 0.6 { envTimer = 0; spawnEnvironment() }
@@ -2466,9 +2492,288 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
 
+    // MARK: - Boss Fight
+
+    private func startBossFight() {
+        isBossFight = true
+        bossHP = 5
+        bossAttackTimer = 0
+        bossAttackPhase = 0
+        bossBerryTimer = 0
+
+        // Banner
+        let banner = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        banner.text = "BOSS FIGHT!"
+        banner.fontSize = 32
+        banner.fontColor = SKColor(red: 1, green: 0.25, blue: 0.15, alpha: 1)
+        banner.position = CGPoint(x: size.width / 2, y: size.height / 2 + 20)
+        banner.zPosition = 130
+        addChild(banner)
+        banner.run(SKAction.sequence([
+            SKAction.group([SKAction.scale(to: 1.3, duration: 0.3), SKAction.fadeAlpha(to: 1, duration: 0.1)]),
+            SKAction.wait(forDuration: 1.5),
+            SKAction.fadeOut(withDuration: 0.5),
+            SKAction.removeFromParent()
+        ]))
+
+        SoundManager.shared.play("roar")
+
+        // Bear appears from right
+        let bearTex = TextureGenerator.generateBearTexture(size: CGSize(width: 160, height: 120))
+        let bear = SKSpriteNode(texture: bearTex, size: CGSize(width: 160, height: 120))
+        bear.position = CGPoint(x: size.width + 100, y: groundY + 60)
+        bear.xScale = -1
+        bear.zPosition = 8
+        bear.name = "boss"
+        addChild(bear)
+        bossNode = bear
+
+        bear.run(SKAction.moveTo(x: size.width * 0.78, duration: 1.5))
+
+        // HP display
+        let hpLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        hpLabel.fontSize = 16
+        hpLabel.fontColor = .red
+        hpLabel.position = CGPoint(x: 0, y: 70)
+        hpLabel.zPosition = 10
+        bear.addChild(hpLabel)
+        bossHPLabel = hpLabel
+        updateBossHP()
+    }
+
+    private func updateBossHP() {
+        var h = ""
+        for i in 0..<5 { h += i < bossHP ? "♥" : "♡" }
+        bossHPLabel?.text = h
+    }
+
+    private func updateBossFight(dt: TimeInterval) {
+        guard isBossFight, bossHP > 0 else { return }
+
+        bossAttackTimer += dt
+        bossBerryTimer += dt
+
+        // Boss attack every 3s
+        if bossAttackTimer >= 3.0 {
+            bossAttackTimer = 0
+            let phase = bossAttackPhase % 3
+            bossAttackPhase += 1
+
+            switch phase {
+            case 0: bossThrowRock()
+            case 1: bossCharge()
+            default: bossGroundSlam()
+            }
+        }
+
+        // Bubble berry every 8s
+        if bossBerryTimer >= 8.0 {
+            bossBerryTimer = 0
+            spawnBubbleBerry()
+        }
+
+        // Bubble shooting mode
+        if isBubbleMode {
+            bubbleTimer += dt
+            bubbleDuration -= dt
+            if bubbleDuration <= 0 {
+                isBubbleMode = false
+                ladybug.colorBlendFactor = 0
+            } else if bubbleTimer >= 0.3 {
+                bubbleTimer = 0
+                shootBubble()
+            }
+        }
+
+        // Scroll bubbles and check hits
+        for child in children where child.name == "bubble" {
+            child.position.x += 400 * CGFloat(dt)
+            if child.position.x > size.width + 20 { child.removeFromParent(); continue }
+            if let boss = bossNode, boss.frame.contains(child.position) {
+                child.removeFromParent()
+                damageBoss()
+            }
+        }
+    }
+
+    private func bossThrowRock() {
+        guard let boss = bossNode else { return }
+        let rockSize = CGSize(width: CGFloat.random(in: 22...32), height: CGFloat.random(in: 20...28))
+        let tex = TextureGenerator.generateFallingRockTexture(size: rockSize)
+        let rock = SKSpriteNode(texture: tex, size: rockSize)
+        rock.position = CGPoint(x: boss.position.x - 40, y: boss.position.y + CGFloat.random(in: -20...30))
+        rock.zPosition = 7
+        rock.name = "bossRock"
+        let body = SKPhysicsBody(circleOfRadius: rockSize.width / 2 * 0.6)
+        body.isDynamic = false
+        body.categoryBitMask = GameScene.PhysicsCategory.bird
+        body.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+        rock.physicsBody = body
+        addChild(rock)
+        SoundManager.shared.play("whoosh")
+        let targetY = groundY + CGFloat.random(in: 20...size.height * 0.60)
+        rock.run(SKAction.sequence([
+            SKAction.move(to: CGPoint(x: -50, y: targetY), duration: 1.2),
+            SKAction.removeFromParent()
+        ]))
+    }
+
+    private func bossCharge() {
+        guard let boss = bossNode else { return }
+        SoundManager.shared.play("roar")
+        let startX = boss.position.x
+        let charge = SKAction.sequence([
+            SKAction.moveTo(x: -60, duration: 0.8),
+            SKAction.wait(forDuration: 0.3),
+            SKAction.moveTo(x: startX, duration: 1.0),
+        ])
+        charge.timingMode = .easeInEaseOut
+        boss.run(charge)
+    }
+
+    private func bossGroundSlam() {
+        guard let boss = bossNode else { return }
+        SoundManager.shared.play("crunch")
+        // Visual shockwave along ground
+        let wave = SKShapeNode(rectOf: CGSize(width: 30, height: 8), cornerRadius: 4)
+        wave.fillColor = SKColor(red: 0.60, green: 0.45, blue: 0.30, alpha: 0.7)
+        wave.strokeColor = .clear
+        wave.position = CGPoint(x: boss.position.x - 50, y: groundY + 6)
+        wave.zPosition = 3
+        wave.name = "shockwave"
+        let wBody = SKPhysicsBody(rectangleOf: CGSize(width: 30, height: 8))
+        wBody.isDynamic = false
+        wBody.categoryBitMask = GameScene.PhysicsCategory.bird
+        wBody.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+        wave.physicsBody = wBody
+        addChild(wave)
+        wave.run(SKAction.sequence([
+            SKAction.moveBy(x: -(size.width + 60), y: 0, duration: 0.8),
+            SKAction.removeFromParent()
+        ]))
+        // Bear slam animation
+        boss.run(SKAction.sequence([
+            SKAction.moveBy(x: 0, y: 20, duration: 0.15),
+            SKAction.moveBy(x: 0, y: -20, duration: 0.08),
+        ]))
+    }
+
+    private func spawnBubbleBerry() {
+        let berry = SKShapeNode(circleOfRadius: 10)
+        berry.fillColor = SKColor(red: 0.30, green: 0.70, blue: 1.0, alpha: 0.8)
+        berry.strokeColor = SKColor(red: 0.40, green: 0.80, blue: 1.0, alpha: 0.6)
+        berry.lineWidth = 2
+        berry.position = CGPoint(x: CGFloat.random(in: size.width * 0.15...size.width * 0.50),
+                                  y: CGFloat.random(in: groundY + 40...size.height * 0.65))
+        berry.zPosition = 9
+        berry.name = "bubbleBerry"
+        addChild(berry)
+        // Glow pulse
+        let pulse = SKAction.sequence([SKAction.fadeAlpha(to: 0.5, duration: 0.4), SKAction.fadeAlpha(to: 1.0, duration: 0.4)])
+        berry.run(SKAction.repeatForever(pulse))
+        // Physics
+        let body = SKPhysicsBody(circleOfRadius: 10)
+        body.isDynamic = false
+        body.categoryBitMask = GameScene.PhysicsCategory.fruitfly
+        body.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+        berry.physicsBody = body
+        // Remove after 6s if not collected
+        berry.run(SKAction.sequence([SKAction.wait(forDuration: 6), SKAction.fadeOut(withDuration: 0.5), SKAction.removeFromParent()]))
+    }
+
+    private func collectBubbleBerry() {
+        isBubbleMode = true
+        bubbleDuration = 4.0
+        bubbleTimer = 0
+        SoundManager.shared.play("powerup")
+        ladybug.color = SKColor(red: 0.3, green: 0.7, blue: 1.0, alpha: 1)
+        ladybug.colorBlendFactor = 0.4
+        // Flash text
+        let txt = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        txt.text = "BUBBLE MODE!"
+        txt.fontSize = 18
+        txt.fontColor = SKColor(red: 0.3, green: 0.8, blue: 1.0, alpha: 1)
+        txt.position = CGPoint(x: size.width / 2, y: size.height / 2 + 30)
+        txt.zPosition = 130
+        addChild(txt)
+        txt.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), SKAction.fadeOut(withDuration: 0.3), SKAction.removeFromParent()]))
+    }
+
+    private func shootBubble() {
+        let bubble = SKShapeNode(circleOfRadius: 6)
+        bubble.fillColor = SKColor(red: 0.40, green: 0.75, blue: 1.0, alpha: 0.6)
+        bubble.strokeColor = SKColor(red: 0.50, green: 0.85, blue: 1.0, alpha: 0.8)
+        bubble.lineWidth = 1.5
+        bubble.position = CGPoint(x: ladybug.position.x + 15, y: ladybug.position.y)
+        bubble.zPosition = 9
+        bubble.name = "bubble"
+        addChild(bubble)
+        SoundManager.shared.play("pop")
+    }
+
+    private func damageBoss() {
+        bossHP -= 1
+        updateBossHP()
+        SoundManager.shared.play("bossHit")
+        bossNode?.run(SKAction.sequence([
+            SKAction.colorize(with: .white, colorBlendFactor: 0.8, duration: 0.05),
+            SKAction.colorize(withColorBlendFactor: 0, duration: 0.15),
+        ]))
+        if bossHP <= 0 { bossDefeated() }
+    }
+
+    private func bossDefeated() {
+        isBossFight = false
+        SoundManager.shared.play("powerup")
+        // Bear runs away
+        bossNode?.run(SKAction.sequence([
+            SKAction.moveTo(x: size.width + 200, duration: 1.0),
+            SKAction.removeFromParent()
+        ]))
+        // Clean up boss projectiles
+        enumerateChildNodes(withName: "bossRock") { n, _ in n.removeFromParent() }
+        enumerateChildNodes(withName: "shockwave") { n, _ in n.removeFromParent() }
+        enumerateChildNodes(withName: "bubbleBerry") { n, _ in n.removeFromParent() }
+        enumerateChildNodes(withName: "bubble") { n, _ in n.removeFromParent() }
+        // Victory banner
+        let victory = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        victory.text = "VICTORY!"
+        victory.fontSize = 40
+        victory.fontColor = SKColor(red: 1, green: 0.85, blue: 0.0, alpha: 1)
+        victory.position = CGPoint(x: size.width / 2, y: size.height / 2 + 10)
+        victory.zPosition = 130
+        addChild(victory)
+        victory.run(SKAction.sequence([
+            SKAction.group([SKAction.scale(to: 1.4, duration: 0.5), SKAction.fadeAlpha(to: 1, duration: 0.1)]),
+            SKAction.wait(forDuration: 3.0),
+            SKAction.fadeOut(withDuration: 1.0),
+            SKAction.removeFromParent(),
+            SKAction.run { [weak self] in
+                guard let self = self else { return }
+                // Award bonus gems
+                GameScene.gemCount += 10
+                self.gemLabel.text = "\(GameScene.gemCount)"
+                // Return to menu
+                let menu = MenuScene(size: self.size)
+                menu.scaleMode = self.scaleMode
+                self.view?.presentScene(menu, transition: .fade(withDuration: 0.5))
+            }
+        ]))
+        // Gem reward text
+        let gemReward = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        gemReward.text = "+10 💎"
+        gemReward.fontSize = 22
+        gemReward.fontColor = SKColor(red: 0.75, green: 0.55, blue: 1.0, alpha: 1)
+        gemReward.position = CGPoint(x: size.width / 2, y: size.height / 2 - 30)
+        gemReward.zPosition = 130
+        addChild(gemReward)
+        gemReward.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), SKAction.fadeOut(withDuration: 3.0), SKAction.removeFromParent()]))
+    }
+
     private func gameOver() {
         isGameOver = true
         SoundManager.shared.stopMusic()
+        SoundManager.shared.play("death")
         SoundManager.shared.play("gameOver")
         if score > MenuScene.highScore { MenuScene.highScore = score }
 

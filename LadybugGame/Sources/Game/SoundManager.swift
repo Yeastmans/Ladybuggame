@@ -19,7 +19,10 @@ final class SoundManager: @unchecked Sendable {
         prepareSound("jump", frequency: 520, duration: 0.1, volume: 0.2, sweep: 800)
         prepareSound("hit", frequency: 180, duration: 0.2, volume: 0.4)
         prepareSound("land", frequency: 200, duration: 0.06, volume: 0.15)
+        prepareSound("death", frequency: 600, duration: 0.3, volume: 0.4, sweep: 100) // ladybug death splat
         prepareSound("gameOver", frequency: 400, duration: 0.4, volume: 0.35, sweep: 120)
+        prepareSound("roar", frequency: 120, duration: 0.5, volume: 0.5, sweep: 80) // boss roar
+        prepareSound("bossHit", frequency: 300, duration: 0.15, volume: 0.4, sweep: 600) // hitting the boss
         prepareSound("caw", frequency: 600, duration: 0.18, volume: 0.25, sweep: 350)
         prepareSound("ribbit", frequency: 250, duration: 0.15, volume: 0.3, sweep: 450)
         prepareSound("hiss", frequency: 300, duration: 0.25, volume: 0.3, sweep: 150) // snake/scorpion

@@ -1764,6 +1764,80 @@ enum TextureGenerator {
         return SKTexture(image: image)
     }
 
+    // MARK: - Bear Boss
+
+    static func generateBearTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            let fur = UIColor(red: 0.45, green: 0.30, blue: 0.18, alpha: 1)
+            let darkFur = UIColor(red: 0.32, green: 0.20, blue: 0.12, alpha: 1)
+            // Back leg
+            cg.setFillColor(darkFur.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.60, width: w * 0.22, height: h * 0.35))
+            // Front leg
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.62, width: w * 0.20, height: h * 0.34))
+            // Body (large, hulking)
+            cg.setFillColor(fur.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.08, y: h * 0.20, width: w * 0.65, height: h * 0.52))
+            // Belly lighter
+            cg.setFillColor(UIColor(red: 0.55, green: 0.40, blue: 0.25, alpha: 0.5).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.20, y: h * 0.38, width: w * 0.35, height: h * 0.28))
+            // Shoulder hump
+            cg.setFillColor(fur.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * 0.12, width: w * 0.30, height: h * 0.25))
+            // Head
+            cg.setFillColor(UIColor(red: 0.40, green: 0.26, blue: 0.15, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.15, width: w * 0.30, height: h * 0.32))
+            // Ears
+            cg.setFillColor(darkFur.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.65, y: h * 0.10, width: w * 0.10, height: h * 0.10))
+            cg.fillEllipse(in: CGRect(x: w * 0.82, y: h * 0.10, width: w * 0.10, height: h * 0.10))
+            // Inner ear
+            cg.setFillColor(UIColor(red: 0.55, green: 0.35, blue: 0.25, alpha: 0.6).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.67, y: h * 0.12, width: w * 0.06, height: h * 0.06))
+            cg.fillEllipse(in: CGRect(x: w * 0.84, y: h * 0.12, width: w * 0.06, height: h * 0.06))
+            // Snout
+            cg.setFillColor(UIColor(red: 0.50, green: 0.35, blue: 0.22, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.80, y: h * 0.25, width: w * 0.16, height: h * 0.15))
+            // Nose
+            cg.setFillColor(UIColor(red: 0.15, green: 0.10, blue: 0.08, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.88, y: h * 0.27, width: w * 0.08, height: h * 0.06))
+            // Eyes (angry)
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.22, width: w * 0.08, height: h * 0.07))
+            cg.fillEllipse(in: CGRect(x: w * 0.82, y: h * 0.22, width: w * 0.08, height: h * 0.07))
+            cg.setFillColor(UIColor(red: 0.60, green: 0.15, blue: 0.10, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.74, y: h * 0.23, width: w * 0.05, height: h * 0.05))
+            cg.fillEllipse(in: CGRect(x: w * 0.84, y: h * 0.23, width: w * 0.05, height: h * 0.05))
+            // Angry brows
+            cg.setStrokeColor(darkFur.cgColor)
+            cg.setLineWidth(3)
+            cg.move(to: CGPoint(x: w * 0.70, y: h * 0.20))
+            cg.addLine(to: CGPoint(x: w * 0.78, y: h * 0.22))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.92, y: h * 0.20))
+            cg.addLine(to: CGPoint(x: w * 0.84, y: h * 0.22))
+            cg.strokePath()
+            // Mouth (growling)
+            cg.setStrokeColor(UIColor(red: 0.20, green: 0.10, blue: 0.05, alpha: 0.8).cgColor)
+            cg.setLineWidth(2)
+            cg.move(to: CGPoint(x: w * 0.84, y: h * 0.38))
+            cg.addLine(to: CGPoint(x: w * 0.95, y: h * 0.36))
+            cg.strokePath()
+            // Claws on front paw
+            cg.setStrokeColor(UIColor(white: 0.85, alpha: 0.8).cgColor)
+            cg.setLineWidth(1.5)
+            for cx in [0.58, 0.62, 0.66] as [CGFloat] {
+                cg.move(to: CGPoint(x: w * cx, y: h * 0.92))
+                cg.addLine(to: CGPoint(x: w * (cx - 0.02), y: h * 0.98))
+                cg.strokePath()
+            }
+        }
+        return SKTexture(image: image)
+    }
+
     // MARK: - Cicada Bee (jungle flying enemy, green/gold)
 
     static func generateCicadaBeeFrames(size: CGSize) -> [SKTexture] {
