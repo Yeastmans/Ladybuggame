@@ -146,7 +146,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         frogTexture = TextureGenerator.generateFrogTexture(size: CGSize(width: 36, height: 32))
         toadTexture = TextureGenerator.generateToadTexture(size: CGSize(width: 36, height: 32))
         poisonDartFrogTexture = TextureGenerator.generatePoisonDartFrogTexture(size: CGSize(width: 36, height: 32))
-        deadTexture = TextureGenerator.generateLadybugDeadTexture(size: CGSize(width: 48, height: 48))
+        // Resolve equipped body color for dead texture too
+        var equippedBodyColor: UIColor? = nil
+        if let colorId = ShopScene.equippedColor,
+           let item = ShopScene.allItems.first(where: { $0.id == colorId }),
+           let c = item.color {
+            equippedBodyColor = UIColor(cgColor: c.cgColor)
+        }
+        deadTexture = TextureGenerator.generateLadybugDeadTexture(size: CGSize(width: 48, height: 48), bodyColor: equippedBodyColor)
         dragonflyFrames = TextureGenerator.generateDragonflyFrames(size: CGSize(width: 48, height: 28))
         fireflyFrames = TextureGenerator.generateFireflyFrames(size: CGSize(width: 24, height: 24))
         heartBugFrames = TextureGenerator.generateHeartBugFrames(size: CGSize(width: 36, height: 36))
@@ -367,13 +374,22 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func spawnLadybug() {
         let bugSize = CGSize(width: 48, height: 48)
-        let walkTex = TextureGenerator.generateLadybugTexture(size: bugSize)
-        let blinkTex = TextureGenerator.generateLadybugBlinkTexture(size: bugSize)
-        let flyFrames = TextureGenerator.generateLadybugFlyFrames(size: bugSize)
+
+        // Resolve equipped body color for texture generation
+        var bodyColor: UIColor? = nil
+        if let colorId = ShopScene.equippedColor,
+           let item = ShopScene.allItems.first(where: { $0.id == colorId }),
+           let c = item.color {
+            bodyColor = UIColor(cgColor: c.cgColor)
+        }
+
+        let walkTex = TextureGenerator.generateLadybugTexture(size: bugSize, bodyColor: bodyColor)
+        let blinkTex = TextureGenerator.generateLadybugBlinkTexture(size: bugSize, bodyColor: bodyColor)
+        let flyFrames = TextureGenerator.generateLadybugFlyFrames(size: bugSize, bodyColor: bodyColor)
         ladybug = Ladybug(walkTexture: walkTex, blinkTexture: blinkTex, flyFrames: flyFrames)
         ladybug.position = CGPoint(x: size.width * 0.18, y: groundY + bugSize.height / 2)
 
-        // Apply equipped cosmetics
+        // Apply equipped cosmetics (hats, shoes, sparkle)
         applyLadybugCosmetics()
 
         let body = SKPhysicsBody(circleOfRadius: bugSize.width / 2 * 0.6)
@@ -388,29 +404,25 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func applyLadybugCosmetics() {
-        // Color tint
+        // Sparkly color effect (body color already baked into texture via spawnLadybug)
         if let colorId = ShopScene.equippedColor,
-           let item = ShopScene.allItems.first(where: { $0.id == colorId }),
-           let tint = item.color {
-            ladybug.color = SKColor(cgColor: tint.cgColor)
-            ladybug.colorBlendFactor = 0.55
-            // Sparkly: add particle child
+           let item = ShopScene.allItems.first(where: { $0.id == colorId }) {
             if item.isSparkly {
                 let sparkle = SKAction.run { [weak self] in
                     guard let self = self else { return }
-                    let dot = SKShapeNode(circleOfRadius: 1.2)
+                    let dot = SKShapeNode(circleOfRadius: 1.5)
                     dot.fillColor = .white
                     dot.strokeColor = .clear
-                    dot.position = CGPoint(x: CGFloat.random(in: -12...12), y: CGFloat.random(in: -12...12))
+                    dot.position = CGPoint(x: CGFloat.random(in: -14...14), y: CGFloat.random(in: -14...14))
                     dot.zPosition = -1
-                    dot.alpha = 0.8
+                    dot.alpha = 0.9
                     self.ladybug.addChild(dot)
                     dot.run(SKAction.sequence([
                         SKAction.group([SKAction.fadeOut(withDuration: 0.5), SKAction.scale(to: 0.1, duration: 0.5)]),
                         SKAction.removeFromParent()
                     ]))
                 }
-                ladybug.run(SKAction.repeatForever(SKAction.sequence([sparkle, SKAction.wait(forDuration: 0.2)])), withKey: "sparkle")
+                ladybug.run(SKAction.repeatForever(SKAction.sequence([sparkle, SKAction.wait(forDuration: 0.18)])), withKey: "sparkle")
             }
         }
 
@@ -442,15 +454,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             ladybug.addChild(hatNode)
         }
 
-        // Shoes — subtle colored dots on ground level legs
+        // Shoes — colored ovals at each leg tip
         if let shoeId = ShopScene.equippedShoes,
            let item = ShopScene.allItems.first(where: { $0.id == shoeId }),
            let shoeColor = item.color {
-            for dx in [CGFloat(-8), -4, 4] {
-                let shoe = SKShapeNode(circleOfRadius: 2)
+            for dx in [CGFloat(-10), -3, 5] {
+                let shoe = SKShapeNode(ellipseOf: CGSize(width: 6, height: 4))
                 shoe.fillColor = SKColor(cgColor: shoeColor.cgColor)
-                shoe.strokeColor = .clear
-                shoe.position = CGPoint(x: dx, y: -20)
+                shoe.strokeColor = SKColor(white: 0, alpha: 0.3)
+                shoe.lineWidth = 0.5
+                shoe.position = CGPoint(x: dx, y: -21)
                 shoe.zPosition = -1
                 shoe.name = "shoe"
                 ladybug.addChild(shoe)

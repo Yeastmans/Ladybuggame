@@ -5,26 +5,26 @@ enum TextureGenerator {
 
     // MARK: - Ladybug SIDE VIEW (facing right)
 
-    static func generateLadybugTexture(size: CGSize) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil)
+    static func generateLadybugTexture(size: CGSize, bodyColor: UIColor? = nil) -> SKTexture {
+        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor)
     }
 
-    static func generateLadybugBlinkTexture(size: CGSize) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: true, wingPhase: nil)
+    static func generateLadybugBlinkTexture(size: CGSize, bodyColor: UIColor? = nil) -> SKTexture {
+        return drawLadybugSide(size: size, eyesClosed: true, wingPhase: nil, bodyColor: bodyColor)
     }
 
-    static func generateLadybugDeadTexture(size: CGSize) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, dead: true)
+    static func generateLadybugDeadTexture(size: CGSize, bodyColor: UIColor? = nil) -> SKTexture {
+        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, dead: true, bodyColor: bodyColor)
     }
 
     /// Two frames: wings up and wings down, legs tucked
-    static func generateLadybugFlyFrames(size: CGSize) -> [SKTexture] {
-        return [drawLadybugSide(size: size, eyesClosed: false, wingPhase: 0),
-                drawLadybugSide(size: size, eyesClosed: false, wingPhase: 1)]
+    static func generateLadybugFlyFrames(size: CGSize, bodyColor: UIColor? = nil) -> [SKTexture] {
+        return [drawLadybugSide(size: size, eyesClosed: false, wingPhase: 0, bodyColor: bodyColor),
+                drawLadybugSide(size: size, eyesClosed: false, wingPhase: 1, bodyColor: bodyColor)]
     }
 
     /// wingPhase: nil = walking (legs out), 0 = wings up, 1 = wings down
-    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingPhase: Int?, dead: Bool = false) -> SKTexture {
+    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingPhase: Int?, dead: Bool = false, bodyColor: UIColor? = nil) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
@@ -33,6 +33,11 @@ enum TextureGenerator {
 
             let legColor = UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor
             let isFlying = wingPhase != nil
+            let bodyFill = (bodyColor ?? UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0)).cgColor
+            // Derive a darker stroke from body color
+            var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
+            (bodyColor ?? UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0)).getRed(&br, green: &bg, blue: &bb, alpha: &ba)
+            let bodyStroke = UIColor(red: br * 0.6, green: bg * 0.6, blue: bb * 0.6, alpha: 1.0).cgColor
 
             // === Legs ===
             cg.setStrokeColor(legColor)
@@ -85,9 +90,9 @@ enum TextureGenerator {
 
                 // Body dome (same as walking but drawn over wing)
                 let bodyRect = CGRect(x: w * 0.18, y: h * 0.25, width: w * 0.65, height: h * 0.48)
-                cg.setFillColor(UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0).cgColor)
+                cg.setFillColor(bodyFill)
                 cg.fillEllipse(in: bodyRect)
-                cg.setStrokeColor(UIColor(red: 0.55, green: 0.05, blue: 0.05, alpha: 1.0).cgColor)
+                cg.setStrokeColor(bodyStroke)
                 cg.setLineWidth(1.2)
                 cg.strokeEllipse(in: bodyRect)
 
@@ -101,11 +106,11 @@ enum TextureGenerator {
                 cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.52, width: w * 0.07, height: w * 0.07))
                 cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * 0.50, width: w * 0.08, height: w * 0.08))
             } else {
-                // === Body dome (red, side profile) ===
+                // === Body dome (side profile) ===
                 let bodyRect = CGRect(x: w * 0.12, y: h * 0.22, width: w * 0.60, height: h * 0.52)
-                cg.setFillColor(UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0).cgColor)
+                cg.setFillColor(bodyFill)
                 cg.fillEllipse(in: bodyRect)
-                cg.setStrokeColor(UIColor(red: 0.55, green: 0.05, blue: 0.05, alpha: 1.0).cgColor)
+                cg.setStrokeColor(bodyStroke)
                 cg.setLineWidth(1.5)
                 cg.strokeEllipse(in: bodyRect)
 
