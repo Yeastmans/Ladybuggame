@@ -106,6 +106,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var spiderFrames: [SKTexture] = []
     private var jungleSpiderFrames: [SKTexture] = []
     private var waspFrames: [SKTexture] = []
+    private var vampireBatFrames: [SKTexture] = []
+
+    // Cave terrain system
+    private var caveTerrain: CaveTerrain?
+    private var caveGroundTiles: [SKShapeNode] = []
+    private var caveCeilingTiles: [SKShapeNode] = []
+    private var isCaveBiome: Bool { currentBiome == .cave }
+    private var caveSpiderTimer: TimeInterval = 0
+    private var fallingRockTimer: TimeInterval = 0
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
@@ -145,6 +154,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         spiderFrames = TextureGenerator.generateSpiderFrames(size: CGSize(width: 48, height: 40))
         jungleSpiderFrames = TextureGenerator.generateJungleSpiderFrames(size: CGSize(width: 48, height: 40))
         waspFrames = TextureGenerator.generateDesertWaspFrames(size: CGSize(width: 40, height: 28))
+        vampireBatFrames = TextureGenerator.generateVampireBatFrames(size: CGSize(width: 50, height: 36))
         for fc in [TextureGenerator.FlyColor.brown, .blue, .purple] {
             flyFrames[fc] = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: fc)
         }
@@ -503,8 +513,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         ladybug.targetY = isTouching ? touchY : nil
 
-        let bugGroundY = groundY + ladybug.size.height / 2
-        var ceilingY = size.height - ladybug.size.height / 2 - 10
+        let localGY = effectiveGroundY(atScreenX: ladybug.position.x)
+        let bugGroundY = localGY + ladybug.size.height / 2
+        var ceilingY = effectiveCeilingY(atScreenX: ladybug.position.x) - ladybug.size.height / 2
 
         // Check if inside a log — clamp ceiling to log top
         checkLogTube(bugGroundY: bugGroundY, ceilingY: &ceilingY)
@@ -514,6 +525,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         pushEntitiesFromLogs()
         checkPondSplash()
         checkSpiderJumps()
+        checkCaveEntities()
 
         // Scrolling
         distanceTraveled += scrollSpeed * CGFloat(dt)
@@ -523,6 +535,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         scrollGround(delta: sd)
         scrollParallax(delta: sd)
         scrollWorldObjects(delta: sd)
+
+        // Cave terrain advancement
+        if isCaveBiome, let terrain = caveTerrain {
+            terrain.update(scrollDelta: sd)
+            terrain.advanceTransition(delta: sd, targetProgress: 1.0)
+        }
 
         // Biome-aware spawning
         spawnForBiome(dt: dt)
@@ -591,6 +609,19 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
 
+    private func checkCaveEntities() {
+        guard isCaveBiome else { return }
+        let dt = 1.0 / 60.0 // approximate frame dt
+        for child in children {
+            if let cs = child as? CaveSpider {
+                cs.lungeIfPlayerNear(playerX: ladybug.position.x)
+            }
+            if let rock = child as? FallingRock {
+                rock.update(dt: dt)
+            }
+        }
+    }
+
     private func pushEntitiesFromLogs() {
         for child in children {
             guard let log = child as? Log else { continue }
@@ -623,6 +654,19 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 tile.position.x = round(maxX + tileStride)
             }
         }
+        // Cave tiles
+        if isCaveBiome {
+            for (i, tile) in caveGroundTiles.enumerated() {
+                tile.position.x -= delta
+                caveCeilingTiles[i].position.x -= delta
+                if tile.position.x + tileStride < 0 {
+                    let maxX = caveGroundTiles.map { $0.position.x }.max() ?? 0
+                    tile.position.x = round(maxX + tileStride)
+                    caveCeilingTiles[i].position.x = tile.position.x
+                    regenerateCaveTilePath(index: i)
+                }
+            }
+        }
     }
 
     private func scrollParallax(delta: CGFloat) {
@@ -653,10 +697,28 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func scrollWorldObjects(delta: CGFloat) {
         for child in children {
-            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood || child is BiomeEnemy || child is BiomeSwooper {
+            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood || child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider || child is FallingRock {
                 child.position.x -= delta
+                // Cave ground tracking: snap ground entities to terrain
+                if isCaveBiome, let terrain = caveTerrain {
+                    let isGround = child is Aphid || child is Ant || child is BiomeEnemy ||
+                        (child is BiomeFood && !(child as! BiomeFood).isFlying) ||
+                        (child is Spider && !(child is CaveSpider))
+                    if isGround {
+                        let gY = terrain.groundY(atScreenX: child.position.x)
+                        child.position.y = gY + child.frame.height / 2
+                    }
+                    if let cs = child as? CaveSpider {
+                        cs.updateVisuals(currentCeilingY: terrain.ceilingY(atScreenX: child.position.x))
+                    }
+                }
                 if child.position.x < -120 { child.removeFromParent() }
             }
+        }
+        // FallingRock shadows also need scrolling
+        enumerateChildNodes(withName: "rockShadow") { node, _ in
+            node.position.x -= delta
+            if node.position.x < -80 { node.removeFromParent() }
         }
     }
 
@@ -909,6 +971,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             spawnSnowDecor(x: x)
         case .jungle:
             spawnJungleDecor(x: x)
+        case .cave:
+            spawnCaveDecor(x: x)
         }
     }
 
@@ -1097,6 +1161,66 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
 
+    private func spawnCaveDecor(x: CGFloat) {
+        guard let terrain = caveTerrain else { return }
+        let gY = terrain.groundY(atScreenX: x)
+        let cY = terrain.ceilingY(atScreenX: x)
+        let roll = Int.random(in: 0...5)
+        switch roll {
+        case 0: // Stalactite (from ceiling)
+            let h = CGFloat.random(in: 15...38)
+            let stalactite = SKShapeNode()
+            let path = UIBezierPath()
+            path.move(to: CGPoint(x: -CGFloat.random(in: 4...8), y: 0))
+            path.addLine(to: CGPoint(x: 0, y: -h))
+            path.addLine(to: CGPoint(x: CGFloat.random(in: 4...8), y: 0))
+            path.close()
+            stalactite.path = path.cgPath
+            stalactite.fillColor = SKColor(red: 0.32, green: 0.28, blue: 0.24, alpha: 0.85)
+            addDecor(stalactite, x: x, y: cY - 1)
+        case 1: // Stalagmite (from ground)
+            let h = CGFloat.random(in: 12...32)
+            let stalagmite = SKShapeNode()
+            let path = UIBezierPath()
+            path.move(to: CGPoint(x: -CGFloat.random(in: 3...7), y: 0))
+            path.addLine(to: CGPoint(x: 0, y: h))
+            path.addLine(to: CGPoint(x: CGFloat.random(in: 3...7), y: 0))
+            path.close()
+            stalagmite.path = path.cgPath
+            stalagmite.fillColor = SKColor(red: 0.34, green: 0.30, blue: 0.25, alpha: 0.85)
+            addDecor(stalagmite, x: x, y: gY + 1)
+        case 2: // Glowing crystal cluster
+            for _ in 0..<Int.random(in: 2...4) {
+                let crystal = SKShapeNode(rectOf: CGSize(width: 2, height: CGFloat.random(in: 6...12)))
+                crystal.fillColor = [SKColor(red: 0.4, green: 0.3, blue: 0.8, alpha: 0.7),
+                                     SKColor(red: 0.3, green: 0.7, blue: 0.9, alpha: 0.7),
+                                     SKColor(red: 0.6, green: 0.2, blue: 0.7, alpha: 0.7)].randomElement()!
+                crystal.strokeColor = .clear
+                crystal.zRotation = CGFloat.random(in: -0.4...0.4)
+                addDecor(crystal, x: x + CGFloat.random(in: -5...5), y: gY + crystal.frame.height / 2)
+            }
+            let glow = SKShapeNode(circleOfRadius: 7)
+            glow.fillColor = SKColor(red: 0.4, green: 0.3, blue: 0.8, alpha: 0.12)
+            glow.strokeColor = .clear
+            addDecor(glow, x: x, y: gY + 6)
+        case 3: // Decorative gemstone (wall)
+            let gem = SKShapeNode(rectOf: CGSize(width: 5, height: 5))
+            gem.fillColor = [SKColor.purple, SKColor.cyan, SKColor.green].randomElement()!.withAlphaComponent(0.6)
+            gem.strokeColor = .clear
+            gem.zRotation = .pi / 4
+            let wallY = CGFloat.random(in: gY + 20...cY - 20)
+            addDecor(gem, x: x, y: wallY)
+        case 4: // Cave moss
+            let moss = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 8...16), height: 4))
+            moss.fillColor = SKColor(red: 0.18, green: CGFloat.random(in: 0.30...0.38), blue: 0.14, alpha: 0.45)
+            addDecor(moss, x: x, y: gY + 2)
+        default: // Small rock
+            let rock = SKShapeNode(rectOf: CGSize(width: CGFloat.random(in: 5...11), height: CGFloat.random(in: 3...6)), cornerRadius: 2)
+            rock.fillColor = SKColor(red: 0.38, green: 0.33, blue: 0.28, alpha: 0.7)
+            addDecor(rock, x: x, y: gY + 2)
+        }
+    }
+
     private func spawnJungleDecor(x: CGFloat) {
         // Don't place big trees near ponds or other ground objects
         let nearWater = isNearGroundObject(x: x, range: 110)
@@ -1191,6 +1315,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 case "Ice Moth":         unlockBug(.iceMoth);         SoundManager.shared.play("flutter")
                 case "Jungle Beetle":    unlockBug(.jungleBeetle);    SoundManager.shared.play("skitter")
                 case "Butterfly":        unlockBug(.butterfly);       SoundManager.shared.play("flutter")
+                case "Cave Cricket":    unlockBug(.caveCricket);    SoundManager.shared.play("skitter")
+                case "Glowworm":        unlockBug(.glowworm);       SoundManager.shared.play("flutter")
+                case "Crystal Beetle":  unlockBug(.crystalBeetle);  SoundManager.shared.play("skitter")
                 default: break
                 }
                 return
@@ -1282,6 +1409,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if ladybug.isSheltered { return }
             if !ladybug.isInvincible {
                 let enemyNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird) ? contact.bodyA.node : contact.bodyB.node
+                // Cave spider stays on web — just damage, don't remove
+                if enemyNode is CaveSpider {
+                    unlockBug(.caveSpider)
+                    takeDamage()
+                    return
+                }
                 // Monkey stays on tree — just damage, don't remove
                 if enemyNode?.name == "monkey" {
                     unlockBug(.monkey)
@@ -1312,6 +1445,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Snow Owl": unlockBug(.snowOwl)
                     case "Toucan": unlockBug(.toucan)
                     case "Desert Wasp": unlockBug(.desertWasp)
+                    case "Vampire Bat": unlockBug(.vampireBat)
                     default: break
                     }
                 }
@@ -1321,6 +1455,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Rattlesnake": unlockBug(.rattlesnake)
                     case "Ice Spider": unlockBug(.iceSpider)
                     case "Jungle Spider": unlockBug(.jungleSpider)
+                    case "Rock Worm": unlockBug(.rockWorm)
                     default: break
                     }
                 }
@@ -1538,6 +1673,24 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Toucan") }
             fireflyTimer += dt // Monkeys (climb trees)
             if fireflyTimer >= max(5.0, 10.0 - Double(distanceTraveled) * 0.0003) { fireflyTimer = 0; spawnMonkey() }
+
+        case .cave:
+            aphidTimer += dt // Cave crickets
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateCaveCricketTexture(size: CGSize(width: 26, height: 20)), pts: 25, flying: false, name: "Cave Cricket") }
+            flyTimer += dt // Glowworms (flying)
+            if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateGlowwormTexture(size: CGSize(width: 24, height: 20)), pts: 35, flying: true, name: "Glowworm") }
+            gnatTimer += dt // Crystal beetles (rare ground, 50pts)
+            if gnatTimer >= 4.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateCrystalBeetleTexture(size: CGSize(width: 26, height: 22)), pts: 50, flying: false, name: "Crystal Beetle") }
+            dragonflyTimer += dt // Rock worms (ground enemy)
+            if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateRockWormTexture(size: CGSize(width: 48, height: 30)), name: "Rock Worm") }
+            birdTimer += dt // Vampire bats
+            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Vampire Bat") }
+            caveSpiderTimer += dt // Cave spiders (ceiling)
+            if caveSpiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { caveSpiderTimer = 0; spawnCaveSpider() }
+            fallingRockTimer += dt // Falling rocks
+            if fallingRockTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { fallingRockTimer = 0; spawnFallingRock() }
+            fireflyTimer += dt // Fireflies return in caves
+            if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
         }
     }
 
@@ -1553,6 +1706,67 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // ~2% chance to become a rare gemstone bug
         if Int.random(in: 1...50) == 1 { food.makeGemBug() }
         addChild(food)
+    }
+
+    // MARK: - Cave Terrain Helpers
+
+    private func effectiveGroundY(atScreenX screenX: CGFloat) -> CGFloat {
+        if let terrain = caveTerrain, isCaveBiome {
+            return terrain.groundY(atScreenX: screenX)
+        }
+        return groundY
+    }
+
+    private func effectiveCeilingY(atScreenX screenX: CGFloat) -> CGFloat {
+        if let terrain = caveTerrain, isCaveBiome {
+            return terrain.ceilingY(atScreenX: screenX)
+        }
+        return size.height
+    }
+
+    private func setupCaveGround() {
+        caveTerrain = CaveTerrain(baseGroundY: groundY, screenHeight: size.height)
+        let tileWidth = size.width + 10
+        for i in 0..<3 {
+            let gTile = SKShapeNode()
+            gTile.fillColor = Biome.cave.groundColor
+            gTile.strokeColor = .clear
+            gTile.position = CGPoint(x: CGFloat(i) * (tileWidth - 10), y: 0)
+            gTile.zPosition = -2
+            gTile.name = "caveGroundTile"
+            gTile.alpha = 0
+            addChild(gTile)
+            caveGroundTiles.append(gTile)
+
+            let cTile = SKShapeNode()
+            cTile.fillColor = Biome.cave.ceilingColor
+            cTile.strokeColor = .clear
+            cTile.position = CGPoint(x: CGFloat(i) * (tileWidth - 10), y: 0)
+            cTile.zPosition = -2
+            cTile.name = "caveCeilingTile"
+            cTile.alpha = 0
+            addChild(cTile)
+            caveCeilingTiles.append(cTile)
+        }
+        regenerateAllCaveTilePaths()
+    }
+
+    private func regenerateAllCaveTilePaths() {
+        let tileWidth = size.width + 10
+        for (i, gTile) in caveGroundTiles.enumerated() {
+            let left = gTile.position.x
+            gTile.path = caveTerrain?.groundTilePath(tileLeft: left, tileWidth: tileWidth)
+            caveCeilingTiles[i].position.x = gTile.position.x
+            caveCeilingTiles[i].path = caveTerrain?.ceilingTilePath(tileLeft: left, tileWidth: tileWidth, tileHeight: size.height)
+        }
+    }
+
+    private func regenerateCaveTilePath(index: Int) {
+        let tileWidth = size.width + 10
+        let gTile = caveGroundTiles[index]
+        gTile.path = caveTerrain?.groundTilePath(tileLeft: gTile.position.x, tileWidth: tileWidth)
+        caveCeilingTiles[index].position.x = gTile.position.x
+        caveCeilingTiles[index].path = caveTerrain?.ceilingTilePath(tileLeft: gTile.position.x, tileWidth: tileWidth, tileHeight: size.height)
     }
 
     private func isNearBiomeEnemy(x: CGFloat, range: CGFloat) -> Bool {
@@ -1578,6 +1792,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         switch name {
         case "Bat": frames = batFrames
         case "Hawk": frames = hawkFrames
+        case "Vampire Bat": frames = vampireBatFrames
         case "Snow Owl": frames = owlFrames
         case "Toucan": frames = toucanFrames
         default: frames = birdTextures
@@ -1591,6 +1806,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         switch name {
         case "Bat": SoundManager.shared.play("screech")
         case "Hawk": SoundManager.shared.play("screech")
+        case "Vampire Bat": SoundManager.shared.play("screech")
         case "Snow Owl": SoundManager.shared.play("hoot")
         case "Toucan": SoundManager.shared.play("squawk")
         default: SoundManager.shared.play("caw")
@@ -1691,6 +1907,33 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         spider.startCrawling()
         addChild(spider)
         unlockBug(.jungleSpider)
+    }
+
+    private func spawnCaveSpider() {
+        guard let terrain = caveTerrain else { return }
+        let spawnX = size.width + 40
+        let ceilY = terrain.ceilingY(atScreenX: spawnX)
+        let texture = TextureGenerator.generateCaveSpiderTexture(size: CGSize(width: 40, height: 34))
+        let spider = CaveSpider(texture: texture, ceilingY: ceilY)
+        let hangLen = CGFloat.random(in: 30...60)
+        spider.position = CGPoint(x: spawnX, y: ceilY - hangLen)
+        spider.setupPhysics()
+        spider.startSwaying()
+        addChild(spider)
+        unlockBug(.caveSpider)
+    }
+
+    private func spawnFallingRock() {
+        guard let terrain = caveTerrain else { return }
+        let targetX = CGFloat.random(in: size.width * 0.3...size.width * 0.85)
+        let gY = terrain.groundY(atScreenX: targetX)
+        let cY = terrain.ceilingY(atScreenX: targetX)
+        let rockSize = CGSize(width: CGFloat.random(in: 20...34), height: CGFloat.random(in: 18...28))
+        let rock = FallingRock(rockSize: rockSize, groundY: gY, ceilingY: cY)
+        rock.position = CGPoint(x: targetX, y: cY)
+        addChild(rock)
+        let shadow = rock.createWarningShadow(groundY: gY)
+        addChild(shadow)
     }
 
     private func spawnMonkey() {
@@ -1799,6 +2042,22 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             mist.position = CGPoint(x: size.width / 2, y: groundY + size.height * 0.1)
             mist.zPosition = 48
             addChild(mist)
+        }
+
+        // Cave: setup cave terrain, fade flat tiles, show cave tiles
+        if biome == .cave {
+            setupCaveGround()
+            // Fade in cave tiles, fade out flat tiles
+            for tile in caveGroundTiles { tile.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5)) }
+            for tile in caveCeilingTiles { tile.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5)) }
+            for tile in groundTiles { tile.run(SKAction.fadeAlpha(to: 0.0, duration: 2.5)) }
+            // Dark ambient overlay for cave atmosphere
+            let ambient = SKShapeNode(rectOf: CGSize(width: size.width + 20, height: size.height))
+            ambient.fillColor = SKColor(red: 0.05, green: 0.03, blue: 0.08, alpha: 0.3)
+            ambient.strokeColor = .clear
+            ambient.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            ambient.zPosition = 45
+            addChild(ambient)
         }
     }
 

@@ -28,6 +28,10 @@ final class BugTracker: @unchecked Sendable {
         // Jungle food
         case jungleBeetle = "Jungle Beetle"
         case butterfly = "Butterfly"
+        // Cave food
+        case caveCricket = "Cave Cricket"
+        case glowworm = "Glowworm"
+        case crystalBeetle = "Crystal Beetle"
         // Meadow enemies
         case bird = "Bird"
         case frog = "Frog"
@@ -51,16 +55,22 @@ final class BugTracker: @unchecked Sendable {
         case jungleSpider = "Jungle Spider"
         case toucan = "Toucan"
         case monkey = "Monkey"
+        // Cave enemies
+        case caveSpider = "Cave Spider"
+        case vampireBat = "Vampire Bat"
+        case rockWorm = "Rock Worm"
 
         var category: Category {
             switch self {
             case .greenAphid, .yellowAphid, .redAphid, .brownFly, .blueFly, .purpleFly,
                  .firefly, .heartBug, .gnatSwarm, .desertBeetle, .sandFly, .desertCricket,
-                 .snowFlea, .iceMoth, .jungleBeetle, .butterfly:
+                 .snowFlea, .iceMoth, .jungleBeetle, .butterfly,
+                 .caveCricket, .glowworm, .crystalBeetle:
                 return .food
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl,
-                 .poisonDartFrog, .jungleSpider, .toucan, .monkey:
+                 .poisonDartFrog, .jungleSpider, .toucan, .monkey,
+                 .caveSpider, .vampireBat, .rockWorm:
                 return .enemy
             }
         }
@@ -101,6 +111,12 @@ final class BugTracker: @unchecked Sendable {
             case .jungleSpider: return "Camouflaged in green. Lurks in vines!"
             case .toucan: return "Tropical bird with a massive beak!"
             case .monkey: return "Mischievous jungle monkey! Climbs trees and swipes at you!"
+            case .caveCricket: return "Pale cave cricket. Hops in the darkness."
+            case .glowworm: return "Bioluminescent worm. Lights up the cave!"
+            case .crystalBeetle: return "Rare crystalline beetle. Shimmers with cave gems!"
+            case .caveSpider: return "Drops from the ceiling on a web! Watch above!"
+            case .vampireBat: return "Red-eyed vampire bat. Swoops from the darkness!"
+            case .rockWorm: return "Armored tunnel worm. Patrols the cave floor."
             }
         }
 
@@ -118,13 +134,17 @@ final class BugTracker: @unchecked Sendable {
             case .desertBeetle: return "15 pts"
             case .sandFly: return "20 pts"
             case .desertCricket: return "50 pts"
+            case .caveCricket: return "25 pts"
+            case .glowworm: return "35 pts"
+            case .crystalBeetle: return "50 pts"
             case .snowFlea: return "15 pts"
             case .iceMoth: return "25 pts"
             case .jungleBeetle: return "30 pts"
             case .butterfly: return "20 pts"
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl,
-                 .poisonDartFrog, .jungleSpider, .toucan, .monkey:
+                 .poisonDartFrog, .jungleSpider, .toucan, .monkey,
+                 .caveSpider, .vampireBat, .rockWorm:
                 return "Danger!"
             }
         }
@@ -191,6 +211,12 @@ final class BugTracker: @unchecked Sendable {
         case .jungleSpider: return TextureGenerator.generateJungleSpiderFrames(size: size).first!
         case .toucan: return TextureGenerator.generateToucanFrames(size: size).first!
         case .monkey: return TextureGenerator.generateMonkeyTexture(size: size)
+        case .caveCricket: return TextureGenerator.generateCaveCricketTexture(size: size)
+        case .glowworm: return TextureGenerator.generateGlowwormTexture(size: size)
+        case .crystalBeetle: return TextureGenerator.generateCrystalBeetleTexture(size: size)
+        case .caveSpider: return TextureGenerator.generateCaveSpiderTexture(size: size)
+        case .vampireBat: return TextureGenerator.generateVampireBatFrames(size: size).first!
+        case .rockWorm: return TextureGenerator.generateRockWormTexture(size: size)
         }
     }
 
