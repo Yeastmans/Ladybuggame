@@ -410,19 +410,19 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if item.isSparkly {
                 let sparkle = SKAction.run { [weak self] in
                     guard let self = self else { return }
-                    let dot = SKShapeNode(circleOfRadius: 1.5)
-                    dot.fillColor = .white
+                    let dot = SKShapeNode(circleOfRadius: CGFloat.random(in: 1.5...2.5))
+                    dot.fillColor = [.white, .yellow, SKColor(red: 1, green: 0.8, blue: 1, alpha: 1)].randomElement()!
                     dot.strokeColor = .clear
-                    dot.position = CGPoint(x: CGFloat.random(in: -14...14), y: CGFloat.random(in: -14...14))
-                    dot.zPosition = -1
-                    dot.alpha = 0.9
+                    dot.position = CGPoint(x: CGFloat.random(in: -16...16), y: CGFloat.random(in: -16...16))
+                    dot.zPosition = 11
+                    dot.alpha = 1.0
                     self.ladybug.addChild(dot)
                     dot.run(SKAction.sequence([
-                        SKAction.group([SKAction.fadeOut(withDuration: 0.5), SKAction.scale(to: 0.1, duration: 0.5)]),
+                        SKAction.group([SKAction.fadeOut(withDuration: 0.4), SKAction.scale(to: 0.1, duration: 0.4), SKAction.moveBy(x: 0, y: 8, duration: 0.4)]),
                         SKAction.removeFromParent()
                     ]))
                 }
-                ladybug.run(SKAction.repeatForever(SKAction.sequence([sparkle, SKAction.wait(forDuration: 0.18)])), withKey: "sparkle")
+                ladybug.run(SKAction.repeatForever(SKAction.sequence([sparkle, SKAction.wait(forDuration: 0.08)])), withKey: "sparkle")
             }
         }
 
@@ -430,7 +430,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if let hatId = ShopScene.equippedHat {
             let hatNode = SKSpriteNode()
             hatNode.zPosition = 2
-            hatNode.position = CGPoint(x: 2, y: 16) // top of head
+            hatNode.position = CGPoint(x: 8, y: 6) // on top of head (right side)
             switch hatId {
             case "hat_tophat":
                 let tex = TextureGenerator.generateTopHatTexture(size: CGSize(width: 16, height: 14))
@@ -1361,8 +1361,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if collision == PhysicsCategory.ladybug | PhysicsCategory.fruitfly {
             // Gnat swarm
             if let gs = (contact.bodyA.node as? GnatSwarm) ?? (contact.bodyB.node as? GnatSwarm) {
-                score += 20
-                showFloatingScore(20, at: gs.position, color: SKColor(white: 0.9, alpha: 1))
+                score += 30
+                showFloatingScore(30, at: gs.position, color: SKColor(white: 0.9, alpha: 1))
                 showEatParticles(at: gs.position)
                 gs.removeFromParent()
                 ladybug.pulse()
@@ -1659,16 +1659,28 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if flyTimer >= 1.8 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 18, height: 18), color: .brown).first!, pts: 20, flying: true, name: "Sand Fly") }
             gnatTimer += dt // Desert crickets (ground, 50pts, hops)
             if gnatTimer >= 2.2 { gnatTimer = 0; spawnDesertCricket() }
-            dragonflyTimer += dt // Scorpions
-            if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateScorpionTexture(size: CGSize(width: 44, height: 34)), name: "Scorpion") }
-            spiderTimer += dt // Rattlesnake
-            if spiderTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateRattlesnakeTexture(size: CGSize(width: 52, height: 34)), name: "Rattlesnake") }
+            dragonflyTimer += dt // Scorpions (slower, never with snake)
+            if dragonflyTimer >= max(6.0, 11.0 - Double(distanceTraveled) * 0.0003) {
+                dragonflyTimer = 0
+                let snakeOnScreen = children.contains { ($0 as? BiomeEnemy)?.biomeName == "Rattlesnake" }
+                if !snakeOnScreen { spawnBiomeGroundEnemy(texture: TextureGenerator.generateScorpionTexture(size: CGSize(width: 44, height: 34)), name: "Scorpion") }
+            }
+            spiderTimer += dt // Rattlesnake (slower, never with scorpion, bigger)
+            if spiderTimer >= max(8.0, 13.0 - Double(distanceTraveled) * 0.0003) {
+                spiderTimer = 0
+                let scorpionOnScreen = children.contains { ($0 as? BiomeEnemy)?.biomeName == "Scorpion" }
+                if !scorpionOnScreen { spawnBiomeGroundEnemy(texture: TextureGenerator.generateRattlesnakeTexture(size: CGSize(width: 64, height: 40)), name: "Rattlesnake") }
+            }
             birdTimer += dt // Hawks
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Hawk") }
             frogTimer += dt // Vultures
             if frogTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnVulture() }
-            waspTimer += dt // Desert wasps (flying enemy, tracks player)
-            if waspTimer >= max(4.5, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnDesertWasp() }
+            waspTimer += dt // Desert wasps — never spawn if vulture on screen
+            if waspTimer >= max(4.5, 9.0 - Double(distanceTraveled) * 0.0003) {
+                waspTimer = 0
+                let vultureOnScreen = children.contains { $0.name == "vulture" }
+                if !vultureOnScreen { spawnDesertWasp() }
+            }
 
         case .snow:
             aphidTimer += dt // Snow fleas
@@ -2035,6 +2047,27 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             isNight = true
             hasTransitionedToNight = true
             transitionToNight()
+        }
+
+        // Desert: warm gradient sky (golden horizon fading to deeper orange top)
+        if biome == .desert {
+            let horizonBand = SKShapeNode(rectOf: CGSize(width: size.width + 10, height: size.height * 0.25))
+            horizonBand.fillColor = SKColor(red: 0.95, green: 0.78, blue: 0.45, alpha: 0.5)
+            horizonBand.strokeColor = .clear
+            horizonBand.position = CGPoint(x: size.width / 2, y: groundY + size.height * 0.12)
+            horizonBand.zPosition = -0.8
+            horizonBand.alpha = 0
+            addChild(horizonBand)
+            horizonBand.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
+
+            let midBand = SKShapeNode(rectOf: CGSize(width: size.width + 10, height: size.height * 0.20))
+            midBand.fillColor = SKColor(red: 0.90, green: 0.65, blue: 0.30, alpha: 0.35)
+            midBand.strokeColor = .clear
+            midBand.position = CGPoint(x: size.width / 2, y: size.height * 0.50)
+            midBand.zPosition = -0.8
+            midBand.alpha = 0
+            addChild(midBand)
+            midBand.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
         }
 
         // Snow: falling snowflakes

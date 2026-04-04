@@ -130,7 +130,7 @@ final class BugTracker: @unchecked Sendable {
             case .purpleFly: return "50 pts"
             case .firefly: return "100 pts + Shield"
             case .heartBug: return "50 pts + ♥"
-            case .gnatSwarm: return "20 pts"
+            case .gnatSwarm: return "30 pts"
             case .desertBeetle: return "15 pts"
             case .sandFly: return "20 pts"
             case .desertCricket: return "50 pts"

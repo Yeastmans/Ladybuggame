@@ -58,23 +58,26 @@ class BiomeEnemy: SKSpriteNode {
             SoundManager.shared.play("hiss")
 
             if biomeName == "Rattlesnake" {
-                // Horizontal strike: coil back → dart forward → recoil
+                // Horizontal strike toward player direction
+                let dir: CGFloat = dist >= 0 ? 1.0 : -1.0
+                // Face the player
+                xScale = dist >= 0 ? -abs(xScale) : abs(xScale)
                 let coilBack = SKAction.group([
-                    SKAction.scaleX(to: 0.82, duration: 0.08),
+                    SKAction.scaleX(to: 0.82 * (dist >= 0 ? -1 : 1), duration: 0.08),
                     SKAction.scaleY(to: 1.1, duration: 0.08),
-                    SKAction.moveBy(x: -10, y: 0, duration: 0.08),
+                    SKAction.moveBy(x: -10 * dir, y: 0, duration: 0.08),
                 ])
                 let strike = SKAction.group([
-                    SKAction.scaleX(to: 1.35, duration: 0.10),
+                    SKAction.scaleX(to: 1.35 * (dist >= 0 ? -1 : 1), duration: 0.10),
                     SKAction.scaleY(to: 0.88, duration: 0.10),
-                    SKAction.moveBy(x: 80, y: 0, duration: 0.10),
+                    SKAction.moveBy(x: 80 * dir, y: 0, duration: 0.10),
                 ])
                 strike.timingMode = .easeIn
                 let holdStrike = SKAction.wait(forDuration: 0.05)
                 let recoil = SKAction.group([
-                    SKAction.scaleX(to: 1.0, duration: 0.18),
+                    SKAction.scaleX(to: 1.0 * (dist >= 0 ? -1 : 1), duration: 0.18),
                     SKAction.scaleY(to: 1.0, duration: 0.18),
-                    SKAction.moveBy(x: -70, y: 0, duration: 0.18),
+                    SKAction.moveBy(x: -70 * dir, y: 0, duration: 0.18),
                 ])
                 recoil.timingMode = .easeOut
                 run(SKAction.sequence([coilBack, strike, holdStrike, recoil]))

@@ -1010,8 +1010,8 @@ enum TextureGenerator {
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
             let w = size.width; let h = size.height
-            let bodyC = UIColor(red: 0.62, green: 0.42, blue: 0.18, alpha: 1.0)
-            let darkC = UIColor(red: 0.45, green: 0.30, blue: 0.12, alpha: 1.0)
+            let bodyC = UIColor(red: 0.30, green: 0.38, blue: 0.52, alpha: 1.0)
+            let darkC = UIColor(red: 0.20, green: 0.26, blue: 0.38, alpha: 1.0)
             cg.setLineCap(.round); cg.setLineJoin(.round)
 
             // === Tail (curled up, segmented) ===
