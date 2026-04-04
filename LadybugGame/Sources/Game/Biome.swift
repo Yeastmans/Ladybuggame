@@ -34,7 +34,7 @@ enum Biome: Int, CaseIterable {
     var skyColor: SKColor {
         switch self {
         case .meadowDay: return SKColor(red: 0.55, green: 0.80, blue: 0.95, alpha: 1.0)
-        case .meadowNight: return SKColor(red: 0.05, green: 0.05, blue: 0.15, alpha: 1.0)
+        case .meadowNight: return SKColor(red: 0.08, green: 0.10, blue: 0.25, alpha: 1.0)
         case .desert: return SKColor(red: 0.62, green: 0.18, blue: 0.05, alpha: 1.0)
         case .snow: return SKColor(red: 0.78, green: 0.85, blue: 0.92, alpha: 1.0)
         case .jungle: return SKColor(red: 0.30, green: 0.65, blue: 0.40, alpha: 1.0)
