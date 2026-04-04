@@ -64,9 +64,9 @@ class BiomeFood: SKSpriteNode {
                 // Butterfly evasion: flee if player is close
                 if self.biomeName == "Butterfly", let player = self.playerRef {
                     let dist = hypot(player.position.x - self.position.x, player.position.y - self.position.y)
-                    if dist < 90 {
-                        dx = (self.position.x - player.position.x) * 0.25
-                        dy = (self.position.y - player.position.y) * 0.25
+                    if dist < 120 {
+                        dx = (self.position.x - player.position.x) * 0.40
+                        dy = (self.position.y - player.position.y) * 0.40
                     }
                 }
                 if dx > 0 { self.xScale = abs(self.xScale) } else { self.xScale = -abs(self.xScale) }

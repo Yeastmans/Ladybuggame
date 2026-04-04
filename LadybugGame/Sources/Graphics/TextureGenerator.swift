@@ -1645,7 +1645,7 @@ enum TextureGenerator {
             let w = size.width
             let h = size.height
 
-            let legC = UIColor(red: 0.10, green: 0.35, blue: 0.08, alpha: 1.0).cgColor
+            let legC = UIColor(red: 0.06, green: 0.22, blue: 0.05, alpha: 1.0).cgColor
             cg.setLineCap(.round); cg.setLineJoin(.round)
 
             // 4 hairy legs per side (green with yellow bands)
@@ -1693,8 +1693,8 @@ enum TextureGenerator {
             cg.fillEllipse(in: CGRect(x: w * 0.18, y: h * 0.48, width: w * 0.08, height: w * 0.08))
             cg.fillEllipse(in: CGRect(x: w * 0.32, y: h * 0.42, width: w * 0.06, height: w * 0.06))
 
-            // Cephalothorax (dark green)
-            cg.setFillColor(UIColor(red: 0.10, green: 0.42, blue: 0.08, alpha: 1.0).cgColor)
+            // Cephalothorax (darker green)
+            cg.setFillColor(UIColor(red: 0.06, green: 0.30, blue: 0.05, alpha: 1.0).cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.46, y: h * 0.28, width: w * 0.30, height: h * 0.38))
 
             // Eyes (bright red, menacing)
@@ -1939,16 +1939,16 @@ enum TextureGenerator {
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
             let w = size.width; let h = size.height
-            // Legs
-            cg.setStrokeColor(UIColor(red: 0.08, green: 0.30, blue: 0.12, alpha: 1.0).cgColor)
+            // Legs (darker green)
+            cg.setStrokeColor(UIColor(red: 0.05, green: 0.20, blue: 0.08, alpha: 1.0).cgColor)
             cg.setLineWidth(1.0); cg.setLineCap(.round)
             for lx in [0.25, 0.42, 0.58] as [CGFloat] {
                 cg.move(to: CGPoint(x: w * lx, y: h * 0.68))
                 cg.addLine(to: CGPoint(x: w * (lx - 0.03), y: h * 0.92))
                 cg.strokePath()
             }
-            // Shell (iridescent green)
-            cg.setFillColor(UIColor(red: 0.08, green: 0.55, blue: 0.22, alpha: 1.0).cgColor)
+            // Shell (darker iridescent green)
+            cg.setFillColor(UIColor(red: 0.05, green: 0.40, blue: 0.15, alpha: 1.0).cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.08, y: h * 0.18, width: w * 0.65, height: h * 0.55))
             // Shell dividing line
             cg.setStrokeColor(UIColor(red: 0.05, green: 0.35, blue: 0.12, alpha: 0.6).cgColor)

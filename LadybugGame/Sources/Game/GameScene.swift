@@ -432,7 +432,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if let hatId = ShopScene.equippedHat {
             let hatNode = SKSpriteNode()
             hatNode.zPosition = 2
-            hatNode.position = CGPoint(x: 8, y: 6) // on top of head (right side)
+            hatNode.position = CGPoint(x: 15, y: 10) // on top of head (forward, right side)
             switch hatId {
             case "hat_tophat":
                 let tex = TextureGenerator.generateTopHatTexture(size: CGSize(width: 16, height: 14))
@@ -1745,8 +1745,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let y: CGFloat = flying ? groundY + CGFloat.random(in: 40...size.height * 0.45) : groundY + food.size.height / 2
         food.position = CGPoint(x: spawnX, y: y)
         food.minY = groundY
+        // Butterflies spawn higher and move faster
+        if food.biomeName == "Butterfly" {
+            food.position.y = groundY + CGFloat.random(in: 80...size.height * 0.55)
+            food.playerRef = ladybug
+        }
         food.setupPhysics()
-        if food.biomeName == "Butterfly" { food.playerRef = ladybug }
         food.startMoving()
         // ~2% chance to become a rare gemstone bug
         if Int.random(in: 1...50) == 1 { food.makeGemBug() }
@@ -1988,9 +1992,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let y = groundY + CGFloat.random(in: 30...size.height * 0.35)
         swarm.position = CGPoint(x: size.width + 30, y: y)
         swarm.minY = groundY
-        // Darker tint for jungle gnats
-        swarm.color = SKColor(red: 0.20, green: 0.15, blue: 0.10, alpha: 1)
-        swarm.colorBlendFactor = 0.5
+        // Tint individual gnat dots darker (not the parent — avoids black box)
+        for child in swarm.children {
+            if let dot = child as? SKShapeNode {
+                dot.fillColor = SKColor(red: 0.25, green: 0.18, blue: 0.10, alpha: 0.75)
+            }
+        }
         swarm.setupPhysics()
         swarm.startMoving()
         addChild(swarm)
@@ -2060,8 +2067,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if isNearGroundObject(x: spawnX, range: 80) { return }
 
         // Spawn a tree trunk for the monkey to climb
-        let trunkH: CGFloat = CGFloat.random(in: 120...170)
-        let trunk = SKShapeNode(rectOf: CGSize(width: 16, height: trunkH))
+        let trunkH: CGFloat = CGFloat.random(in: 160...220)
+        let trunk = SKShapeNode(rectOf: CGSize(width: 18, height: trunkH))
         trunk.fillColor = SKColor(red: 0.32, green: 0.20, blue: 0.08, alpha: 0.9)
         trunk.strokeColor = .clear
         trunk.position = CGPoint(x: spawnX, y: groundY + trunkH / 2)
@@ -2069,15 +2076,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         trunk.name = "envDecor"
         addChild(trunk)
         // Small canopy on top
-        let canopy = SKShapeNode(circleOfRadius: 28)
-        canopy.fillColor = SKColor(red: 0.14, green: 0.50, blue: 0.12, alpha: 0.85)
-        canopy.strokeColor = .clear
-        canopy.position = CGPoint(x: spawnX, y: groundY + trunkH + 10)
-        canopy.zPosition = 1
-        canopy.name = "envDecor"
-        addChild(canopy)
+        // Layered canopy with leaves
+        for (dx, dy, r) in [(-15.0, 5.0, 22.0), (12.0, 10.0, 20.0), (0.0, 20.0, 26.0), (-10.0, 25.0, 18.0)] as [(CGFloat, CGFloat, CGFloat)] {
+            let leaf = SKShapeNode(circleOfRadius: r)
+            leaf.fillColor = SKColor(red: CGFloat.random(in: 0.10...0.16), green: CGFloat.random(in: 0.42...0.55), blue: 0.12, alpha: 0.85)
+            leaf.strokeColor = .clear
+            leaf.position = CGPoint(x: spawnX + dx, y: groundY + trunkH + dy)
+            leaf.zPosition = 1
+            leaf.name = "envDecor"
+            addChild(leaf)
+        }
 
-        let texture = TextureGenerator.generateMonkeyTexture(size: CGSize(width: 38, height: 42))
+        let texture = TextureGenerator.generateMonkeyTexture(size: CGSize(width: 44, height: 48))
         let monkey = SKSpriteNode(texture: texture, color: .clear, size: texture.size())
         monkey.name = "monkey"
         monkey.zPosition = 6
@@ -2091,7 +2101,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(monkey)
         unlockBug(.monkey)
 
-        let climbHeight = CGFloat.random(in: 70...110)
+        let climbHeight = CGFloat.random(in: 100...160)
         let upDur = Double.random(in: 1.4...2.2)
         let downDur = Double.random(in: 1.4...2.2)
         let pause = SKAction.wait(forDuration: Double.random(in: 0.3...0.7))

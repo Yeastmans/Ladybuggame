@@ -34,7 +34,7 @@ class MenuScene: SKScene {
         if let hatId = ShopScene.equippedHat {
             let hatNode = SKSpriteNode()
             hatNode.zPosition = 2
-            hatNode.position = CGPoint(x: 3, y: 22)
+            hatNode.position = CGPoint(x: 20, y: 14) // on top of head
             switch hatId {
             case "hat_tophat":
                 let t = TextureGenerator.generateTopHatTexture(size: CGSize(width: 22, height: 18))
