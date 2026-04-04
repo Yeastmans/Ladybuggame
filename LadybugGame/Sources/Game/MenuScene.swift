@@ -31,34 +31,32 @@ class MenuScene: SKScene {
         title.zPosition = 20
         addChild(title)
 
+        // High score under title
+        let hsLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        hsLabel.text = "Best: \(MenuScene.highScore)"
+        hsLabel.fontSize = 16
+        hsLabel.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 0.8)
+        hsLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.68)
+        hsLabel.zPosition = 20
+        addChild(hsLabel)
+
         addButton("Start Game", name: "startButton",
                   color: SKColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0),
-                  y: size.height * 0.58)
+                  y: size.height * 0.54)
         addButton("Bugopedia", name: "bugTracker",
                   color: SKColor(red: 0.55, green: 0.35, blue: 0.70, alpha: 1.0),
-                  y: size.height * 0.48)
+                  y: size.height * 0.44)
         addButton("Shop", name: "shopButton",
                   color: SKColor(red: 0.82, green: 0.65, blue: 0.12, alpha: 1.0),
-                  y: size.height * 0.38)
-        addButton("Leaderboards", name: "leaderboard",
-                  color: SKColor(red: 0.25, green: 0.50, blue: 0.75, alpha: 1.0),
-                  y: size.height * 0.28)
+                  y: size.height * 0.34)
 
         // Checkpoints button (opens submenu)
         let unlocked = GameScene.unlockedBiomes.compactMap { Biome(rawValue: $0) }.sorted { $0.rawValue < $1.rawValue }
         if !unlocked.isEmpty {
             addButton("Checkpoints", name: "checkpointsMenu",
                       color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
-                      y: size.height * 0.18)
+                      y: size.height * 0.24)
         }
-
-        let hsLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        hsLabel.text = "Best: \(MenuScene.highScore)"
-        hsLabel.fontSize = 14
-        hsLabel.fontColor = SKColor(white: 1.0, alpha: 0.7)
-        hsLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.08)
-        hsLabel.zPosition = 20
-        addChild(hsLabel)
     }
 
     private func addButton(_ text: String, name: String, color: SKColor, y: CGFloat) {
@@ -97,7 +95,6 @@ class MenuScene: SKScene {
                 view?.presentScene(game, transition: .fade(withDuration: 0.4))
                 return
             }
-            if node.name == "leaderboard" { showLeaderboard(); return }
             if node.name == "shopButton" {
                 let shop = ShopScene(size: size)
                 shop.scaleMode = scaleMode
@@ -143,26 +140,6 @@ class MenuScene: SKScene {
         if let _ = childNode(withName: "overlay") {
             // Overlay handled in touchesBegan
         }
-    }
-
-    private func showLeaderboard() {
-        childNode(withName: "overlay")?.removeFromParent()
-        let overlay = makeOverlay()
-        let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        title.text = "Leaderboards"
-        title.fontSize = 24
-        title.fontColor = .white
-        title.position = CGPoint(x: 0, y: size.height * 0.22)
-        overlay.addChild(title)
-
-        let score = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        score.text = "High Score: \(MenuScene.highScore)"
-        score.fontSize = 20
-        score.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0)
-        score.position = CGPoint(x: 0, y: size.height * 0.05)
-        overlay.addChild(score)
-
-        addTapToClose(overlay)
     }
 
     private func showCheckpoints() {
