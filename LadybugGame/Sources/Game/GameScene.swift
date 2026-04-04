@@ -188,21 +188,37 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         _ = SoundManager.shared
         SoundManager.shared.startMusic()
 
-        setupSky()
-        setupGround()
-        setupHUD()
-        spawnLadybug()
-
         if startFromCheckpoint {
             let cpScore = GameScene.checkpointScore
             let biome = Biome.biome(for: cpScore)
-            hasShownRainbow = true // Don't show rainbow on resume
-            hasTransitionedToNight = true // Don't re-trigger night transition
+            hasShownRainbow = true
+            hasTransitionedToNight = true
             currentBiome = biome
+
+            // Set sky directly to biome color — skip meadow sky setup
+            backgroundColor = biome.skyColor
+
+            setupGround()
+            // Immediately colorize ground tiles to biome color
+            for tile in groundTiles {
+                tile.color = biome.groundColor
+            }
+            setupHUD()
+            spawnLadybug()
             score = biome.scoreThreshold
+
+            // Night needs isNight flag
+            if biome == .meadowNight { isNight = true }
+
+            // Trigger biome-specific effects (snow, cave tiles, etc.)
             if biome != .meadowDay {
                 transitionToBiome(biome)
             }
+        } else {
+            setupSky()
+            setupGround()
+            setupHUD()
+            spawnLadybug()
         }
     }
 
