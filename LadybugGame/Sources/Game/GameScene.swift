@@ -18,6 +18,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var distanceTraveled: CGFloat = 0
 
     private var scoreLabel: SKLabelNode!
+    private var gemLabel: SKLabelNode!
+
+    private static let gemCountKey = "GemstoneCount"
+    static var gemCount: Int {
+        get { UserDefaults.standard.integer(forKey: gemCountKey) }
+        set { UserDefaults.standard.set(newValue, forKey: gemCountKey) }
+    }
     private var hasShownRainbow = false
     private var currentBiome: Biome = .meadowDay
     private var score: Int = 0 {
@@ -311,6 +318,24 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         updateLivesDisplay()
         addChild(livesLabel)
 
+        // Gem counter (top-left, below score)
+        let gemIcon = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        gemIcon.text = "💎"
+        gemIcon.fontSize = 13
+        gemIcon.horizontalAlignmentMode = .left
+        gemIcon.position = CGPoint(x: 50, y: size.height - 50)
+        gemIcon.zPosition = 100
+        addChild(gemIcon)
+
+        gemLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        gemLabel.text = "\(GameScene.gemCount)"
+        gemLabel.fontSize = 14
+        gemLabel.fontColor = SKColor(red: 0.75, green: 0.55, blue: 1.0, alpha: 1.0)
+        gemLabel.horizontalAlignmentMode = .left
+        gemLabel.position = CGPoint(x: 70, y: size.height - 50)
+        gemLabel.zPosition = 100
+        addChild(gemLabel)
+
         // Pause button
         let pauseBtn = SKLabelNode(fontNamed: "AvenirNext-Bold")
         pauseBtn.text = "❚❚"
@@ -577,6 +602,19 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let spawnX = size.width + 30
         if isInsideAnyLog(x: spawnX) || isNearGroundObject(x: spawnX, range: 60) { return }
 
+        // 2% chance: gem bug replaces aphid
+        if Int.random(in: 1...50) == 1 {
+            let tex = TextureGenerator.generateAphidTexture(size: CGSize(width: 22, height: 22), color: [.green, .yellow].randomElement()!)
+            let gem = BiomeFood(texture: tex, points: 10, biomeName: "GemBug", isFlying: false)
+            gem.position = CGPoint(x: spawnX, y: groundY + gem.size.height / 2)
+            gem.minY = groundY
+            gem.setupPhysics()
+            gem.startMoving()
+            gem.makeGemBug()
+            addChild(gem)
+            return
+        }
+
         let roll = Int.random(in: 0..<100)
         let color: TextureGenerator.AphidColor
         if roll < 55 { color = .green }
@@ -592,6 +630,20 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func spawnFruitFly() {
+        // 2% chance: gem bug replaces fly
+        if Int.random(in: 1...50) == 1 {
+            let tex = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: .brown).first!
+            let gem = BiomeFood(texture: tex, points: 15, biomeName: "GemBug", isFlying: true)
+            let y = groundY + CGFloat.random(in: 50...size.height * 0.45)
+            gem.position = CGPoint(x: size.width + 30, y: y)
+            gem.minY = groundY
+            gem.setupPhysics()
+            gem.startMoving()
+            gem.makeGemBug()
+            addChild(gem)
+            return
+        }
+
         let roll = Int.random(in: 0..<100)
         let fc: TextureGenerator.FlyColor
         if roll < 50 { fc = .brown }
@@ -1044,6 +1096,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if collision == PhysicsCategory.ladybug | PhysicsCategory.aphid {
             // BiomeFood
             if let food = (contact.bodyA.node as? BiomeFood) ?? (contact.bodyB.node as? BiomeFood) {
+                // Gem bug — grants gemstone instead of normal points
+                if food.isGemBug {
+                    collectGemstone(at: food.position)
+                    food.removeFromParent()
+                    ladybug.pulse()
+                    return
+                }
                 score += food.points
                 showFloatingScore(food.points, at: food.position, color: .cyan)
                 showEatParticles(at: food.position)
@@ -1232,6 +1291,54 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
 
+    private func collectGemstone(at pos: CGPoint) {
+        GameScene.gemCount += 1
+        gemLabel.text = "\(GameScene.gemCount)"
+        SoundManager.shared.play("powerup")
+
+        // Sparkle burst
+        for _ in 0..<8 {
+            let spark = SKShapeNode(circleOfRadius: 2)
+            spark.fillColor = SKColor(red: 0.8, green: 0.5, blue: 1.0, alpha: 0.9)
+            spark.strokeColor = .clear
+            spark.position = pos
+            spark.zPosition = 80
+            addChild(spark)
+            let dx = CGFloat.random(in: -25...25)
+            let dy = CGFloat.random(in: 5...30)
+            spark.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.moveBy(x: dx, y: dy, duration: 0.35),
+                    SKAction.fadeOut(withDuration: 0.35),
+                    SKAction.scale(to: 0.2, duration: 0.35),
+                ]),
+                SKAction.removeFromParent()
+            ]))
+        }
+
+        // Floating "+1 💎" text
+        let gemText = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        gemText.text = "+1 💎"
+        gemText.fontSize = 16
+        gemText.fontColor = SKColor(red: 0.85, green: 0.55, blue: 1.0, alpha: 1.0)
+        gemText.position = CGPoint(x: pos.x, y: pos.y + 10)
+        gemText.zPosition = 90
+        addChild(gemText)
+        gemText.run(SKAction.sequence([
+            SKAction.group([
+                SKAction.moveBy(x: 0, y: 35, duration: 0.7),
+                SKAction.fadeOut(withDuration: 0.7),
+            ]),
+            SKAction.removeFromParent()
+        ]))
+
+        // Pulse gem counter
+        gemLabel.run(SKAction.sequence([
+            SKAction.scale(to: 1.5, duration: 0.1),
+            SKAction.scale(to: 1.0, duration: 0.15),
+        ]))
+    }
+
     private func unlockBug(_ bug: BugTracker.BugType) {
         let wasNew = !BugTracker.shared.isUnlocked(bug)
         BugTracker.shared.unlock(bug)
@@ -1369,6 +1476,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         food.minY = groundY
         food.setupPhysics()
         food.startMoving()
+        // ~2% chance to become a rare gemstone bug
+        if Int.random(in: 1...50) == 1 { food.makeGemBug() }
         addChild(food)
     }
 

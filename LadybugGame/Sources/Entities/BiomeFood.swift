@@ -6,6 +6,7 @@ class BiomeFood: SKSpriteNode {
     let points: Int
     let biomeName: String
     let isFlying: Bool
+    var isGemBug: Bool = false
     var minY: CGFloat = 0
 
     init(texture: SKTexture, points: Int, biomeName: String, isFlying: Bool) {
@@ -14,6 +15,16 @@ class BiomeFood: SKSpriteNode {
         self.isFlying = isFlying
         super.init(texture: texture, color: .clear, size: texture.size())
         zPosition = 5
+    }
+
+    /// Make this a rare gemstone bug — flashes pink
+    func makeGemBug() {
+        isGemBug = true
+        let flash = SKAction.sequence([
+            SKAction.colorize(with: SKColor(red: 1.0, green: 0.4, blue: 0.7, alpha: 1.0), colorBlendFactor: 0.7, duration: 0.15),
+            SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.15),
+        ])
+        run(SKAction.repeatForever(flash), withKey: "gemFlash")
     }
 
     required init?(coder aDecoder: NSCoder) {
