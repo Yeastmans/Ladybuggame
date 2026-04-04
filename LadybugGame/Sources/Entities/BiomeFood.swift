@@ -110,10 +110,20 @@ class BiomeFood: SKSpriteNode {
             ])
             run(SKAction.repeatForever(walkBob), withKey: "walkBob")
 
-            // Squash/stretch while walking
+            // Squash/stretch while walking (preserves facing direction)
             let squash = SKAction.sequence([
-                SKAction.group([SKAction.scaleX(to: 1.08, duration: 0.18), SKAction.scaleY(to: 0.94, duration: 0.18)]),
-                SKAction.group([SKAction.scaleX(to: 0.95, duration: 0.18), SKAction.scaleY(to: 1.06, duration: 0.18)]),
+                SKAction.run { [weak self] in
+                    guard let self = self else { return }
+                    let sign: CGFloat = self.xScale >= 0 ? 1 : -1
+                    self.run(SKAction.scaleX(to: 1.08 * sign, duration: 0.18))
+                },
+                SKAction.scaleY(to: 0.94, duration: 0.18),
+                SKAction.run { [weak self] in
+                    guard let self = self else { return }
+                    let sign: CGFloat = self.xScale >= 0 ? 1 : -1
+                    self.run(SKAction.scaleX(to: 0.95 * sign, duration: 0.18))
+                },
+                SKAction.scaleY(to: 1.06, duration: 0.18),
             ])
             run(SKAction.repeatForever(squash), withKey: "walkSquash")
         }

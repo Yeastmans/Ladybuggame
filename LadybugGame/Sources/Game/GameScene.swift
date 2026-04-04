@@ -1925,11 +1925,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             guard let cricket = cricket else { return }
             let dist = CGFloat.random(in: -30...30)
             let height = CGFloat.random(in: 22...42)
-            let squat = SKAction.group([SKAction.scaleX(to: 1.18, duration: 0.08), SKAction.scaleY(to: 0.82, duration: 0.08)])
-            let launch = SKAction.group([SKAction.scaleX(to: 0.82, duration: 0.14), SKAction.scaleY(to: 1.28, duration: 0.14), SKAction.moveBy(x: dist * 0.5, y: height, duration: 0.18)])
-            let fall = SKAction.group([SKAction.scaleX(to: 1.0, duration: 0.14), SKAction.scaleY(to: 1.0, duration: 0.14), SKAction.moveBy(x: dist * 0.5, y: -height, duration: 0.18)])
-            let land = SKAction.group([SKAction.scaleX(to: 1.14, duration: 0.06), SKAction.scaleY(to: 0.88, duration: 0.06)])
-            let recover = SKAction.group([SKAction.scaleX(to: 1.0, duration: 0.08), SKAction.scaleY(to: 1.0, duration: 0.08)])
+            // Face hop direction
+            let dir: CGFloat = dist >= 0 ? 1.0 : -1.0
+            let squat = SKAction.group([SKAction.scaleX(to: 1.18 * dir, duration: 0.08), SKAction.scaleY(to: 0.82, duration: 0.08)])
+            let launch = SKAction.group([SKAction.scaleX(to: 0.82 * dir, duration: 0.14), SKAction.scaleY(to: 1.28, duration: 0.14), SKAction.moveBy(x: dist * 0.5, y: height, duration: 0.18)])
+            let fall = SKAction.group([SKAction.scaleX(to: 1.0 * dir, duration: 0.14), SKAction.scaleY(to: 1.0, duration: 0.14), SKAction.moveBy(x: dist * 0.5, y: -height, duration: 0.18)])
+            let land = SKAction.group([SKAction.scaleX(to: 1.14 * dir, duration: 0.06), SKAction.scaleY(to: 0.88, duration: 0.06)])
+            let recover = SKAction.group([SKAction.scaleX(to: 1.0 * dir, duration: 0.08), SKAction.scaleY(to: 1.0, duration: 0.08)])
             let fixY = SKAction.run { cricket.position.y = baseY }
             cricket.run(SKAction.sequence([squat, launch, fall, land, recover, fixY]))
         }
@@ -1990,7 +1992,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         for child in children {
             if let s = child as? BiomeSwooper, s.biomeName == "Cicada Bee" { return }
         }
-        let frames = TextureGenerator.generateCicadaBeeFrames(size: CGSize(width: 76, height: 56))
+        let frames = TextureGenerator.generateCicadaBeeFrames(size: CGSize(width: 62, height: 46))
         let bee = BiomeSwooper(textures: frames, biomeName: "Cicada Bee")
         bee.position = CGPoint(x: size.width + 50, y: size.height * CGFloat.random(in: 0.60...0.88))
         bee.xScale = -1
