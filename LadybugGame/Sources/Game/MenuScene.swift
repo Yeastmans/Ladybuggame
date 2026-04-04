@@ -8,6 +8,17 @@ class MenuScene: SKScene {
         set { UserDefaults.standard.set(newValue, forKey: highScoreKey) }
     }
 
+    enum Difficulty: Int { case easy = 0, normal = 1, hard = 2
+        var name: String { switch self { case .easy: return "Easy"; case .normal: return "Normal"; case .hard: return "Hard" } }
+        var enemyMul: Double { switch self { case .easy: return 2.0; case .normal: return 1.0; case .hard: return 0.5 } }
+        var foodMul: Double { switch self { case .easy: return 0.5; case .normal: return 1.0; case .hard: return 2.0 } }
+    }
+    private static let diffKey = "GameDifficulty"
+    static var difficulty: Difficulty {
+        get { Difficulty(rawValue: UserDefaults.standard.integer(forKey: diffKey)) ?? .normal }
+        set { UserDefaults.standard.set(newValue.rawValue, forKey: diffKey) }
+    }
+
     override func didMove(to view: SKView) {
         backgroundColor = SKColor(red: 0.35, green: 0.62, blue: 0.85, alpha: 1.0)
 
@@ -85,31 +96,46 @@ class MenuScene: SKScene {
         hsLabel.zPosition = 20
         addChild(hsLabel)
 
+        // Row 1: Start Game (wide, centered)
         addButton("Start Game", name: "startButton",
                   color: SKColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0),
-                  y: size.height * 0.54)
-        addButton("Bugopedia", name: "bugTracker",
-                  color: SKColor(red: 0.55, green: 0.35, blue: 0.70, alpha: 1.0),
-                  y: size.height * 0.44)
-        addButton("Shop", name: "shopButton",
-                  color: SKColor(red: 0.82, green: 0.65, blue: 0.12, alpha: 1.0),
-                  y: size.height * 0.34)
+                  x: size.width / 2, y: size.height * 0.56, w: 220)
 
-        // Checkpoints button (opens submenu)
+        // Row 2: Checkpoints + Difficulty (side by side)
         let unlocked = GameScene.unlockedBiomes.compactMap { Biome(rawValue: $0) }.sorted { $0.rawValue < $1.rawValue }
         if !unlocked.isEmpty {
             addButton("Checkpoints", name: "checkpointsMenu",
                       color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
-                      y: size.height * 0.24)
+                      x: size.width / 2 - 58, y: size.height * 0.44, w: 108)
         }
+        let diffColor: SKColor = switch MenuScene.difficulty {
+        case .easy: SKColor(red: 0.30, green: 0.70, blue: 0.30, alpha: 1)
+        case .normal: SKColor(red: 0.70, green: 0.55, blue: 0.15, alpha: 1)
+        case .hard: SKColor(red: 0.75, green: 0.20, blue: 0.15, alpha: 1)
+        }
+        addButton(MenuScene.difficulty.name, name: "difficultyBtn",
+                  color: diffColor,
+                  x: size.width / 2 + 58, y: size.height * 0.44, w: 108)
+
+        // Row 3: Shop + Bugopedia (side by side)
+        addButton("Shop", name: "shopButton",
+                  color: SKColor(red: 0.82, green: 0.65, blue: 0.12, alpha: 1.0),
+                  x: size.width / 2 - 58, y: size.height * 0.32, w: 108)
+        addButton("Bugopedia", name: "bugTracker",
+                  color: SKColor(red: 0.55, green: 0.35, blue: 0.70, alpha: 1.0),
+                  x: size.width / 2 + 58, y: size.height * 0.32, w: 108)
     }
 
     private func addButton(_ text: String, name: String, color: SKColor, y: CGFloat) {
-        let bg = SKShapeNode(rectOf: CGSize(width: 200, height: 42), cornerRadius: 10)
+        addButton(text, name: name, color: color, x: size.width / 2, y: y, w: 200)
+    }
+
+    private func addButton(_ text: String, name: String, color: SKColor, x: CGFloat, y: CGFloat, w: CGFloat) {
+        let bg = SKShapeNode(rectOf: CGSize(width: w, height: 38), cornerRadius: 10)
         bg.fillColor = color
         bg.strokeColor = SKColor(white: 0, alpha: 0.2)
         bg.lineWidth = 1.5
-        bg.position = CGPoint(x: size.width / 2, y: y)
+        bg.position = CGPoint(x: x, y: y)
         bg.zPosition = 20
         bg.name = name
         addChild(bg)
@@ -138,6 +164,16 @@ class MenuScene: SKScene {
                 let game = GameScene(size: size)
                 game.scaleMode = scaleMode
                 view?.presentScene(game, transition: .fade(withDuration: 0.4))
+                return
+            }
+            if node.name == "difficultyBtn" {
+                // Cycle: easy → normal → hard → easy
+                let next = MenuScene.Difficulty(rawValue: (MenuScene.difficulty.rawValue + 1) % 3) ?? .normal
+                MenuScene.difficulty = next
+                // Rebuild menu to show new difficulty
+                let menu = MenuScene(size: size)
+                menu.scaleMode = scaleMode
+                view?.presentScene(menu)
                 return
             }
             if node.name == "shopButton" {

@@ -1647,6 +1647,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     // MARK: - Biome Spawning
 
+    /// Difficulty multiplier for enemy spawn intervals (higher = slower spawns = fewer enemies)
+    private var enemySpawnMul: Double { MenuScene.difficulty.enemyMul }
+    /// Difficulty multiplier for food spawn intervals (higher = slower spawns = fewer food)
+    private var foodSpawnMul: Double { MenuScene.difficulty.foodMul }
+
     private func spawnForBiome(dt: TimeInterval) {
         // Bushes only in meadow biomes
         if currentBiome == .meadowDay || currentBiome == .meadowNight {
@@ -1661,57 +1666,61 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         envTimer += dt
         if envTimer >= 0.6 { envTimer = 0; spawnEnvironment() }
 
+        // Difficulty-scaled dt: food spawns faster/slower, enemies slower/faster
+        let fdt = dt / foodSpawnMul   // food timers: smaller mul = faster dt = more food
+        let edt = dt / enemySpawnMul  // enemy timers: smaller mul = faster dt = more enemies
+
         switch currentBiome {
         case .meadowDay:
-            aphidTimer += dt
+            aphidTimer += fdt
             if aphidTimer >= 1.2 { aphidTimer = 0; spawnAphid() }
-            flyTimer += dt
+            flyTimer += fdt
             if flyTimer >= 1.5 { flyTimer = 0; spawnFruitFly() }
-            antTimer += dt
+            antTimer += edt
             if antTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { antTimer = 0; spawnAnt() }
-            birdTimer += dt
+            birdTimer += edt
             if birdTimer >= max(2.5, 5.5 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBird() }
-            frogTimer += dt
+            frogTimer += edt
             if frogTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnPondCreature() }
 
         case .meadowNight:
-            gnatTimer += dt
+            gnatTimer += fdt
             if gnatTimer >= 1.0 { gnatTimer = 0; spawnGnatSwarm() }
-            aphidTimer += dt // Red aphids at night
+            aphidTimer += fdt
             if aphidTimer >= 2.0 { aphidTimer = 0; spawnAphid() }
-            fireflyTimer += dt
+            fireflyTimer += dt // Powerups unaffected by difficulty
             if fireflyTimer >= 22.0 { fireflyTimer = 0; spawnFirefly() }
-            spiderTimer += dt
+            spiderTimer += edt
             if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnSpider() }
-            birdTimer += dt
+            birdTimer += edt
             if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Bat") }
-            frogTimer += dt
+            frogTimer += edt
             if frogTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnPondCreature() }
 
         case .desert:
-            aphidTimer += dt // Desert beetles
+            aphidTimer += fdt
             if aphidTimer >= 1.4 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateDesertBeetleTexture(size: CGSize(width: 28, height: 24)), pts: 15, flying: false, name: "Desert Beetle") }
-            flyTimer += dt // Desert flies (with wings via FruitFly frames)
+            flyTimer += fdt
             if flyTimer >= 1.8 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 18, height: 18), color: .brown).first!, pts: 20, flying: true, name: "Sand Fly") }
-            gnatTimer += dt // Desert crickets (ground, 50pts, hops)
+            gnatTimer += fdt
             if gnatTimer >= 2.2 { gnatTimer = 0; spawnDesertCricket() }
-            dragonflyTimer += dt // Scorpions (slower, never with snake)
+            dragonflyTimer += edt // Scorpions (slower, never with snake)
             if dragonflyTimer >= max(6.0, 11.0 - Double(distanceTraveled) * 0.0003) {
                 dragonflyTimer = 0
                 let snakeOnScreen = children.contains { ($0 as? BiomeEnemy)?.biomeName == "Rattlesnake" }
                 if !snakeOnScreen { spawnBiomeGroundEnemy(texture: TextureGenerator.generateScorpionTexture(size: CGSize(width: 44, height: 34)), name: "Scorpion") }
             }
-            spiderTimer += dt // Rattlesnake (slower, never with scorpion, bigger)
+            spiderTimer += edt // Rattlesnake (slower, never with scorpion, bigger)
             if spiderTimer >= max(8.0, 13.0 - Double(distanceTraveled) * 0.0003) {
                 spiderTimer = 0
                 let scorpionOnScreen = children.contains { ($0 as? BiomeEnemy)?.biomeName == "Scorpion" }
                 if !scorpionOnScreen { spawnBiomeGroundEnemy(texture: TextureGenerator.generateRattlesnakeTexture(size: CGSize(width: 64, height: 40)), name: "Rattlesnake") }
             }
-            birdTimer += dt // Hawks
+            birdTimer += edt // Hawks
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Hawk") }
-            frogTimer += dt // Vultures
+            frogTimer += edt // Vultures
             if frogTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnVulture() }
-            waspTimer += dt // Desert wasps — never spawn if vulture on screen
+            waspTimer += edt // Desert wasps — never spawn if vulture on screen
             if waspTimer >= max(4.5, 9.0 - Double(distanceTraveled) * 0.0003) {
                 waspTimer = 0
                 let vultureOnScreen = children.contains { $0.name == "vulture" }
@@ -1719,51 +1728,51 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             }
 
         case .snow:
-            aphidTimer += dt // Snow fleas
+            aphidTimer += fdt
             if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSnowFleaTexture(size: CGSize(width: 24, height: 20)), pts: 15, flying: false, name: "Snow Flea") }
-            flyTimer += dt // Ice moths
+            flyTimer += fdt
             if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 20, height: 20), color: .blue).first!, pts: 25, flying: true, name: "Ice Moth") }
-            spiderTimer += dt // Ice spiders
+            spiderTimer += edt
             if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateIceSpiderTexture(size: CGSize(width: 44, height: 36)), name: "Ice Spider") }
-            birdTimer += dt // Snow owls
+            birdTimer += edt
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Snow Owl") }
-            fireflyTimer += dt // Hot cocoa (rare power-up)
+            fireflyTimer += dt // Powerups unaffected
             if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
-            waspTimer += dt // Frost moth (sky patrol enemy, like desert wasp)
+            waspTimer += edt
             if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnFrostMoth() }
 
         case .jungle:
-            aphidTimer += dt // Jungle beetles
+            aphidTimer += fdt
             if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateJungleBeetleTexture(size: CGSize(width: 28, height: 24)), pts: 30, flying: false, name: "Jungle Beetle") }
-            flyTimer += dt // Tropical butterflies
+            flyTimer += fdt
             if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateButterflyTexture(size: CGSize(width: 22, height: 20)), pts: 20, flying: true, name: "Butterfly") }
-            dragonflyTimer += dt // Poison dart frogs at ponds
+            dragonflyTimer += edt
             if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnPondCreature() }
-            spiderTimer += dt // Jungle spiders
+            spiderTimer += edt
             if spiderTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnJungleSpider() }
-            birdTimer += dt // Toucans
+            birdTimer += edt
             if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Toucan") }
-            fireflyTimer += dt // Monkeys (climb trees)
+            fireflyTimer += edt // Monkeys
             if fireflyTimer >= max(5.0, 10.0 - Double(distanceTraveled) * 0.0003) { fireflyTimer = 0; spawnMonkey() }
-            waspTimer += dt // Cicada bee (sky patrol enemy)
+            waspTimer += edt
             if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnCicadaBee() }
-            gnatTimer += dt // Jungle gnats (darker, less common)
+            gnatTimer += fdt
             if gnatTimer >= 2.5 { gnatTimer = 0; spawnJungleGnatSwarm() }
 
         case .cave:
-            aphidTimer += dt // Cave crickets
+            aphidTimer += fdt
             if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateCaveCricketTexture(size: CGSize(width: 26, height: 20)), pts: 25, flying: false, name: "Cave Cricket") }
-            flyTimer += dt // Glowworms (flying)
+            flyTimer += fdt
             if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateGlowwormTexture(size: CGSize(width: 24, height: 20)), pts: 35, flying: true, name: "Glowworm") }
-            gnatTimer += dt // Crystal beetles (rare ground, 50pts)
+            gnatTimer += fdt
             if gnatTimer >= 4.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateCrystalBeetleTexture(size: CGSize(width: 26, height: 22)), pts: 50, flying: false, name: "Crystal Beetle") }
-            dragonflyTimer += dt // Rock worms (ground enemy)
+            dragonflyTimer += edt
             if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateRockWormTexture(size: CGSize(width: 48, height: 30)), name: "Rock Worm") }
-            birdTimer += dt // Vampire bats
+            birdTimer += edt
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Vampire Bat") }
-            caveSpiderTimer += dt // Cave spiders (ceiling)
+            caveSpiderTimer += edt
             if caveSpiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { caveSpiderTimer = 0; spawnCaveSpider() }
-            fallingRockTimer += dt // Falling rocks
+            fallingRockTimer += edt
             if fallingRockTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { fallingRockTimer = 0; spawnFallingRock() }
             fireflyTimer += dt // Fireflies return in caves
             if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
