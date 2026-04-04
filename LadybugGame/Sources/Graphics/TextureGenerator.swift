@@ -1915,8 +1915,8 @@ enum TextureGenerator {
             let cg = ctx.cgContext
             let w = size.width; let h = size.height
             let wingOff: CGFloat = wingsUp ? -0.12 : 0.06
-            // Top wing (icy white-blue, large)
-            cg.setFillColor(UIColor(red: 0.75, green: 0.85, blue: 0.95, alpha: 0.80).cgColor)
+            // Top wing (darker icy blue, visible against snow)
+            cg.setFillColor(UIColor(red: 0.35, green: 0.50, blue: 0.75, alpha: 0.85).cgColor)
             cg.move(to: CGPoint(x: w * 0.45, y: h * 0.48))
             cg.addCurve(to: CGPoint(x: w * 0.05, y: h * (0.18 + wingOff)),
                         control1: CGPoint(x: w * 0.20, y: h * (0.20 + wingOff)),

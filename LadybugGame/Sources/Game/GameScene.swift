@@ -81,6 +81,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var isTouching = false
     private var gnatTimer: TimeInterval = 0
     private var touchY: CGFloat?
+    private var touchX: CGFloat?
     private var lastUpdateTime: TimeInterval = 0
 
     // Bug discovery queue — shows one banner at a time
@@ -514,12 +515,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if isPaused_ { return }
         isTouching = true
         touchY = loc.y
+        touchX = loc.x
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         if isPaused_ { return }
         guard let touch = touches.first else { return }
-        touchY = touch.location(in: self).y
+        let loc = touch.location(in: self)
+        touchY = loc.y
+        touchX = loc.x
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -1994,7 +1998,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         for child in children {
             if let s = child as? BiomeSwooper, s.biomeName == "Cicada Bee" { return }
         }
-        let frames = TextureGenerator.generateCicadaBeeFrames(size: CGSize(width: 62, height: 46))
+        let frames = TextureGenerator.generateCicadaBeeFrames(size: CGSize(width: 52, height: 32))
         let bee = BiomeSwooper(textures: frames, biomeName: "Cicada Bee")
         bee.position = CGPoint(x: size.width + 50, y: size.height * CGFloat.random(in: 0.60...0.88))
         bee.xScale = -1
@@ -2068,6 +2072,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnCaveSpider() {
         guard let terrain = caveTerrain else { return }
         let spawnX = size.width + 40
+        // Don't spawn directly above ground enemies
+        if isNearBiomeEnemy(x: spawnX, range: 100) { return }
         let ceilY = terrain.ceilingY(atScreenX: spawnX)
         let texture = TextureGenerator.generateCaveSpiderTexture(size: CGSize(width: 40, height: 34))
         let spider = CaveSpider(texture: texture, ceilingY: ceilY)
@@ -2095,10 +2101,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnMonkey() {
         let spawnX = size.width + 30
         if isNearGroundObject(x: spawnX, range: 80) { return }
+        // Avoid overlapping with existing envDecor trees
+        for child in children where child.name == "envDecor" {
+            if abs(child.position.x - spawnX) < 60 && child.position.y > groundY + 40 { return }
+        }
 
-        // Spawn a tree trunk for the monkey to climb
-        let trunkH: CGFloat = CGFloat.random(in: 160...220)
-        let trunk = SKShapeNode(rectOf: CGSize(width: 18, height: trunkH))
+        // Spawn a tree trunk for the monkey to climb (big)
+        let trunkH: CGFloat = CGFloat.random(in: 200...280)
+        let trunk = SKShapeNode(rectOf: CGSize(width: 22, height: trunkH))
         trunk.fillColor = SKColor(red: 0.32, green: 0.20, blue: 0.08, alpha: 0.9)
         trunk.strokeColor = .clear
         trunk.position = CGPoint(x: spawnX, y: groundY + trunkH / 2)
@@ -2107,7 +2117,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(trunk)
         // Small canopy on top
         // Layered canopy with leaves
-        for (dx, dy, r) in [(-15.0, 5.0, 22.0), (12.0, 10.0, 20.0), (0.0, 20.0, 26.0), (-10.0, 25.0, 18.0)] as [(CGFloat, CGFloat, CGFloat)] {
+        for (dx, dy, r) in [(-20.0, 5.0, 28.0), (16.0, 12.0, 26.0), (0.0, 25.0, 32.0), (-14.0, 30.0, 24.0), (10.0, 32.0, 20.0)] as [(CGFloat, CGFloat, CGFloat)] {
             let leaf = SKShapeNode(circleOfRadius: r)
             leaf.fillColor = SKColor(red: CGFloat.random(in: 0.10...0.16), green: CGFloat.random(in: 0.42...0.55), blue: 0.12, alpha: 0.85)
             leaf.strokeColor = .clear
@@ -2117,7 +2127,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             addChild(leaf)
         }
 
-        let texture = TextureGenerator.generateMonkeyTexture(size: CGSize(width: 44, height: 48))
+        let texture = TextureGenerator.generateMonkeyTexture(size: CGSize(width: 56, height: 60))
         let monkey = SKSpriteNode(texture: texture, color: .clear, size: texture.size())
         monkey.name = "monkey"
         monkey.zPosition = 6
@@ -2131,7 +2141,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(monkey)
         unlockBug(.monkey)
 
-        let climbHeight = CGFloat.random(in: 100...160)
+        let climbHeight = CGFloat.random(in: 140...210)
         let upDur = Double.random(in: 1.4...2.2)
         let downDur = Double.random(in: 1.4...2.2)
         let pause = SKAction.wait(forDuration: Double.random(in: 0.3...0.7))
@@ -2500,21 +2510,39 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func startBossFight() {
         isBossFight = true
-        bossHP = 5
+        bossHP = 20
         bossAttackTimer = 0
         bossAttackPhase = 0
         bossBerryTimer = 0
 
-        // Banner
+        // Save checkpoint
+        GameScene.hasNightCheckpoint = true
+        GameScene.checkpointScore = 6000
+        GameScene.unlockBiome(.cave)
+
+        // Clear all existing entities from screen
+        for child in children {
+            if child is Aphid || child is FruitFly || child is Log || child is Bird ||
+               child is Frog || child is Dragonfly || child is Firefly || child is HeartBug ||
+               child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood ||
+               child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider ||
+               child is FallingRock || child.name == "monkey" || child.name == "envDecor" {
+                child.removeFromParent()
+            }
+        }
+
+        // Banner with dramatic entry
         let banner = SKLabelNode(fontNamed: "AvenirNext-Bold")
         banner.text = "BOSS FIGHT!"
-        banner.fontSize = 32
+        banner.fontSize = 36
         banner.fontColor = SKColor(red: 1, green: 0.25, blue: 0.15, alpha: 1)
         banner.position = CGPoint(x: size.width / 2, y: size.height / 2 + 20)
         banner.zPosition = 130
+        banner.setScale(0.3)
         addChild(banner)
         banner.run(SKAction.sequence([
-            SKAction.group([SKAction.scale(to: 1.3, duration: 0.3), SKAction.fadeAlpha(to: 1, duration: 0.1)]),
+            SKAction.scale(to: 1.5, duration: 0.4),
+            SKAction.scale(to: 1.0, duration: 0.2),
             SKAction.wait(forDuration: 1.5),
             SKAction.fadeOut(withDuration: 0.5),
             SKAction.removeFromParent()
@@ -2522,33 +2550,64 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         SoundManager.shared.play("roar")
 
-        // Bear appears from right
-        let bearTex = TextureGenerator.generateBearTexture(size: CGSize(width: 160, height: 120))
-        let bear = SKSpriteNode(texture: bearTex, size: CGSize(width: 160, height: 120))
-        bear.position = CGPoint(x: size.width + 100, y: groundY + 60)
+        // Bear appears from right — big and menacing
+        let bearTex = TextureGenerator.generateBearTexture(size: CGSize(width: 200, height: 150))
+        let bear = SKSpriteNode(texture: bearTex, size: CGSize(width: 200, height: 150))
+        bear.position = CGPoint(x: size.width + 120, y: groundY + 75)
         bear.xScale = -1
         bear.zPosition = 8
         bear.name = "boss"
         addChild(bear)
         bossNode = bear
 
-        bear.run(SKAction.moveTo(x: size.width * 0.78, duration: 1.5))
+        // Dramatic entrance: shake + walk in
+        bear.run(SKAction.sequence([
+            SKAction.wait(forDuration: 0.5),
+            SKAction.moveTo(x: size.width * 0.75, duration: 1.5)
+        ]))
+        // Bear idle breathing
+        let breathe = SKAction.sequence([
+            SKAction.scaleY(to: -1.03, duration: 0.8),
+            SKAction.scaleY(to: -0.97, duration: 0.8),
+        ])
+        bear.run(SKAction.repeatForever(breathe), withKey: "breathe")
 
-        // HP display
-        let hpLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        hpLabel.fontSize = 16
-        hpLabel.fontColor = .red
-        hpLabel.position = CGPoint(x: 0, y: 70)
-        hpLabel.zPosition = 10
-        bear.addChild(hpLabel)
-        bossHPLabel = hpLabel
-        updateBossHP()
+        // Health bar background (above bear)
+        let hpBg = SKShapeNode(rectOf: CGSize(width: 104, height: 10), cornerRadius: 3)
+        hpBg.fillColor = SKColor(red: 0.2, green: 0.1, blue: 0.1, alpha: 0.8)
+        hpBg.strokeColor = SKColor(white: 0.5, alpha: 0.6)
+        hpBg.lineWidth = 1
+        hpBg.position = CGPoint(x: 0, y: 85)
+        hpBg.zPosition = 10
+        hpBg.name = "bossHPBg"
+        bear.addChild(hpBg)
+
+        // Health bar fill
+        let hpBar = SKShapeNode(rectOf: CGSize(width: 100, height: 6), cornerRadius: 2)
+        hpBar.fillColor = SKColor(red: 0.85, green: 0.15, blue: 0.10, alpha: 1)
+        hpBar.strokeColor = .clear
+        hpBar.position = CGPoint(x: 0, y: 85)
+        hpBar.zPosition = 11
+        hpBar.name = "bossHPBar"
+        bear.addChild(hpBar)
+        bossHPLabel = nil // Not using text anymore
     }
 
     private func updateBossHP() {
-        var h = ""
-        for i in 0..<5 { h += i < bossHP ? "♥" : "♡" }
-        bossHPLabel?.text = h
+        guard let boss = bossNode else { return }
+        let ratio = CGFloat(bossHP) / 20.0
+        if let bar = boss.childNode(withName: "bossHPBar") as? SKShapeNode {
+            let w = 100 * ratio
+            bar.path = CGPath(roundedRect: CGRect(x: -w / 2, y: -3, width: w, height: 6), cornerWidth: 2, cornerHeight: 2, transform: nil)
+            // Color shifts from green to yellow to red as HP drops
+            if ratio > 0.5 {
+                bar.fillColor = SKColor(red: 0.15, green: 0.75, blue: 0.15, alpha: 1)
+            } else if ratio > 0.25 {
+                bar.fillColor = SKColor(red: 0.85, green: 0.70, blue: 0.10, alpha: 1)
+            } else {
+                bar.fillColor = SKColor(red: 0.85, green: 0.15, blue: 0.10, alpha: 1)
+            }
+        }
     }
 
     private func updateBossFight(dt: TimeInterval) {
@@ -2557,21 +2616,30 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         bossAttackTimer += dt
         bossBerryTimer += dt
 
-        // Boss attack every 3s
-        if bossAttackTimer >= 3.0 {
+        // Ladybug X movement during boss fight — follows touch with smooth lerp
+        if let tx = touchX {
+            let dx = tx - ladybug.position.x
+            ladybug.position.x += dx * 0.08
+            ladybug.position.x = max(ladybug.size.width / 2, min(size.width * 0.60, ladybug.position.x))
+        }
+
+        // Boss attacks faster as HP drops — every 2.5s at full HP, 1.2s at low HP
+        let attackInterval = 1.2 + 1.3 * (CGFloat(bossHP) / 20.0)
+        if bossAttackTimer >= Double(attackInterval) {
             bossAttackTimer = 0
-            let phase = bossAttackPhase % 3
+            let phase = bossAttackPhase % 4
             bossAttackPhase += 1
 
             switch phase {
             case 0: bossThrowRock()
-            case 1: bossCharge()
+            case 1: bossThrowRock(); bossThrowRock() // Double rocks
+            case 2: bossCharge()
             default: bossGroundSlam()
             }
         }
 
-        // Bubble berry every 8s
-        if bossBerryTimer >= 8.0 {
+        // Bubble berry every 10s
+        if bossBerryTimer >= 10.0 {
             bossBerryTimer = 0
             spawnBubbleBerry()
         }
