@@ -206,33 +206,44 @@ class MenuScene: SKScene {
         overlay.addChild(subtitle)
 
         let biomes = GameScene.unlockedBiomes.compactMap { Biome(rawValue: $0) }.sorted { $0.rawValue < $1.rawValue }
-        let spacing: CGFloat = 46
-        let startY = size.height * 0.06
+        let cols = 3
+        let btnW: CGFloat = 110
+        let btnH: CGFloat = 34
+        let spacingX: CGFloat = 120
+        let spacingY: CGFloat = 44
+        let gridW = CGFloat(min(cols, biomes.count)) * spacingX
+        let startX = -gridW / 2 + spacingX / 2
+        let startY = size.height * 0.08
+
         for (i, biome) in biomes.enumerated() {
-            let y = startY - CGFloat(i) * spacing
-            let btn = SKShapeNode(rectOf: CGSize(width: 180, height: 36), cornerRadius: 8)
+            let col = i % cols
+            let row = i / cols
+            let x = startX + CGFloat(col) * spacingX
+            let y = startY - CGFloat(row) * spacingY
+
+            let btn = SKShapeNode(rectOf: CGSize(width: btnW, height: btnH), cornerRadius: 8)
             btn.fillColor = biome.skyColor.withAlphaComponent(0.8)
             btn.strokeColor = SKColor(white: 1.0, alpha: 0.3)
             btn.lineWidth = 1
-            btn.position = CGPoint(x: 0, y: y)
+            btn.position = CGPoint(x: x, y: y)
             btn.name = "cp_\(biome.rawValue)"
             overlay.addChild(btn)
 
             let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
             label.text = biome.name
-            label.fontSize = 16
+            label.fontSize = 13
             label.fontColor = .white
             label.verticalAlignmentMode = .center
+            label.position = CGPoint(x: 0, y: 2)
             label.name = "cp_\(biome.rawValue)"
             btn.addChild(label)
 
             let scoreHint = SKLabelNode(fontNamed: "AvenirNext-Regular")
-            scoreHint.text = "\(biome.scoreThreshold) pts"
+            scoreHint.text = "\(biome.scoreThreshold)"
             scoreHint.fontSize = 9
             scoreHint.fontColor = SKColor(white: 1.0, alpha: 0.5)
-            scoreHint.horizontalAlignmentMode = .right
             scoreHint.verticalAlignmentMode = .center
-            scoreHint.position = CGPoint(x: 75, y: 0)
+            scoreHint.position = CGPoint(x: 0, y: -10)
             scoreHint.name = "cp_\(biome.rawValue)"
             btn.addChild(scoreHint)
         }
