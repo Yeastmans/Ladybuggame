@@ -271,7 +271,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                                     size: CGSize(width: tileWidth, height: groundY + 2))
             tile.anchorPoint = CGPoint(x: 0, y: 0)
             tile.position = CGPoint(x: CGFloat(i) * (tileWidth - 10), y: 0)
-            tile.zPosition = -2
+            tile.zPosition = 0
             tile.name = "groundTile"
             addChild(tile)
             groundTiles.append(tile)
@@ -1754,7 +1754,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             gTile.fillColor = Biome.cave.groundColor
             gTile.strokeColor = .clear
             gTile.position = CGPoint(x: CGFloat(i) * (tileWidth - 10), y: 0)
-            gTile.zPosition = -2
+            gTile.zPosition = 0
             gTile.name = "caveGroundTile"
             gTile.alpha = 0
             addChild(gTile)
@@ -1764,7 +1764,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             cTile.fillColor = Biome.cave.ceilingColor
             cTile.strokeColor = .clear
             cTile.position = CGPoint(x: CGFloat(i) * (tileWidth - 10), y: 0)
-            cTile.zPosition = -2
+            cTile.zPosition = 0
             cTile.name = "caveCeilingTile"
             cTile.alpha = 0
             addChild(cTile)
