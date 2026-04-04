@@ -148,7 +148,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         backgroundColor = SKColor(red: 0.55, green: 0.80, blue: 0.95, alpha: 1.0)
         physicsWorld.gravity = .zero
         physicsWorld.contactDelegate = self
-        groundY = size.height * 0.28
+        groundY = size.height * 0.20
 
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
         vultureFrames = TextureGenerator.generateVultureFrames(size: CGSize(width: 56, height: 40))
@@ -280,34 +280,31 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func setupGround() {
-        let tileWidth = size.width + 10 // Extra width to guarantee overlap
+        let tileWidth = size.width + 10
+        let groundHeight: CGFloat = 18 // Thin grass strip only
         for i in 0..<3 {
             let tile = SKSpriteNode(color: SKColor(red: 0.42, green: 0.68, blue: 0.28, alpha: 1.0),
-                                    size: CGSize(width: tileWidth, height: groundY + 2))
+                                    size: CGSize(width: tileWidth, height: groundHeight))
             tile.anchorPoint = CGPoint(x: 0, y: 0)
-            tile.position = CGPoint(x: CGFloat(i) * (tileWidth - 10), y: 0)
+            tile.position = CGPoint(x: CGFloat(i) * (tileWidth - 10), y: groundY - groundHeight + 4)
             tile.zPosition = 0
             tile.name = "groundTile"
             addChild(tile)
             groundTiles.append(tile)
 
-            let dirt = SKShapeNode(rectOf: CGSize(width: tileWidth, height: groundY * 0.45))
-            dirt.fillColor = SKColor(red: 0.50, green: 0.35, blue: 0.18, alpha: 1.0)
-            dirt.strokeColor = .clear
-            dirt.position = CGPoint(x: tileWidth / 2, y: groundY * 0.225)
-            tile.addChild(dirt)
-
-            let grass = SKShapeNode(rectOf: CGSize(width: tileWidth, height: 4))
+            // Grass line at top
+            let grass = SKShapeNode(rectOf: CGSize(width: tileWidth, height: 3))
             grass.fillColor = SKColor(red: 0.32, green: 0.55, blue: 0.20, alpha: 1.0)
             grass.strokeColor = .clear
-            grass.position = CGPoint(x: tileWidth / 2, y: groundY)
+            grass.position = CGPoint(x: tileWidth / 2, y: groundHeight - 1)
             tile.addChild(grass)
 
-            for _ in 0..<10 {
+            // Grass tufts
+            for _ in 0..<8 {
                 let tuft = SKShapeNode()
                 let tp = UIBezierPath()
-                let tw = CGFloat.random(in: 3...6)
-                let th = CGFloat.random(in: 5...14)
+                let tw = CGFloat.random(in: 3...5)
+                let th = CGFloat.random(in: 4...10)
                 tp.move(to: CGPoint(x: 0, y: 0))
                 tp.addQuadCurve(to: CGPoint(x: tw, y: 0), controlPoint: CGPoint(x: tw / 2, y: th))
                 tp.close()
@@ -316,7 +313,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                                          green: CGFloat.random(in: 0.60...0.78),
                                          blue: CGFloat.random(in: 0.18...0.30), alpha: 0.7)
                 tuft.strokeColor = .clear
-                tuft.position = CGPoint(x: CGFloat.random(in: 5...tileWidth - 5), y: groundY - 1)
+                tuft.position = CGPoint(x: CGFloat.random(in: 5...tileWidth - 5), y: groundHeight - 2)
                 tile.addChild(tuft)
             }
         }
@@ -576,7 +573,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Cave terrain advancement
         if isCaveBiome, let terrain = caveTerrain {
             terrain.update(scrollDelta: sd)
+            let wasFull = terrain.transitionProgress >= 1.0
             terrain.advanceTransition(delta: sd, targetProgress: 1.0)
+            // During transition ramp, regenerate all tile paths every frame so terrain visually matches
+            if !wasFull && terrain.transitionProgress < 1.0 {
+                regenerateAllCaveTilePaths()
+            }
         }
 
         // Boss fight or normal spawning

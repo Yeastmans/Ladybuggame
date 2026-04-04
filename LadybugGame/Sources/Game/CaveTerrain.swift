@@ -16,7 +16,7 @@ class CaveTerrain {
 
     init(baseGroundY: CGFloat, screenHeight: CGFloat) {
         self.baseGroundY = baseGroundY
-        self.baseCeilingY = screenHeight * 0.73
+        self.baseCeilingY = screenHeight * 0.82
     }
 
     /// Ground surface Y at a world X position.
