@@ -1704,7 +1704,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             aphidTimer += dt // Jungle beetles
             if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateJungleBeetleTexture(size: CGSize(width: 28, height: 24)), pts: 30, flying: false, name: "Jungle Beetle") }
             flyTimer += dt // Tropical butterflies
-            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateButterflyTexture(size: CGSize(width: 30, height: 26)), pts: 20, flying: true, name: "Butterfly") }
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateButterflyTexture(size: CGSize(width: 22, height: 20)), pts: 20, flying: true, name: "Butterfly") }
             dragonflyTimer += dt // Poison dart frogs at ponds
             if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnPondCreature() }
             spiderTimer += dt // Jungle spiders
@@ -1746,6 +1746,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         food.position = CGPoint(x: spawnX, y: y)
         food.minY = groundY
         food.setupPhysics()
+        if food.biomeName == "Butterfly" { food.playerRef = ladybug }
         food.startMoving()
         // ~2% chance to become a rare gemstone bug
         if Int.random(in: 1...50) == 1 { food.makeGemBug() }
@@ -2057,9 +2058,28 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnMonkey() {
         let spawnX = size.width + 30
         if isNearGroundObject(x: spawnX, range: 80) { return }
-        let texture = TextureGenerator.generateMonkeyTexture(size: CGSize(width: 28, height: 32))
+
+        // Spawn a tree trunk for the monkey to climb
+        let trunkH: CGFloat = CGFloat.random(in: 120...170)
+        let trunk = SKShapeNode(rectOf: CGSize(width: 16, height: trunkH))
+        trunk.fillColor = SKColor(red: 0.32, green: 0.20, blue: 0.08, alpha: 0.9)
+        trunk.strokeColor = .clear
+        trunk.position = CGPoint(x: spawnX, y: groundY + trunkH / 2)
+        trunk.zPosition = 1
+        trunk.name = "envDecor"
+        addChild(trunk)
+        // Small canopy on top
+        let canopy = SKShapeNode(circleOfRadius: 28)
+        canopy.fillColor = SKColor(red: 0.14, green: 0.50, blue: 0.12, alpha: 0.85)
+        canopy.strokeColor = .clear
+        canopy.position = CGPoint(x: spawnX, y: groundY + trunkH + 10)
+        canopy.zPosition = 1
+        canopy.name = "envDecor"
+        addChild(canopy)
+
+        let texture = TextureGenerator.generateMonkeyTexture(size: CGSize(width: 38, height: 42))
         let monkey = SKSpriteNode(texture: texture, color: .clear, size: texture.size())
-        monkey.name = "monkey"  // handled by scrollWorldObjects
+        monkey.name = "monkey"
         monkey.zPosition = 6
         monkey.xScale = -1
         let body = SKPhysicsBody(rectangleOf: CGSize(width: texture.size().width * 0.55, height: texture.size().height * 0.65))
@@ -2172,6 +2192,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             run(SKAction.repeatForever(SKAction.sequence([snowfall, SKAction.wait(forDuration: 0.15)])), withKey: "snowfall")
         }
 
+
+        // Jungle: warm haze gradient near horizon
+        if biome == .jungle {
+            let horizonBand = SKShapeNode(rectOf: CGSize(width: size.width + 10, height: size.height * 0.20))
+            horizonBand.fillColor = SKColor(red: 0.45, green: 0.60, blue: 0.35, alpha: 0.35)
+            horizonBand.strokeColor = .clear
+            horizonBand.position = CGPoint(x: size.width / 2, y: groundY + size.height * 0.10)
+            horizonBand.zPosition = -0.8
+            horizonBand.alpha = 0
+            addChild(horizonBand)
+            horizonBand.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
+        }
 
         // Jungle: mist
         if biome == .jungle {

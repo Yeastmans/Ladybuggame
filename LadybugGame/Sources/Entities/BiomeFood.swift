@@ -8,6 +8,7 @@ class BiomeFood: SKSpriteNode {
     let isFlying: Bool
     var isGemBug: Bool = false
     var minY: CGFloat = 0
+    weak var playerRef: SKNode?  // For evasion (butterfly)
 
     init(texture: SKTexture, points: Int, biomeName: String, isFlying: Bool) {
         self.points = points
@@ -58,8 +59,16 @@ class BiomeFood: SKSpriteNode {
         if isFlying {
             let bob = SKAction.run { [weak self] in
                 guard let self = self else { return }
-                let dy = CGFloat.random(in: 8...22) * (Bool.random() ? 1.0 : -1.0)
-                let dx = CGFloat.random(in: 3...10) * (Bool.random() ? 1.0 : -1.0)
+                var dy = CGFloat.random(in: 8...22) * (Bool.random() ? 1.0 : -1.0)
+                var dx = CGFloat.random(in: 3...10) * (Bool.random() ? 1.0 : -1.0)
+                // Butterfly evasion: flee if player is close
+                if self.biomeName == "Butterfly", let player = self.playerRef {
+                    let dist = hypot(player.position.x - self.position.x, player.position.y - self.position.y)
+                    if dist < 90 {
+                        dx = (self.position.x - player.position.x) * 0.25
+                        dy = (self.position.y - player.position.y) * 0.25
+                    }
+                }
                 if dx > 0 { self.xScale = abs(self.xScale) } else { self.xScale = -abs(self.xScale) }
                 let move = SKAction.moveBy(x: dx, y: dy, duration: Double.random(in: 0.3...0.6))
                 move.timingMode = .easeInEaseOut
@@ -73,10 +82,12 @@ class BiomeFood: SKSpriteNode {
             }
             run(SKAction.repeatForever(SKAction.sequence([bob, SKAction.wait(forDuration: 0.3), clamp])), withKey: "fly")
 
-            // Gentle body tilt while flying
+            // Body tilt/flap — faster for butterflies
+            let tiltSpeed = biomeName == "Butterfly" ? 0.15 : 0.4
+            let tiltAngle: CGFloat = biomeName == "Butterfly" ? 0.25 : 0.12
             let tilt = SKAction.sequence([
-                SKAction.rotate(toAngle: 0.12, duration: 0.4),
-                SKAction.rotate(toAngle: -0.12, duration: 0.4),
+                SKAction.rotate(toAngle: tiltAngle, duration: tiltSpeed),
+                SKAction.rotate(toAngle: -tiltAngle, duration: tiltSpeed),
             ])
             run(SKAction.repeatForever(tilt), withKey: "tilt")
         } else {
