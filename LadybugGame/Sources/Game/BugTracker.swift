@@ -56,6 +56,7 @@ final class BugTracker: @unchecked Sendable {
         case jungleSpider = "Jungle Spider"
         case toucan = "Toucan"
         case monkey = "Monkey"
+        case cicadaBee = "Cicada Bee"
         // Cave enemies
         case caveSpider = "Cave Spider"
         case vampireBat = "Vampire Bat"
@@ -70,7 +71,7 @@ final class BugTracker: @unchecked Sendable {
                 return .food
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl, .frostMoth,
-                 .poisonDartFrog, .jungleSpider, .toucan, .monkey,
+                 .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee,
                  .caveSpider, .vampireBat, .rockWorm:
                 return .enemy
             }
@@ -113,6 +114,7 @@ final class BugTracker: @unchecked Sendable {
             case .jungleSpider: return "Camouflaged in green. Lurks in vines!"
             case .toucan: return "Tropical bird with a massive beak!"
             case .monkey: return "Mischievous jungle monkey! Climbs trees and swipes at you!"
+            case .cicadaBee: return "Loud jungle cicada-bee hybrid. Buzzes through the canopy!"
             case .caveCricket: return "Pale cave cricket. Hops in the darkness."
             case .glowworm: return "Bioluminescent worm. Lights up the cave!"
             case .crystalBeetle: return "Rare crystalline beetle. Shimmers with cave gems!"
@@ -145,7 +147,7 @@ final class BugTracker: @unchecked Sendable {
             case .butterfly: return "20 pts"
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl, .frostMoth,
-                 .poisonDartFrog, .jungleSpider, .toucan, .monkey,
+                 .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee,
                  .caveSpider, .vampireBat, .rockWorm:
                 return "Danger!"
             }
@@ -214,6 +216,7 @@ final class BugTracker: @unchecked Sendable {
         case .jungleSpider: return TextureGenerator.generateJungleSpiderFrames(size: size).first!
         case .toucan: return TextureGenerator.generateToucanFrames(size: size).first!
         case .monkey: return TextureGenerator.generateMonkeyTexture(size: size)
+        case .cicadaBee: return TextureGenerator.generateCicadaBeeFrames(size: size).first!
         case .caveCricket: return TextureGenerator.generateCaveCricketTexture(size: size)
         case .glowworm: return TextureGenerator.generateGlowwormTexture(size: size)
         case .crystalBeetle: return TextureGenerator.generateCrystalBeetleTexture(size: size)

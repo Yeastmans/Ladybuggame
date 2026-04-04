@@ -1764,6 +1764,71 @@ enum TextureGenerator {
         return SKTexture(image: image)
     }
 
+    // MARK: - Cicada Bee (jungle flying enemy, green/gold)
+
+    static func generateCicadaBeeFrames(size: CGSize) -> [SKTexture] {
+        return [drawCicadaBee(size: size, wingsUp: true), drawCicadaBee(size: size, wingsUp: false)]
+    }
+
+    private static func drawCicadaBee(size: CGSize, wingsUp: Bool) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            let wingOff: CGFloat = wingsUp ? -0.14 : 0.05
+            // Large translucent wings (cicada-style, veined)
+            cg.setFillColor(UIColor(red: 0.70, green: 0.85, blue: 0.65, alpha: 0.35).cgColor)
+            // Top wing
+            cg.move(to: CGPoint(x: w * 0.40, y: h * 0.46))
+            cg.addLine(to: CGPoint(x: w * 0.06, y: h * (0.22 + wingOff)))
+            cg.addLine(to: CGPoint(x: w * 0.50, y: h * (0.28 + wingOff)))
+            cg.closePath(); cg.fillPath()
+            // Bottom wing
+            cg.move(to: CGPoint(x: w * 0.40, y: h * 0.54))
+            cg.addLine(to: CGPoint(x: w * 0.06, y: h * (0.78 - wingOff)))
+            cg.addLine(to: CGPoint(x: w * 0.50, y: h * (0.72 - wingOff)))
+            cg.closePath(); cg.fillPath()
+            // Wing veins
+            cg.setStrokeColor(UIColor(red: 0.45, green: 0.60, blue: 0.40, alpha: 0.3).cgColor)
+            cg.setLineWidth(0.5)
+            cg.move(to: CGPoint(x: w * 0.40, y: h * 0.46))
+            cg.addLine(to: CGPoint(x: w * 0.12, y: h * (0.24 + wingOff)))
+            cg.strokePath()
+            // Legs
+            cg.setStrokeColor(UIColor(red: 0.15, green: 0.10, blue: 0.0, alpha: 1).cgColor)
+            cg.setLineWidth(0.8); cg.setLineCap(.round)
+            for lx in [CGFloat(0.52), 0.60, 0.68] {
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.56))
+                cg.addLine(to: CGPoint(x: w * (lx + 0.04), y: h * 0.82))
+                cg.strokePath()
+            }
+            // Abdomen (green with dark bands)
+            cg.setFillColor(UIColor(red: 0.25, green: 0.50, blue: 0.15, alpha: 1).cgColor)
+            cg.move(to: CGPoint(x: w * 0.08, y: h * 0.40))
+            cg.addLine(to: CGPoint(x: w * 0.08, y: h * 0.60))
+            cg.addLine(to: CGPoint(x: w * 0.48, y: h * 0.66))
+            cg.addLine(to: CGPoint(x: w * 0.48, y: h * 0.34))
+            cg.closePath(); cg.fillPath()
+            // Dark bands
+            cg.setFillColor(UIColor(red: 0.10, green: 0.25, blue: 0.05, alpha: 0.6).cgColor)
+            for bx in [CGFloat(0.14), 0.24, 0.36] {
+                cg.fill(CGRect(x: w * bx, y: h * 0.38, width: w * 0.06, height: h * 0.24))
+            }
+            // Thorax
+            cg.setFillColor(UIColor(red: 0.18, green: 0.35, blue: 0.10, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.46, y: h * 0.38, width: w * 0.12, height: h * 0.24))
+            // Head (dark)
+            cg.setFillColor(UIColor(red: 0.12, green: 0.22, blue: 0.08, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.56, y: h * 0.30, width: w * 0.22, height: h * 0.40))
+            // Gold compound eyes
+            cg.setFillColor(UIColor(red: 0.85, green: 0.70, blue: 0.15, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.34, width: w * 0.10, height: h * 0.12))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.71, y: h * 0.37, width: w * 0.05, height: h * 0.06))
+        }
+        return SKTexture(image: image)
+    }
+
     // MARK: - Frost Moth (tundra flying enemy, icy wings)
 
     static func generateFrostMothFrames(size: CGSize) -> [SKTexture] {

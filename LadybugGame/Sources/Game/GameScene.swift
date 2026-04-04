@@ -1469,6 +1469,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Desert Wasp": unlockBug(.desertWasp)
                     case "Vampire Bat": unlockBug(.vampireBat)
                     case "Frost Moth": unlockBug(.frostMoth)
+                    case "Cicada Bee": unlockBug(.cicadaBee)
                     default: break
                     }
                 }
@@ -1712,6 +1713,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if birdTimer >= max(2.5, 5.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Toucan") }
             fireflyTimer += dt // Monkeys (climb trees)
             if fireflyTimer >= max(5.0, 10.0 - Double(distanceTraveled) * 0.0003) { fireflyTimer = 0; spawnMonkey() }
+            waspTimer += dt // Cicada bee (sky patrol enemy)
+            if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnCicadaBee() }
+            gnatTimer += dt // Jungle gnats (darker, less common)
+            if gnatTimer >= 2.5 { gnatTimer = 0; spawnJungleGnatSwarm() }
 
         case .cave:
             aphidTimer += dt // Cave crickets
@@ -1948,6 +1953,46 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         spider.startCrawling()
         addChild(spider)
         unlockBug(.jungleSpider)
+    }
+
+    private func spawnCicadaBee() {
+        for child in children {
+            if let s = child as? BiomeSwooper, s.biomeName == "Cicada Bee" { return }
+        }
+        let frames = TextureGenerator.generateCicadaBeeFrames(size: CGSize(width: 38, height: 28))
+        let bee = BiomeSwooper(textures: frames, biomeName: "Cicada Bee")
+        bee.position = CGPoint(x: size.width + 50, y: size.height * CGFloat.random(in: 0.60...0.88))
+        bee.xScale = -1
+        bee.setupPhysics()
+        addChild(bee)
+        unlockBug(.cicadaBee)
+        SoundManager.shared.play("buzz")
+        let dur: TimeInterval = 6.0 + Double.random(in: 0...3.0)
+        let minY = size.height * 0.50
+        let maxY = size.height * 0.90
+        bee.run(SKAction.moveBy(x: -(size.width + 100), y: 0, duration: dur))
+        let bob = SKAction.run { [weak bee] in
+            guard let bee = bee else { return }
+            let dy = CGFloat.random(in: minY...maxY) - bee.position.y
+            let m = SKAction.moveBy(x: 0, y: dy, duration: Double.random(in: 0.5...1.0))
+            m.timingMode = .easeInEaseOut
+            bee.run(m, withKey: "beeBob")
+        }
+        bee.run(SKAction.repeatForever(SKAction.sequence([bob, SKAction.wait(forDuration: 0.7, withRange: 0.3)])))
+        bee.run(SKAction.sequence([SKAction.wait(forDuration: dur + 0.2), SKAction.removeFromParent()]))
+    }
+
+    private func spawnJungleGnatSwarm() {
+        let swarm = GnatSwarm()
+        let y = groundY + CGFloat.random(in: 30...size.height * 0.35)
+        swarm.position = CGPoint(x: size.width + 30, y: y)
+        swarm.minY = groundY
+        // Darker tint for jungle gnats
+        swarm.color = SKColor(red: 0.20, green: 0.15, blue: 0.10, alpha: 1)
+        swarm.colorBlendFactor = 0.5
+        swarm.setupPhysics()
+        swarm.startMoving()
+        addChild(swarm)
     }
 
     private func spawnFrostMoth() {
