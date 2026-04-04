@@ -17,11 +17,56 @@ class MenuScene: SKScene {
         ground.position = CGPoint(x: size.width / 2, y: size.height * 0.175)
         addChild(ground)
 
-        let ladybugTex = TextureGenerator.generateLadybugTexture(size: CGSize(width: 64, height: 64))
+        // Resolve equipped body color
+        var menuBodyColor: UIColor? = nil
+        if let colorId = ShopScene.equippedColor,
+           let item = ShopScene.allItems.first(where: { $0.id == colorId }),
+           let c = item.color {
+            menuBodyColor = UIColor(cgColor: c.cgColor)
+        }
+        let ladybugTex = TextureGenerator.generateLadybugTexture(size: CGSize(width: 64, height: 64), bodyColor: menuBodyColor)
         let ladybug = SKSpriteNode(texture: ladybugTex)
         ladybug.position = CGPoint(x: size.width * 0.15, y: size.height * 0.35 + 32)
         ladybug.zPosition = 10
         addChild(ladybug)
+
+        // Show equipped hat on menu ladybug
+        if let hatId = ShopScene.equippedHat {
+            let hatNode = SKSpriteNode()
+            hatNode.zPosition = 2
+            hatNode.position = CGPoint(x: 3, y: 22)
+            switch hatId {
+            case "hat_tophat":
+                let t = TextureGenerator.generateTopHatTexture(size: CGSize(width: 22, height: 18))
+                hatNode.texture = t; hatNode.size = t.size()
+            case "hat_cap":
+                let t = TextureGenerator.generateCapTexture(size: CGSize(width: 24, height: 16))
+                hatNode.texture = t; hatNode.size = t.size()
+            case "hat_crown":
+                let t = TextureGenerator.generateCrownTexture(size: CGSize(width: 24, height: 16))
+                hatNode.texture = t; hatNode.size = t.size()
+            case "hat_flower":
+                let t = TextureGenerator.generateFlowerHatTexture(size: CGSize(width: 18, height: 18))
+                hatNode.texture = t; hatNode.size = t.size()
+            default: break
+            }
+            ladybug.addChild(hatNode)
+        }
+
+        // Show equipped shoes on menu ladybug
+        if let shoeId = ShopScene.equippedShoes,
+           let item = ShopScene.allItems.first(where: { $0.id == shoeId }),
+           let shoeColor = item.color {
+            for dx in [CGFloat(-14), -4, 7] {
+                let shoe = SKShapeNode(ellipseOf: CGSize(width: 8, height: 5))
+                shoe.fillColor = SKColor(cgColor: shoeColor.cgColor)
+                shoe.strokeColor = SKColor(white: 0, alpha: 0.3)
+                shoe.lineWidth = 0.5
+                shoe.position = CGPoint(x: dx, y: -28)
+                shoe.zPosition = -1
+                ladybug.addChild(shoe)
+            }
+        }
 
         let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
         title.text = "Ladybug Run"

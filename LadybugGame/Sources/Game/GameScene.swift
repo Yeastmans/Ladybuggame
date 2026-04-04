@@ -1641,6 +1641,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case .meadowNight:
             gnatTimer += dt
             if gnatTimer >= 1.0 { gnatTimer = 0; spawnGnatSwarm() }
+            aphidTimer += dt // Red aphids at night
+            if aphidTimer >= 2.0 { aphidTimer = 0; spawnAphid() }
             fireflyTimer += dt
             if fireflyTimer >= 22.0 { fireflyTimer = 0; spawnFirefly() }
             spiderTimer += dt
