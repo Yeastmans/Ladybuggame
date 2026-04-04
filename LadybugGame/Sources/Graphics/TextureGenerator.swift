@@ -2092,6 +2092,99 @@ enum TextureGenerator {
         return SKTexture(image: image)
     }
 
+    // MARK: - Hat Textures (shop cosmetics)
+
+    static func generateTopHatTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            // Brim
+            cg.setFillColor(UIColor(red: 0.10, green: 0.08, blue: 0.12, alpha: 1).cgColor)
+            cg.fill(CGRect(x: 0, y: h * 0.70, width: w, height: h * 0.12))
+            // Crown
+            cg.fill(CGRect(x: w * 0.18, y: h * 0.05, width: w * 0.64, height: h * 0.70))
+            // Band
+            cg.setFillColor(UIColor(red: 0.65, green: 0.20, blue: 0.20, alpha: 1).cgColor)
+            cg.fill(CGRect(x: w * 0.18, y: h * 0.58, width: w * 0.64, height: h * 0.10))
+            // Shine
+            cg.setFillColor(UIColor(white: 0.30, alpha: 0.25).cgColor)
+            cg.fill(CGRect(x: w * 0.24, y: h * 0.10, width: w * 0.12, height: h * 0.45))
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateCapTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            // Cap dome
+            cg.setFillColor(UIColor(red: 0.20, green: 0.35, blue: 0.70, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.10, width: w * 0.70, height: h * 0.80))
+            // Brim (backwards — points left)
+            cg.fill(CGRect(x: 0, y: h * 0.55, width: w * 0.35, height: h * 0.15))
+            // Button on top
+            cg.setFillColor(UIColor(red: 0.15, green: 0.30, blue: 0.65, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.38, y: h * 0.08, width: w * 0.14, height: h * 0.14))
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateCrownTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            // Crown base
+            cg.setFillColor(UIColor(red: 0.90, green: 0.72, blue: 0.10, alpha: 1).cgColor)
+            cg.fill(CGRect(x: w * 0.08, y: h * 0.50, width: w * 0.84, height: h * 0.35))
+            // Points
+            let points: [(CGFloat, CGFloat)] = [(0.12, 0.10), (0.35, 0.20), (0.50, 0.05), (0.65, 0.20), (0.88, 0.10)]
+            for (px, py) in points {
+                cg.move(to: CGPoint(x: w * (px - 0.06), y: h * 0.50))
+                cg.addLine(to: CGPoint(x: w * px, y: h * py))
+                cg.addLine(to: CGPoint(x: w * (px + 0.06), y: h * 0.50))
+                cg.closePath(); cg.fillPath()
+            }
+            // Gems
+            cg.setFillColor(UIColor.red.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.28, y: h * 0.58, width: 4, height: 4))
+            cg.setFillColor(UIColor(red: 0.2, green: 0.5, blue: 0.9, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.48, y: h * 0.56, width: 4, height: 4))
+            cg.setFillColor(UIColor.green.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.66, y: h * 0.58, width: 4, height: 4))
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateFlowerHatTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            // Stem
+            cg.setStrokeColor(UIColor(red: 0.25, green: 0.55, blue: 0.18, alpha: 1).cgColor)
+            cg.setLineWidth(2); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.50, y: h * 0.95))
+            cg.addLine(to: CGPoint(x: w * 0.50, y: h * 0.45))
+            cg.strokePath()
+            // Petals
+            let petalColors: [UIColor] = [.systemPink, .orange, .yellow, .systemPink, .orange]
+            for (i, color) in petalColors.enumerated() {
+                let angle = CGFloat(i) * (2.0 * .pi / 5.0) - .pi / 2
+                let px = w * 0.50 + cos(angle) * w * 0.22
+                let py = h * 0.30 + sin(angle) * h * 0.22
+                cg.setFillColor(color.cgColor)
+                cg.fillEllipse(in: CGRect(x: px - 4, y: py - 4, width: 8, height: 8))
+            }
+            // Center
+            cg.setFillColor(UIColor.yellow.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.50 - 3, y: h * 0.30 - 3, width: 6, height: 6))
+        }
+        return SKTexture(image: image)
+    }
+
     // MARK: - Butterfly (proper wings, jungle food)
 
     static func generateButterflyTexture(size: CGSize) -> SKTexture {

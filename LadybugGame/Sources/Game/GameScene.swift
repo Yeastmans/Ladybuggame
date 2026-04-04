@@ -363,6 +363,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ladybug = Ladybug(walkTexture: walkTex, blinkTexture: blinkTex, flyFrames: flyFrames)
         ladybug.position = CGPoint(x: size.width * 0.18, y: groundY + bugSize.height / 2)
 
+        // Apply equipped cosmetics
+        applyLadybugCosmetics()
+
         let body = SKPhysicsBody(circleOfRadius: bugSize.width / 2 * 0.6)
         body.isDynamic = true
         body.categoryBitMask = PhysicsCategory.ladybug
@@ -372,6 +375,77 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         body.affectedByGravity = false
         ladybug.physicsBody = body
         addChild(ladybug)
+    }
+
+    private func applyLadybugCosmetics() {
+        // Color tint
+        if let colorId = ShopScene.equippedColor,
+           let item = ShopScene.allItems.first(where: { $0.id == colorId }),
+           let tint = item.color {
+            ladybug.color = SKColor(cgColor: tint.cgColor)
+            ladybug.colorBlendFactor = 0.55
+            // Sparkly: add particle child
+            if item.isSparkly {
+                let sparkle = SKAction.run { [weak self] in
+                    guard let self = self else { return }
+                    let dot = SKShapeNode(circleOfRadius: 1.2)
+                    dot.fillColor = .white
+                    dot.strokeColor = .clear
+                    dot.position = CGPoint(x: CGFloat.random(in: -12...12), y: CGFloat.random(in: -12...12))
+                    dot.zPosition = -1
+                    dot.alpha = 0.8
+                    self.ladybug.addChild(dot)
+                    dot.run(SKAction.sequence([
+                        SKAction.group([SKAction.fadeOut(withDuration: 0.5), SKAction.scale(to: 0.1, duration: 0.5)]),
+                        SKAction.removeFromParent()
+                    ]))
+                }
+                ladybug.run(SKAction.repeatForever(SKAction.sequence([sparkle, SKAction.wait(forDuration: 0.2)])), withKey: "sparkle")
+            }
+        }
+
+        // Hat
+        if let hatId = ShopScene.equippedHat {
+            let hatNode = SKSpriteNode()
+            hatNode.zPosition = 2
+            hatNode.position = CGPoint(x: 2, y: 16) // top of head
+            switch hatId {
+            case "hat_tophat":
+                let tex = TextureGenerator.generateTopHatTexture(size: CGSize(width: 16, height: 14))
+                hatNode.texture = tex
+                hatNode.size = tex.size()
+            case "hat_cap":
+                let tex = TextureGenerator.generateCapTexture(size: CGSize(width: 18, height: 12))
+                hatNode.texture = tex
+                hatNode.size = tex.size()
+            case "hat_crown":
+                let tex = TextureGenerator.generateCrownTexture(size: CGSize(width: 18, height: 12))
+                hatNode.texture = tex
+                hatNode.size = tex.size()
+            case "hat_flower":
+                let tex = TextureGenerator.generateFlowerHatTexture(size: CGSize(width: 14, height: 14))
+                hatNode.texture = tex
+                hatNode.size = tex.size()
+            default: break
+            }
+            hatNode.name = "hat"
+            ladybug.addChild(hatNode)
+        }
+
+        // Shoes — subtle colored dots on ground level legs
+        if let shoeId = ShopScene.equippedShoes,
+           let item = ShopScene.allItems.first(where: { $0.id == shoeId }),
+           let shoeColor = item.color {
+            for dx in [CGFloat(-8), -4, 4] {
+                let shoe = SKShapeNode(circleOfRadius: 2)
+                shoe.fillColor = SKColor(cgColor: shoeColor.cgColor)
+                shoe.strokeColor = .clear
+                shoe.position = CGPoint(x: dx, y: -20)
+                shoe.zPosition = -1
+                shoe.name = "shoe"
+                ladybug.addChild(shoe)
+            }
+        }
     }
 
     // MARK: - Touch
