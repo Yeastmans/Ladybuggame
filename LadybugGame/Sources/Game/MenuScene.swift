@@ -10,8 +10,8 @@ class MenuScene: SKScene {
 
     enum Difficulty: Int { case easy = 0, normal = 1, hard = 2
         var name: String { switch self { case .easy: return "Easy"; case .normal: return "Normal"; case .hard: return "Hard" } }
-        var enemyMul: Double { switch self { case .easy: return 2.0; case .normal: return 1.0; case .hard: return 0.5 } }
-        var foodMul: Double { switch self { case .easy: return 0.5; case .normal: return 1.0; case .hard: return 2.0 } }
+        var enemyMul: Double { switch self { case .easy: return 1.25; case .normal: return 1.0; case .hard: return 0.5 } }
+        var foodMul: Double { switch self { case .easy: return 0.85; case .normal: return 1.0; case .hard: return 1.8 } }
     }
     private static let diffKey = "GameDifficulty"
     static var difficulty: Difficulty {
@@ -166,11 +166,8 @@ class MenuScene: SKScene {
             if let name = node.name, name.hasPrefix("diff_") {
                 let raw = Int(name.replacingOccurrences(of: "diff_", with: "")) ?? 1
                 MenuScene.difficulty = Difficulty(rawValue: raw) ?? .normal
-                childNode(withName: "overlay")?.removeFromParent()
-                // Rebuild to reflect change
-                let menu = MenuScene(size: size)
-                menu.scaleMode = scaleMode
-                view?.presentScene(menu)
+                // Redraw selector in place (don't close)
+                showDifficultySelector()
                 return
             }
             if node.name == "shopButton" {
@@ -228,56 +225,68 @@ class MenuScene: SKScene {
         title.text = "Difficulty"
         title.fontSize = 24
         title.fontColor = .white
-        title.position = CGPoint(x: 0, y: size.height * 0.22)
+        title.position = CGPoint(x: 0, y: size.height * 0.24)
         overlay.addChild(title)
 
         let options: [(Difficulty, String, String, SKColor)] = [
-            (.easy, "Easy", "More food, fewer enemies", SKColor(red: 0.30, green: 0.70, blue: 0.30, alpha: 1)),
+            (.easy, "Easy", "Slightly less food, slightly fewer enemies", SKColor(red: 0.30, green: 0.70, blue: 0.30, alpha: 1)),
             (.normal, "Normal", "Balanced challenge", SKColor(red: 0.70, green: 0.55, blue: 0.15, alpha: 1)),
             (.hard, "Hard", "Less food, more enemies", SKColor(red: 0.75, green: 0.20, blue: 0.15, alpha: 1)),
         ]
 
-        for (i, (diff, name, desc, color)) in options.enumerated() {
-            let y = size.height * 0.10 - CGFloat(i) * 52
+        for (i, (diff, _, _, _)) in options.enumerated() {
+            let (_, name, desc, color) = options[i]
+            let y = size.height * 0.12 - CGFloat(i) * 60
             let isSelected = MenuScene.difficulty == diff
 
-            // Radio circle
-            let radio = SKShapeNode(circleOfRadius: 8)
-            radio.strokeColor = .white
-            radio.lineWidth = 1.5
-            radio.fillColor = isSelected ? color : .clear
-            radio.position = CGPoint(x: -size.width * 0.20, y: y)
-            radio.name = "diff_\(diff.rawValue)"
-            overlay.addChild(radio)
+            // Big touch-friendly button row
+            let rowBg = SKShapeNode(rectOf: CGSize(width: size.width * 0.50, height: 46), cornerRadius: 10)
+            rowBg.fillColor = isSelected ? color.withAlphaComponent(0.35) : SKColor(white: 0.15, alpha: 0.6)
+            rowBg.strokeColor = isSelected ? color : SKColor(white: 0.3, alpha: 0.5)
+            rowBg.lineWidth = isSelected ? 2.5 : 1
+            rowBg.position = CGPoint(x: 0, y: y)
+            rowBg.name = "diff_\(diff.rawValue)"
+            overlay.addChild(rowBg)
+
+            // Checkbox
+            let box = SKShapeNode(rectOf: CGSize(width: 18, height: 18), cornerRadius: 4)
+            box.strokeColor = .white
+            box.lineWidth = 1.5
+            box.fillColor = isSelected ? color : .clear
+            box.position = CGPoint(x: -size.width * 0.20, y: 0)
+            box.name = "diff_\(diff.rawValue)"
+            rowBg.addChild(box)
             if isSelected {
-                let check = SKShapeNode(circleOfRadius: 4)
-                check.fillColor = .white
-                check.strokeColor = .clear
-                check.name = "diff_\(diff.rawValue)"
-                radio.addChild(check)
+                let tick = SKLabelNode(text: "✓")
+                tick.fontSize = 14
+                tick.fontColor = .white
+                tick.verticalAlignmentMode = .center
+                tick.horizontalAlignmentMode = .center
+                tick.name = "diff_\(diff.rawValue)"
+                box.addChild(tick)
             }
 
-            // Label
+            // Name
             let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
             label.text = name
-            label.fontSize = 18
+            label.fontSize = 17
             label.fontColor = isSelected ? color : .white
             label.horizontalAlignmentMode = .left
             label.verticalAlignmentMode = .center
-            label.position = CGPoint(x: -size.width * 0.12, y: y)
+            label.position = CGPoint(x: -size.width * 0.13, y: 5)
             label.name = "diff_\(diff.rawValue)"
-            overlay.addChild(label)
+            rowBg.addChild(label)
 
             // Description
             let descLabel = SKLabelNode(fontNamed: "AvenirNext-Regular")
             descLabel.text = desc
-            descLabel.fontSize = 10
-            descLabel.fontColor = SKColor(white: 0.6, alpha: 1)
+            descLabel.fontSize = 9
+            descLabel.fontColor = SKColor(white: 0.65, alpha: 1)
             descLabel.horizontalAlignmentMode = .left
             descLabel.verticalAlignmentMode = .center
-            descLabel.position = CGPoint(x: -size.width * 0.12, y: y - 16)
+            descLabel.position = CGPoint(x: -size.width * 0.13, y: -8)
             descLabel.name = "diff_\(diff.rawValue)"
-            overlay.addChild(descLabel)
+            rowBg.addChild(descLabel)
         }
 
         addTapToClose(overlay)
