@@ -401,7 +401,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let walkTex = TextureGenerator.generateLadybugTexture(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat)
         let blinkTex = TextureGenerator.generateLadybugBlinkTexture(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat)
         let flyFrames = TextureGenerator.generateLadybugFlyFrames(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat)
-        ladybug = Ladybug(walkTexture: walkTex, blinkTexture: blinkTex, flyFrames: flyFrames)
+        let walkFrames = TextureGenerator.generateLadybugWalkFrames(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat)
+        ladybug = Ladybug(walkTexture: walkTex, blinkTexture: blinkTex, flyFrames: flyFrames, walkFrames: walkFrames)
         ladybug.position = CGPoint(x: size.width * 0.18, y: groundY + bugSize.height / 2)
 
         // Apply equipped cosmetics (hats, shoes, sparkle)

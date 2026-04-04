@@ -9,6 +9,12 @@ enum TextureGenerator {
         return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae)
     }
 
+    /// Two walk frames with alternating leg positions
+    static func generateLadybugWalkFrames(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> [SKTexture] {
+        return [drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae, walkPhase: 0),
+                drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae, walkPhase: 1)]
+    }
+
     static func generateLadybugBlinkTexture(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> SKTexture {
         return drawLadybugSide(size: size, eyesClosed: true, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae)
     }
@@ -24,7 +30,7 @@ enum TextureGenerator {
     }
 
     /// wingPhase: nil = walking (legs out), 0 = wings up, 1 = wings down
-    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingPhase: Int?, dead: Bool = false, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> SKTexture {
+    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingPhase: Int?, dead: Bool = false, bodyColor: UIColor? = nil, hideAntennae: Bool = false, walkPhase: Int? = nil) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
@@ -53,10 +59,12 @@ enum TextureGenerator {
                 }
             } else {
                 let legXs: [CGFloat] = [0.25, 0.42, 0.60]
-                for lx in legXs {
+                let fwd: CGFloat = (walkPhase == 1) ? 0.04 : -0.04
+                for (i, lx) in legXs.enumerated() {
+                    let off = (i % 2 == 0) ? fwd : -fwd
                     cg.move(to: CGPoint(x: w * lx, y: h * 0.70))
-                    cg.addLine(to: CGPoint(x: w * (lx - 0.02), y: h * 0.86))
-                    cg.addLine(to: CGPoint(x: w * (lx + 0.02), y: h * 0.94))
+                    cg.addLine(to: CGPoint(x: w * (lx + off - 0.02), y: h * 0.86))
+                    cg.addLine(to: CGPoint(x: w * (lx + off + 0.02), y: h * 0.94))
                     cg.strokePath()
                 }
             }

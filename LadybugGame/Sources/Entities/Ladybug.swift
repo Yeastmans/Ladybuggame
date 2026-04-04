@@ -5,6 +5,7 @@ class Ladybug: SKSpriteNode {
     private let walkTexture: SKTexture
     private let blinkTexture: SKTexture
     private let flyFrames: [SKTexture]
+    private var walkFrames: [SKTexture] = []
 
     private(set) var isFlying = false
     private(set) var isOnGround = true
@@ -23,13 +24,15 @@ class Ladybug: SKSpriteNode {
     var isInvincible: Bool { invincibleTimer > 0 }
     var isSheltered: Bool { isInsideLog && isOnGround }
 
-    init(walkTexture: SKTexture, blinkTexture: SKTexture, flyFrames: [SKTexture]) {
+    init(walkTexture: SKTexture, blinkTexture: SKTexture, flyFrames: [SKTexture], walkFrames: [SKTexture] = []) {
         self.walkTexture = walkTexture
         self.blinkTexture = blinkTexture
         self.flyFrames = flyFrames
+        self.walkFrames = walkFrames
         super.init(texture: walkTexture, color: .clear, size: walkTexture.size())
         zPosition = 10
         startBlinking()
+        startWalkAnimation()
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -50,9 +53,21 @@ class Ladybug: SKSpriteNode {
         run(SKAction.repeatForever(SKAction.sequence([wait, close, holdClosed, open])), withKey: "blink")
     }
 
+    private func startWalkAnimation() {
+        guard walkFrames.count >= 2 else { return }
+        let walk = SKAction.animate(with: walkFrames, timePerFrame: 0.12)
+        run(SKAction.repeatForever(walk), withKey: "walk")
+    }
+
+    private func stopWalkAnimation() {
+        removeAction(forKey: "walk")
+        texture = walkTexture
+    }
+
     private func startFlapAnimation() {
         guard flyFrames.count >= 2 else { return }
         removeAction(forKey: "flap")
+        stopWalkAnimation()
         let flap = SKAction.animate(with: flyFrames, timePerFrame: 0.08)
         run(SKAction.repeatForever(flap), withKey: "flap")
         // Move shoes to flying leg positions (tucked up)
@@ -67,6 +82,7 @@ class Ladybug: SKSpriteNode {
     private func stopFlapAnimation() {
         removeAction(forKey: "flap")
         texture = walkTexture
+        startWalkAnimation()
         // Move shoes back to walking leg positions
         let walkXs: [CGFloat] = [-10, -3, 5]
         var i = 0
