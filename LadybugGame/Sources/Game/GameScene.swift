@@ -1964,7 +1964,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         for child in children {
             if let s = child as? BiomeSwooper, s.biomeName == "Cicada Bee" { return }
         }
-        let frames = TextureGenerator.generateCicadaBeeFrames(size: CGSize(width: 38, height: 28))
+        let frames = TextureGenerator.generateCicadaBeeFrames(size: CGSize(width: 76, height: 56))
         let bee = BiomeSwooper(textures: frames, biomeName: "Cicada Bee")
         bee.position = CGPoint(x: size.width + 50, y: size.height * CGFloat.random(in: 0.60...0.88))
         bee.xScale = -1
