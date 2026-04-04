@@ -37,6 +37,10 @@ workflows:
         script: |
           mkdir -p Payload
           cp -r "$CM_BUILD_DIR/LadybugGame.xcarchive/Products/Applications/LadybugGame.app" Payload/
+          # Copy icon as iTunesArtwork for sideloading tools
+          if [ -f "LadybugGame/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png" ]; then
+            cp "LadybugGame/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png" Payload/iTunesArtwork
+          fi
           zip -r "$CM_BUILD_DIR/LadybugGame.ipa" Payload
           rm -rf Payload
     artifacts:
