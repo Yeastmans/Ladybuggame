@@ -397,22 +397,16 @@ enum TextureGenerator {
             let h = size.height
             let dark = UIColor(red: 0.12, green: 0.08, blue: 0.06, alpha: 1.0)
 
-            // Legs (3 pairs, thick, angular, alternating)
+            // Legs (3 pairs, short, only below body)
             cg.setStrokeColor(dark.cgColor)
-            cg.setLineWidth(1.6)
+            cg.setLineWidth(1.4)
             cg.setLineCap(.round)
-            let fwd: CGFloat = legPhase == 0 ? 0.05 : -0.05
-            for (i, lx) in ([0.26, 0.44, 0.60] as [CGFloat]).enumerated() {
+            let fwd: CGFloat = legPhase == 0 ? 0.04 : -0.04
+            for (i, lx) in ([0.28, 0.44, 0.60] as [CGFloat]).enumerated() {
                 let off = (i % 2 == 0) ? fwd : -fwd
-                // Top legs
-                cg.move(to: CGPoint(x: w * lx, y: h * 0.55))
-                cg.addLine(to: CGPoint(x: w * (lx + off - 0.06), y: h * 0.25))
-                cg.addLine(to: CGPoint(x: w * (lx + off - 0.04), y: h * 0.10))
-                cg.strokePath()
-                // Bottom legs
-                cg.move(to: CGPoint(x: w * lx, y: h * 0.58))
-                cg.addLine(to: CGPoint(x: w * (lx + off), y: h * 0.82))
-                cg.addLine(to: CGPoint(x: w * (lx + off + 0.03), y: h * 0.94))
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.62))
+                cg.addLine(to: CGPoint(x: w * (lx + off), y: h * 0.80))
+                cg.addLine(to: CGPoint(x: w * (lx + off + 0.03), y: h * 0.92))
                 cg.strokePath()
             }
 
@@ -1770,48 +1764,104 @@ enum TextureGenerator {
         return SKTexture(image: image)
     }
 
-    // MARK: - Snow Flea (small dark hopper with detail)
+    // MARK: - Frost Moth (tundra flying enemy, icy wings)
+
+    static func generateFrostMothFrames(size: CGSize) -> [SKTexture] {
+        return [drawFrostMoth(size: size, wingsUp: true), drawFrostMoth(size: size, wingsUp: false)]
+    }
+
+    private static func drawFrostMoth(size: CGSize, wingsUp: Bool) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            let wingOff: CGFloat = wingsUp ? -0.12 : 0.06
+            // Top wing (icy white-blue, large)
+            cg.setFillColor(UIColor(red: 0.75, green: 0.85, blue: 0.95, alpha: 0.80).cgColor)
+            cg.move(to: CGPoint(x: w * 0.45, y: h * 0.48))
+            cg.addCurve(to: CGPoint(x: w * 0.05, y: h * (0.18 + wingOff)),
+                        control1: CGPoint(x: w * 0.20, y: h * (0.20 + wingOff)),
+                        control2: CGPoint(x: w * 0.08, y: h * (0.10 + wingOff)))
+            cg.addCurve(to: CGPoint(x: w * 0.45, y: h * 0.48),
+                        control1: CGPoint(x: w * 0.02, y: h * (0.40 + wingOff)),
+                        control2: CGPoint(x: w * 0.22, y: h * 0.52))
+            cg.closePath(); cg.fillPath()
+            // Bottom wing
+            cg.move(to: CGPoint(x: w * 0.45, y: h * 0.52))
+            cg.addCurve(to: CGPoint(x: w * 0.10, y: h * (0.78 - wingOff)),
+                        control1: CGPoint(x: w * 0.18, y: h * 0.58),
+                        control2: CGPoint(x: w * 0.08, y: h * (0.68 - wingOff)))
+            cg.addCurve(to: CGPoint(x: w * 0.45, y: h * 0.56),
+                        control1: CGPoint(x: w * 0.16, y: h * (0.88 - wingOff)),
+                        control2: CGPoint(x: w * 0.32, y: h * 0.72))
+            cg.closePath(); cg.fillPath()
+            // Ice crystal patterns on wings
+            cg.setFillColor(UIColor(red: 0.55, green: 0.75, blue: 0.95, alpha: 0.4).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.12, y: h * (0.22 + wingOff), width: w * 0.14, height: h * 0.12))
+            cg.fillEllipse(in: CGRect(x: w * 0.14, y: h * (0.68 - wingOff), width: w * 0.10, height: h * 0.10))
+            // Body (dark blue-gray, fuzzy)
+            cg.setFillColor(UIColor(red: 0.30, green: 0.35, blue: 0.50, alpha: 1).cgColor)
+            let bodyPath = UIBezierPath(roundedRect: CGRect(x: w * 0.40, y: h * 0.30, width: w * 0.14, height: h * 0.40), cornerRadius: w * 0.06)
+            cg.addPath(bodyPath.cgPath); cg.fillPath()
+            // Head
+            cg.setFillColor(UIColor(red: 0.35, green: 0.40, blue: 0.55, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.48, y: h * 0.22, width: w * 0.18, height: h * 0.20))
+            // Feathery antennae
+            cg.setStrokeColor(UIColor(red: 0.50, green: 0.60, blue: 0.80, alpha: 0.8).cgColor)
+            cg.setLineWidth(1.2); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.56, y: h * 0.24))
+            cg.addLine(to: CGPoint(x: w * 0.70, y: h * 0.08))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.52, y: h * 0.23))
+            cg.addLine(to: CGPoint(x: w * 0.62, y: h * 0.06))
+            cg.strokePath()
+            // Eyes (red, menacing)
+            cg.setFillColor(UIColor(red: 0.85, green: 0.20, blue: 0.15, alpha: 0.9).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.56, y: h * 0.26, width: w * 0.07, height: h * 0.07))
+        }
+        return SKTexture(image: image)
+    }
+
+    // MARK: - Snow Flea (bright blue-white springtail, distinct from ants)
 
     static func generateSnowFleaTexture(size: CGSize) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
             let w = size.width; let h = size.height
-            // Jumping legs (powerful hind legs)
-            cg.setStrokeColor(UIColor(red: 0.12, green: 0.10, blue: 0.18, alpha: 1.0).cgColor)
-            cg.setLineWidth(1.2); cg.setLineCap(.round)
-            // Big hind leg
-            cg.move(to: CGPoint(x: w * 0.22, y: h * 0.60))
-            cg.addLine(to: CGPoint(x: w * 0.08, y: h * 0.45))
-            cg.addLine(to: CGPoint(x: w * 0.05, y: h * 0.90))
+            // Big spring leg (folded under, characteristic of springtails)
+            cg.setStrokeColor(UIColor(red: 0.30, green: 0.45, blue: 0.65, alpha: 1).cgColor)
+            cg.setLineWidth(1.4); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.20, y: h * 0.60))
+            cg.addLine(to: CGPoint(x: w * 0.04, y: h * 0.50))
+            cg.addLine(to: CGPoint(x: w * 0.12, y: h * 0.90))
             cg.strokePath()
-            // Front legs
-            cg.setLineWidth(0.8)
-            cg.move(to: CGPoint(x: w * 0.50, y: h * 0.68))
-            cg.addLine(to: CGPoint(x: w * 0.48, y: h * 0.90))
-            cg.strokePath()
-            cg.move(to: CGPoint(x: w * 0.62, y: h * 0.65))
-            cg.addLine(to: CGPoint(x: w * 0.62, y: h * 0.88))
-            cg.strokePath()
-            // Body (dark, rounded)
-            cg.setFillColor(UIColor(red: 0.15, green: 0.12, blue: 0.22, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.25, width: w * 0.55, height: h * 0.48))
-            // Head
-            cg.setFillColor(UIColor(red: 0.18, green: 0.14, blue: 0.25, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.28, width: w * 0.32, height: h * 0.38))
-            // Shiny highlight
-            cg.setFillColor(UIColor(red: 0.30, green: 0.25, blue: 0.40, alpha: 0.3).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.18, y: h * 0.28, width: w * 0.22, height: h * 0.18))
-            // Eye
-            cg.setFillColor(UIColor(red: 0.60, green: 0.80, blue: 1.0, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.34, width: w * 0.10, height: w * 0.10))
+            // Small front legs
+            cg.setLineWidth(0.7)
+            for lx in [CGFloat(0.50), 0.62] {
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.62))
+                cg.addLine(to: CGPoint(x: w * (lx + 0.02), y: h * 0.85))
+                cg.strokePath()
+            }
+            // Body (bright icy blue, round — NOT elongated like ant)
+            cg.setFillColor(UIColor(red: 0.40, green: 0.58, blue: 0.82, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.12, y: h * 0.22, width: w * 0.50, height: h * 0.48))
+            // Frost shimmer
+            cg.setFillColor(UIColor(red: 0.65, green: 0.80, blue: 1.0, alpha: 0.35).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.18, y: h * 0.25, width: w * 0.20, height: h * 0.18))
+            // Head (lighter blue)
+            cg.setFillColor(UIColor(red: 0.45, green: 0.62, blue: 0.85, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.54, y: h * 0.28, width: w * 0.30, height: h * 0.36))
+            // Eye (bright cyan)
+            cg.setFillColor(UIColor(red: 0.20, green: 0.90, blue: 1.0, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.70, y: h * 0.34, width: w * 0.11, height: h * 0.11))
             cg.setFillColor(UIColor.black.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.75, y: h * 0.37, width: w * 0.06, height: w * 0.06))
-            // Antennae
-            cg.setStrokeColor(UIColor(red: 0.18, green: 0.14, blue: 0.25, alpha: 1.0).cgColor)
-            cg.setLineWidth(0.6)
-            cg.move(to: CGPoint(x: w * 0.82, y: h * 0.32))
-            cg.addLine(to: CGPoint(x: w * 0.92, y: h * 0.15))
+            cg.fillEllipse(in: CGRect(x: w * 0.74, y: h * 0.37, width: w * 0.05, height: h * 0.05))
+            // Short antennae
+            cg.setStrokeColor(UIColor(red: 0.35, green: 0.50, blue: 0.70, alpha: 1).cgColor)
+            cg.setLineWidth(0.7)
+            cg.move(to: CGPoint(x: w * 0.78, y: h * 0.30))
+            cg.addLine(to: CGPoint(x: w * 0.88, y: h * 0.18))
             cg.strokePath()
         }
         return SKTexture(image: image)

@@ -50,6 +50,7 @@ final class BugTracker: @unchecked Sendable {
         // Snow enemies
         case iceSpider = "Ice Spider"
         case snowOwl = "Snow Owl"
+        case frostMoth = "Frost Moth"
         // Jungle enemies
         case poisonDartFrog = "Poison Dart Frog"
         case jungleSpider = "Jungle Spider"
@@ -68,7 +69,7 @@ final class BugTracker: @unchecked Sendable {
                  .caveCricket, .glowworm, .crystalBeetle:
                 return .food
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
-                 .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl,
+                 .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl, .frostMoth,
                  .poisonDartFrog, .jungleSpider, .toucan, .monkey,
                  .caveSpider, .vampireBat, .rockWorm:
                 return .enemy
@@ -107,6 +108,7 @@ final class BugTracker: @unchecked Sendable {
             case .desertWasp: return "Aggressive desert wasp. Hunts you down through the air!"
             case .iceSpider: return "Frost-covered spider. Slides on ice!"
             case .snowOwl: return "Silent white hunter in the snow."
+            case .frostMoth: return "Icy moth that patrols the frozen skies!"
             case .poisonDartFrog: return "Vibrant and deadly! Toxic tongue attack!"
             case .jungleSpider: return "Camouflaged in green. Lurks in vines!"
             case .toucan: return "Tropical bird with a massive beak!"
@@ -142,7 +144,7 @@ final class BugTracker: @unchecked Sendable {
             case .jungleBeetle: return "30 pts"
             case .butterfly: return "20 pts"
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
-                 .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl,
+                 .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl, .frostMoth,
                  .poisonDartFrog, .jungleSpider, .toucan, .monkey,
                  .caveSpider, .vampireBat, .rockWorm:
                 return "Danger!"
@@ -207,6 +209,7 @@ final class BugTracker: @unchecked Sendable {
         case .desertWasp: return TextureGenerator.generateDesertWaspFrames(size: size).first!
         case .iceSpider: return TextureGenerator.generateIceSpiderTexture(size: size)
         case .snowOwl: return TextureGenerator.generateOwlFrames(size: size).first!
+        case .frostMoth: return TextureGenerator.generateFrostMothFrames(size: size).first!
         case .poisonDartFrog: return TextureGenerator.generatePoisonDartFrogTexture(size: size)
         case .jungleSpider: return TextureGenerator.generateJungleSpiderFrames(size: size).first!
         case .toucan: return TextureGenerator.generateToucanFrames(size: size).first!

@@ -107,6 +107,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var jungleSpiderFrames: [SKTexture] = []
     private var waspFrames: [SKTexture] = []
     private var vampireBatFrames: [SKTexture] = []
+    private var frostMothFrames: [SKTexture] = []
 
     // Cave terrain system
     private var caveTerrain: CaveTerrain?
@@ -162,6 +163,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         jungleSpiderFrames = TextureGenerator.generateJungleSpiderFrames(size: CGSize(width: 48, height: 40))
         waspFrames = TextureGenerator.generateDesertWaspFrames(size: CGSize(width: 40, height: 28))
         vampireBatFrames = TextureGenerator.generateVampireBatFrames(size: CGSize(width: 50, height: 36))
+        frostMothFrames = TextureGenerator.generateFrostMothFrames(size: CGSize(width: 44, height: 36))
         for fc in [TextureGenerator.FlyColor.brown, .blue, .purple] {
             flyFrames[fc] = TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 22, height: 22), color: fc)
         }
@@ -1466,6 +1468,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Toucan": unlockBug(.toucan)
                     case "Desert Wasp": unlockBug(.desertWasp)
                     case "Vampire Bat": unlockBug(.vampireBat)
+                    case "Frost Moth": unlockBug(.frostMoth)
                     default: break
                     }
                 }
@@ -1693,6 +1696,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Snow Owl") }
             fireflyTimer += dt // Hot cocoa (rare power-up)
             if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
+            waspTimer += dt // Frost moth (sky patrol enemy, like desert wasp)
+            if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnFrostMoth() }
 
         case .jungle:
             aphidTimer += dt // Jungle beetles
@@ -1827,6 +1832,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Bat": frames = batFrames
         case "Hawk": frames = hawkFrames
         case "Vampire Bat": frames = vampireBatFrames
+        case "Frost Moth": frames = frostMothFrames
         case "Snow Owl": frames = owlFrames
         case "Toucan": frames = toucanFrames
         default: frames = birdTextures
@@ -1841,6 +1847,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Bat": SoundManager.shared.play("screech")
         case "Hawk": SoundManager.shared.play("screech")
         case "Vampire Bat": SoundManager.shared.play("screech")
+        case "Frost Moth": SoundManager.shared.play("flutter")
         case "Snow Owl": SoundManager.shared.play("hoot")
         case "Toucan": SoundManager.shared.play("squawk")
         default: SoundManager.shared.play("caw")
@@ -1941,6 +1948,38 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         spider.startCrawling()
         addChild(spider)
         unlockBug(.jungleSpider)
+    }
+
+    private func spawnFrostMoth() {
+        // Only one on screen
+        for child in children {
+            if let s = child as? BiomeSwooper, s.biomeName == "Frost Moth" { return }
+        }
+        let moth = BiomeSwooper(textures: frostMothFrames, biomeName: "Frost Moth")
+        let spawnY = size.height * CGFloat.random(in: 0.65...0.90)
+        moth.position = CGPoint(x: size.width + 50, y: spawnY)
+        moth.xScale = -1
+        moth.setupPhysics()
+        addChild(moth)
+        unlockBug(.frostMoth)
+        SoundManager.shared.play("flutter")
+
+        // Patrol: drift left across screen, bobbing up/down (like desert wasp)
+        let patrolDuration: TimeInterval = 7.0 + Double.random(in: 0...3.0)
+        let minY = size.height * 0.55
+        let maxY = size.height * 0.92
+        let driftLeft = SKAction.moveBy(x: -(size.width + 100), y: 0, duration: patrolDuration)
+        let bobStep = SKAction.run { [weak moth] in
+            guard let moth = moth else { return }
+            let targetY = CGFloat.random(in: minY...maxY)
+            let dy = targetY - moth.position.y
+            let move = SKAction.moveBy(x: 0, y: dy, duration: Double.random(in: 0.6...1.2))
+            move.timingMode = .easeInEaseOut
+            moth.run(move, withKey: "mothBob")
+        }
+        moth.run(driftLeft)
+        moth.run(SKAction.repeatForever(SKAction.sequence([bobStep, SKAction.wait(forDuration: 0.8, withRange: 0.4)])))
+        moth.run(SKAction.sequence([SKAction.wait(forDuration: patrolDuration + 0.2), SKAction.removeFromParent()]))
     }
 
     private func spawnCaveSpider() {
