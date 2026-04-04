@@ -17,12 +17,27 @@ class BiomeFood: SKSpriteNode {
         zPosition = 5
     }
 
-    /// Make this a rare gemstone bug — flashes pink
+    /// Make this a rare gemstone bug — pink glow aura around it
     func makeGemBug() {
         isGemBug = true
+        // Pink glow circle behind the bug (like firefly but pink and smaller)
+        let glow = SKShapeNode(circleOfRadius: size.width * 0.6)
+        glow.fillColor = SKColor(red: 1.0, green: 0.35, blue: 0.65, alpha: 0.22)
+        glow.strokeColor = SKColor(red: 1.0, green: 0.40, blue: 0.70, alpha: 0.35)
+        glow.lineWidth = 1.5
+        glow.zPosition = -1
+        glow.name = "gemGlow"
+        addChild(glow)
+        // Pulse the glow
+        let pulse = SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.6, duration: 0.3),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.3),
+        ])
+        glow.run(SKAction.repeatForever(pulse))
+        // Also tint the bug slightly pink
         let flash = SKAction.sequence([
-            SKAction.colorize(with: SKColor(red: 1.0, green: 0.4, blue: 0.7, alpha: 1.0), colorBlendFactor: 0.7, duration: 0.15),
-            SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.15),
+            SKAction.colorize(with: SKColor(red: 1.0, green: 0.4, blue: 0.7, alpha: 1.0), colorBlendFactor: 0.5, duration: 0.2),
+            SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2),
         ])
         run(SKAction.repeatForever(flash), withKey: "gemFlash")
     }

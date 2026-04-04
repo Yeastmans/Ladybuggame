@@ -733,17 +733,17 @@ enum TextureGenerator {
             let w = size.width
             let h = size.height
 
-            // Wings
+            // Wings (large, dramatic)
             cg.setFillColor(UIColor(red: 0.29, green: 0.29, blue: 0.33, alpha: 1.0).cgColor)
             if wingsUp {
-                cg.move(to: CGPoint(x: w * 0.45, y: h * 0.45))
-                cg.addQuadCurve(to: CGPoint(x: w * 0.30, y: h * 0.0), control: CGPoint(x: w * 0.25, y: h * 0.20))
-                cg.addQuadCurve(to: CGPoint(x: w * 0.55, y: h * 0.42), control: CGPoint(x: w * 0.50, y: h * 0.15))
+                cg.move(to: CGPoint(x: w * 0.42, y: h * 0.45))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.15, y: -h * 0.05), control: CGPoint(x: w * 0.15, y: h * 0.15))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.58, y: h * 0.40), control: CGPoint(x: w * 0.50, y: h * 0.05))
                 cg.fillPath()
             } else {
-                cg.move(to: CGPoint(x: w * 0.45, y: h * 0.50))
-                cg.addQuadCurve(to: CGPoint(x: w * 0.20, y: h * 0.90), control: CGPoint(x: w * 0.20, y: h * 0.65))
-                cg.addQuadCurve(to: CGPoint(x: w * 0.55, y: h * 0.55), control: CGPoint(x: w * 0.40, y: h * 0.70))
+                cg.move(to: CGPoint(x: w * 0.42, y: h * 0.52))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.08, y: h * 0.98), control: CGPoint(x: w * 0.10, y: h * 0.70))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.58, y: h * 0.58), control: CGPoint(x: w * 0.38, y: h * 0.80))
                 cg.fillPath()
             }
 
@@ -1190,26 +1190,30 @@ enum TextureGenerator {
             let h = size.height
             let bodyC = UIColor(red: 0.45, green: 0.30, blue: 0.60, alpha: 1.0)
 
-            // Webbed wings (jagged edge)
+            // Webbed wings (large, jagged edge — bats have big wings)
             cg.setFillColor(UIColor(red: 0.50, green: 0.35, blue: 0.65, alpha: 0.9).cgColor)
             if wingsUp {
                 let wp = UIBezierPath()
-                wp.move(to: CGPoint(x: w * 0.45, y: h * 0.45))
-                wp.addLine(to: CGPoint(x: w * 0.15, y: h * 0.05))
-                wp.addLine(to: CGPoint(x: w * 0.25, y: h * 0.20))
-                wp.addLine(to: CGPoint(x: w * 0.10, y: h * 0.10))
-                wp.addLine(to: CGPoint(x: w * 0.30, y: h * 0.30))
-                wp.addLine(to: CGPoint(x: w * 0.55, y: h * 0.42))
+                wp.move(to: CGPoint(x: w * 0.42, y: h * 0.45))
+                wp.addLine(to: CGPoint(x: w * 0.05, y: -h * 0.02))
+                wp.addLine(to: CGPoint(x: w * 0.18, y: h * 0.15))
+                wp.addLine(to: CGPoint(x: w * 0.02, y: h * 0.05))
+                wp.addLine(to: CGPoint(x: w * 0.25, y: h * 0.25))
+                wp.addLine(to: CGPoint(x: w * 0.12, y: h * 0.12))
+                wp.addLine(to: CGPoint(x: w * 0.35, y: h * 0.32))
+                wp.addLine(to: CGPoint(x: w * 0.58, y: h * 0.42))
                 wp.close()
                 cg.addPath(wp.cgPath); cg.fillPath()
             } else {
                 let wp = UIBezierPath()
-                wp.move(to: CGPoint(x: w * 0.45, y: h * 0.50))
-                wp.addLine(to: CGPoint(x: w * 0.10, y: h * 0.85))
-                wp.addLine(to: CGPoint(x: w * 0.22, y: h * 0.70))
-                wp.addLine(to: CGPoint(x: w * 0.08, y: h * 0.95))
-                wp.addLine(to: CGPoint(x: w * 0.32, y: h * 0.75))
-                wp.addLine(to: CGPoint(x: w * 0.55, y: h * 0.55))
+                wp.move(to: CGPoint(x: w * 0.42, y: h * 0.52))
+                wp.addLine(to: CGPoint(x: w * 0.02, y: h * 0.92))
+                wp.addLine(to: CGPoint(x: w * 0.16, y: h * 0.75))
+                wp.addLine(to: CGPoint(x: -w * 0.02, y: h * 1.0))
+                wp.addLine(to: CGPoint(x: w * 0.22, y: h * 0.82))
+                wp.addLine(to: CGPoint(x: w * 0.10, y: h * 0.90))
+                wp.addLine(to: CGPoint(x: w * 0.35, y: h * 0.70))
+                wp.addLine(to: CGPoint(x: w * 0.58, y: h * 0.56))
                 wp.close()
                 cg.addPath(wp.cgPath); cg.fillPath()
             }
@@ -1217,8 +1221,11 @@ enum TextureGenerator {
             cg.setStrokeColor(UIColor(red: 0.55, green: 0.40, blue: 0.70, alpha: 0.5).cgColor)
             cg.setLineWidth(0.5)
             if wingsUp {
-                cg.move(to: CGPoint(x: w * 0.45, y: h * 0.45))
-                cg.addLine(to: CGPoint(x: w * 0.18, y: h * 0.12))
+                cg.move(to: CGPoint(x: w * 0.42, y: h * 0.45))
+                cg.addLine(to: CGPoint(x: w * 0.10, y: h * 0.05))
+                cg.strokePath()
+                cg.move(to: CGPoint(x: w * 0.42, y: h * 0.45))
+                cg.addLine(to: CGPoint(x: w * 0.20, y: h * 0.18))
                 cg.strokePath()
             }
 

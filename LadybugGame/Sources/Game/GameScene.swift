@@ -1642,7 +1642,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             gnatTimer += dt
             if gnatTimer >= 1.0 { gnatTimer = 0; spawnGnatSwarm() }
             fireflyTimer += dt
-            if fireflyTimer >= 12.0 { fireflyTimer = 0; spawnFirefly() }
+            if fireflyTimer >= 22.0 { fireflyTimer = 0; spawnFirefly() }
             spiderTimer += dt
             if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnSpider() }
             birdTimer += dt

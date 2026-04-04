@@ -55,11 +55,25 @@ class Ladybug: SKSpriteNode {
         removeAction(forKey: "flap")
         let flap = SKAction.animate(with: flyFrames, timePerFrame: 0.08)
         run(SKAction.repeatForever(flap), withKey: "flap")
+        // Move shoes to flying leg positions (tucked up)
+        let flyXs: [CGFloat] = [-8, -1, 6]
+        var i = 0
+        for child in children where child.name == "shoe" {
+            if i < flyXs.count { child.position = CGPoint(x: flyXs[i], y: -13) }
+            i += 1
+        }
     }
 
     private func stopFlapAnimation() {
         removeAction(forKey: "flap")
         texture = walkTexture
+        // Move shoes back to walking leg positions
+        let walkXs: [CGFloat] = [-10, -3, 5]
+        var i = 0
+        for child in children where child.name == "shoe" {
+            if i < walkXs.count { child.position = CGPoint(x: walkXs[i], y: -21) }
+            i += 1
+        }
     }
 
     func updatePhysics(dt: TimeInterval, groundY: CGFloat, ceilingY: CGFloat) {
