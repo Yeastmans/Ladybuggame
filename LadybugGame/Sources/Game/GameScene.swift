@@ -461,23 +461,23 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Hat
         if let hatId = ShopScene.equippedHat {
             let hatNode = SKSpriteNode()
-            hatNode.zPosition = 2
-            hatNode.position = CGPoint(x: 17, y: 8) // on top of head
+            hatNode.zPosition = 12 // above everything including body
+            hatNode.position = CGPoint(x: 16, y: 10) // on top of head
             switch hatId {
             case "hat_tophat":
-                let tex = TextureGenerator.generateTopHatTexture(size: CGSize(width: 16, height: 14))
+                let tex = TextureGenerator.generateTopHatTexture(size: CGSize(width: 18, height: 16))
                 hatNode.texture = tex
                 hatNode.size = tex.size()
             case "hat_cap":
-                let tex = TextureGenerator.generateCapTexture(size: CGSize(width: 18, height: 12))
+                let tex = TextureGenerator.generateCapTexture(size: CGSize(width: 20, height: 14))
                 hatNode.texture = tex
                 hatNode.size = tex.size()
             case "hat_crown":
-                let tex = TextureGenerator.generateCrownTexture(size: CGSize(width: 18, height: 12))
+                let tex = TextureGenerator.generateCrownTexture(size: CGSize(width: 20, height: 14))
                 hatNode.texture = tex
                 hatNode.size = tex.size()
             case "hat_flower":
-                let tex = TextureGenerator.generateFlowerHatTexture(size: CGSize(width: 14, height: 14))
+                let tex = TextureGenerator.generateFlowerHatTexture(size: CGSize(width: 16, height: 16))
                 hatNode.texture = tex
                 hatNode.size = tex.size()
             default: break
