@@ -57,11 +57,28 @@ class Ladybug: SKSpriteNode {
         guard walkFrames.count >= 2 else { return }
         let walk = SKAction.animate(with: walkFrames, timePerFrame: 0.12)
         run(SKAction.repeatForever(walk), withKey: "walk")
+        // Animate shoes in sync with leg movement
+        let shoeNodes = children.filter { $0.name == "shoe" }
+        guard !shoeNodes.isEmpty else { return }
+        let walkXs: [CGFloat] = [-10, -3, 5]
+        let offset: CGFloat = 2.0 // matches leg ±0.04 * 48px
+        for (i, shoe) in shoeNodes.enumerated() {
+            let baseX = i < walkXs.count ? walkXs[i] : 0
+            let dir: CGFloat = (i % 2 == 0) ? 1 : -1
+            let shoeWalk = SKAction.sequence([
+                SKAction.moveTo(x: baseX + offset * dir, duration: 0.12),
+                SKAction.moveTo(x: baseX - offset * dir, duration: 0.12),
+            ])
+            shoe.run(SKAction.repeatForever(shoeWalk), withKey: "shoeWalk")
+        }
     }
 
     private func stopWalkAnimation() {
         removeAction(forKey: "walk")
         texture = walkTexture
+        for shoe in children where shoe.name == "shoe" {
+            shoe.removeAction(forKey: "shoeWalk")
+        }
     }
 
     private func startFlapAnimation() {
