@@ -1764,6 +1764,47 @@ enum TextureGenerator {
         return SKTexture(image: image)
     }
 
+    // MARK: - Cave Fish
+
+    static func generateCaveFishTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            // Tail fin
+            cg.setFillColor(UIColor(red: 0.30, green: 0.45, blue: 0.55, alpha: 0.9).cgColor)
+            cg.move(to: CGPoint(x: w * 0.05, y: h * 0.50))
+            cg.addLine(to: CGPoint(x: -w * 0.08, y: h * 0.25))
+            cg.addLine(to: CGPoint(x: -w * 0.08, y: h * 0.75))
+            cg.closePath(); cg.fillPath()
+            // Body (pale, blind cave fish)
+            cg.setFillColor(UIColor(red: 0.72, green: 0.68, blue: 0.62, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.05, y: h * 0.22, width: w * 0.75, height: h * 0.56))
+            // Belly lighter
+            cg.setFillColor(UIColor(red: 0.82, green: 0.78, blue: 0.72, alpha: 0.5).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.15, y: h * 0.42, width: w * 0.50, height: h * 0.28))
+            // Dorsal fin
+            cg.setFillColor(UIColor(red: 0.55, green: 0.50, blue: 0.45, alpha: 0.8).cgColor)
+            cg.move(to: CGPoint(x: w * 0.30, y: h * 0.24))
+            cg.addLine(to: CGPoint(x: w * 0.45, y: h * 0.08))
+            cg.addLine(to: CGPoint(x: w * 0.60, y: h * 0.24))
+            cg.closePath(); cg.fillPath()
+            // Head
+            cg.setFillColor(UIColor(red: 0.68, green: 0.64, blue: 0.58, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.60, y: h * 0.28, width: w * 0.30, height: h * 0.44))
+            // Eye (tiny, pale — blind cave fish)
+            cg.setFillColor(UIColor(white: 0.85, alpha: 0.6).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.78, y: h * 0.38, width: w * 0.08, height: h * 0.08))
+            // Mouth line
+            cg.setStrokeColor(UIColor(red: 0.50, green: 0.45, blue: 0.40, alpha: 0.6).cgColor)
+            cg.setLineWidth(0.8)
+            cg.move(to: CGPoint(x: w * 0.88, y: h * 0.50))
+            cg.addLine(to: CGPoint(x: w * 0.95, y: h * 0.52))
+            cg.strokePath()
+        }
+        return SKTexture(image: image)
+    }
+
     // MARK: - Bear Boss
 
     static func generateBearTexture(size: CGSize) -> SKTexture {

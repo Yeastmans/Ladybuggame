@@ -1767,6 +1767,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if fallingRockTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { fallingRockTimer = 0; spawnFallingRock() }
             fireflyTimer += dt // Fireflies return in caves
             if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
+            frogTimer += dt // Cave pools with fish
+            if frogTimer >= max(5.0, 10.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnCavePool() }
         }
     }
 
@@ -2067,6 +2069,102 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         moth.run(driftLeft)
         moth.run(SKAction.repeatForever(SKAction.sequence([bobStep, SKAction.wait(forDuration: 0.8, withRange: 0.4)])))
         moth.run(SKAction.sequence([SKAction.wait(forDuration: patrolDuration + 0.2), SKAction.removeFromParent()]))
+    }
+
+    private func spawnCavePool() {
+        guard let terrain = caveTerrain else { return }
+        let spawnX = size.width + 60
+        if isNearGroundObject(x: spawnX, range: 140) { return }
+        if isNearBiomeEnemy(x: spawnX, range: 120) { return }
+
+        let gY = terrain.groundY(atScreenX: spawnX)
+        let poolW = CGFloat.random(in: 80...120)
+
+        // Deep pool — sinks below ground level
+        let pool = SKShapeNode(ellipseOf: CGSize(width: poolW, height: 20))
+        pool.fillColor = SKColor(red: 0.12, green: 0.22, blue: 0.38, alpha: 0.7)
+        pool.strokeColor = SKColor(red: 0.18, green: 0.30, blue: 0.45, alpha: 0.5)
+        pool.lineWidth = 1.5
+        pool.position = CGPoint(x: spawnX, y: gY - 2)
+        pool.zPosition = 2
+        pool.name = "pond"
+        addChild(pool)
+
+        // Fish swimming in pool
+        let fishTex = TextureGenerator.generateCaveFishTexture(size: CGSize(width: 22, height: 14))
+        let fishCount = Int.random(in: 1...2)
+        for i in 0..<fishCount {
+            let fish = SKSpriteNode(texture: fishTex, size: CGSize(width: 22, height: 14))
+            fish.position = CGPoint(x: spawnX + CGFloat(i * 20 - 10), y: gY - 4)
+            fish.zPosition = 3
+            fish.name = "envDecor"
+            // Swim back and forth
+            let swimDist = poolW * 0.3
+            let swimR = SKAction.sequence([
+                SKAction.run { [weak fish] in fish?.xScale = 1 },
+                SKAction.moveBy(x: swimDist, y: 0, duration: Double.random(in: 1.2...2.0))
+            ])
+            let swimL = SKAction.sequence([
+                SKAction.run { [weak fish] in fish?.xScale = -1 },
+                SKAction.moveBy(x: -swimDist, y: 0, duration: Double.random(in: 1.2...2.0))
+            ])
+            let pause = SKAction.wait(forDuration: Double.random(in: 0.3...0.8))
+            fish.run(SKAction.repeatForever(SKAction.sequence([swimR, pause, swimL, pause])))
+            addChild(fish)
+        }
+
+        // Jumping fish — one fish periodically leaps out of pool
+        let jumpFish = SKSpriteNode(texture: fishTex, size: CGSize(width: 22, height: 14))
+        jumpFish.position = CGPoint(x: spawnX, y: gY - 4)
+        jumpFish.zPosition = 7
+        jumpFish.alpha = 0
+        jumpFish.name = "envDecor"
+        // Physics — damages ladybug when jumping
+        let jBody = SKPhysicsBody(circleOfRadius: 8)
+        jBody.isDynamic = false
+        jBody.categoryBitMask = GameScene.PhysicsCategory.bird
+        jBody.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+        jumpFish.physicsBody = jBody
+        addChild(jumpFish)
+
+        // Jump cycle: wait → appear → arc up (face up) → arc down (face down) → hide
+        let jumpCycle = SKAction.sequence([
+            SKAction.wait(forDuration: Double.random(in: 2.5...5.0)),
+            SKAction.run { [weak jumpFish] in
+                jumpFish?.alpha = 1
+                jumpFish?.zRotation = .pi / 2 // face up
+                SoundManager.shared.play("splash")
+            },
+            SKAction.moveBy(x: CGFloat.random(in: -15...15), y: 60, duration: 0.35),
+            SKAction.run { [weak jumpFish] in
+                jumpFish?.zRotation = -.pi / 2 // face down
+            },
+            SKAction.moveBy(x: 0, y: -60, duration: 0.30),
+            SKAction.run { [weak jumpFish, weak self] in
+                jumpFish?.alpha = 0
+                jumpFish?.zRotation = 0
+                guard let self = self, let terrain = self.caveTerrain else { return }
+                let gY = terrain.groundY(atScreenX: jumpFish?.position.x ?? 0)
+                jumpFish?.position.y = gY - 4
+                // Splash particles
+                if let pos = jumpFish?.position {
+                    for _ in 0..<4 {
+                        let drop = SKShapeNode(circleOfRadius: 1.5)
+                        drop.fillColor = SKColor(red: 0.3, green: 0.5, blue: 0.7, alpha: 0.6)
+                        drop.strokeColor = .clear
+                        drop.position = CGPoint(x: pos.x + CGFloat.random(in: -10...10), y: pos.y + 5)
+                        drop.zPosition = 6
+                        drop.name = "envDecor"
+                        self.addChild(drop)
+                        drop.run(SKAction.sequence([
+                            SKAction.group([SKAction.moveBy(x: CGFloat.random(in: -8...8), y: CGFloat.random(in: 5...15), duration: 0.3), SKAction.fadeOut(withDuration: 0.3)]),
+                            SKAction.removeFromParent()
+                        ]))
+                    }
+                }
+            },
+        ])
+        jumpFish.run(SKAction.repeatForever(jumpCycle))
     }
 
     private func spawnCaveSpider() {

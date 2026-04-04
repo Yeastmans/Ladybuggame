@@ -61,6 +61,7 @@ final class BugTracker: @unchecked Sendable {
         case caveSpider = "Cave Spider"
         case vampireBat = "Vampire Bat"
         case rockWorm = "Rock Worm"
+        case caveFish = "Cave Fish"
 
         var category: Category {
             switch self {
@@ -72,7 +73,7 @@ final class BugTracker: @unchecked Sendable {
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl, .frostMoth,
                  .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee,
-                 .caveSpider, .vampireBat, .rockWorm:
+                 .caveSpider, .vampireBat, .rockWorm, .caveFish:
                 return .enemy
             }
         }
@@ -121,6 +122,7 @@ final class BugTracker: @unchecked Sendable {
             case .caveSpider: return "Drops from the ceiling on a web! Watch above!"
             case .vampireBat: return "Red-eyed vampire bat. Swoops from the darkness!"
             case .rockWorm: return "Armored tunnel worm. Patrols the cave floor."
+            case .caveFish: return "Blind pale fish. Leaps from underground pools!"
             }
         }
 
@@ -148,7 +150,7 @@ final class BugTracker: @unchecked Sendable {
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl, .frostMoth,
                  .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee,
-                 .caveSpider, .vampireBat, .rockWorm:
+                 .caveSpider, .vampireBat, .rockWorm, .caveFish:
                 return "Danger!"
             }
         }
@@ -223,6 +225,7 @@ final class BugTracker: @unchecked Sendable {
         case .caveSpider: return TextureGenerator.generateCaveSpiderTexture(size: size)
         case .vampireBat: return TextureGenerator.generateVampireBatFrames(size: size).first!
         case .rockWorm: return TextureGenerator.generateRockWormTexture(size: size)
+        case .caveFish: return TextureGenerator.generateCaveFishTexture(size: size)
         }
     }
 
