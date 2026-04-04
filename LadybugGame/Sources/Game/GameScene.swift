@@ -168,7 +168,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
            let c = item.color {
             equippedBodyColor = UIColor(cgColor: c.cgColor)
         }
-        deadTexture = TextureGenerator.generateLadybugDeadTexture(size: CGSize(width: 48, height: 48), bodyColor: equippedBodyColor)
+        let hasHatForDead = ShopScene.equippedHat != nil
+        deadTexture = TextureGenerator.generateLadybugDeadTexture(size: CGSize(width: 48, height: 48), bodyColor: equippedBodyColor, hideAntennae: hasHatForDead)
         dragonflyFrames = TextureGenerator.generateDragonflyFrames(size: CGSize(width: 48, height: 28))
         fireflyFrames = TextureGenerator.generateFireflyFrames(size: CGSize(width: 24, height: 24))
         heartBugFrames = TextureGenerator.generateHeartBugFrames(size: CGSize(width: 36, height: 36))
@@ -396,9 +397,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             bodyColor = UIColor(cgColor: c.cgColor)
         }
 
-        let walkTex = TextureGenerator.generateLadybugTexture(size: bugSize, bodyColor: bodyColor)
-        let blinkTex = TextureGenerator.generateLadybugBlinkTexture(size: bugSize, bodyColor: bodyColor)
-        let flyFrames = TextureGenerator.generateLadybugFlyFrames(size: bugSize, bodyColor: bodyColor)
+        let hasHat = ShopScene.equippedHat != nil
+        let walkTex = TextureGenerator.generateLadybugTexture(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat)
+        let blinkTex = TextureGenerator.generateLadybugBlinkTexture(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat)
+        let flyFrames = TextureGenerator.generateLadybugFlyFrames(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat)
         ladybug = Ladybug(walkTexture: walkTex, blinkTexture: blinkTex, flyFrames: flyFrames)
         ladybug.position = CGPoint(x: size.width * 0.18, y: groundY + bugSize.height / 2)
 
@@ -1788,11 +1790,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let y: CGFloat = flying ? groundY + CGFloat.random(in: 40...size.height * 0.45) : groundY + food.size.height / 2
         food.position = CGPoint(x: spawnX, y: y)
         food.minY = groundY
-        // Butterflies spawn higher and move faster
+        // Butterflies and glowworms evade the player
         if food.biomeName == "Butterfly" {
             food.position.y = groundY + CGFloat.random(in: 80...size.height * 0.55)
             food.playerRef = ladybug
         }
+        if food.biomeName == "Glowworm" { food.playerRef = ladybug }
         food.setupPhysics()
         food.startMoving()
         // ~2% chance to become a rare gemstone bug

@@ -15,6 +15,8 @@ class ShopScene: SKScene {
 
     static let allItems: [ShopItem] = [
         // Colors
+        ShopItem(id: "color_red", displayName: "Classic Red", price: 0, tab: .colors,
+                 color: nil, isSparkly: false), // nil = default red, free
         ShopItem(id: "color_pink", displayName: "Pink", price: 6, tab: .colors,
                  color: UIColor(red: 1.0, green: 0.55, blue: 0.65, alpha: 1), isSparkly: false),
         ShopItem(id: "color_purple", displayName: "Purple", price: 6, tab: .colors,
@@ -78,7 +80,7 @@ class ShopScene: SKScene {
         set { UserDefaults.standard.set(newValue, forKey: equippedShoesKey) }
     }
 
-    static func isOwned(_ id: String) -> Bool { ownedItems.contains(id) }
+    static func isOwned(_ id: String) -> Bool { id == "color_red" || ownedItems.contains(id) }
     static func isEquipped(_ id: String) -> Bool {
         id == equippedColor || id == equippedHat || id == equippedShoes
     }

@@ -5,26 +5,26 @@ enum TextureGenerator {
 
     // MARK: - Ladybug SIDE VIEW (facing right)
 
-    static func generateLadybugTexture(size: CGSize, bodyColor: UIColor? = nil) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor)
+    static func generateLadybugTexture(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> SKTexture {
+        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae)
     }
 
-    static func generateLadybugBlinkTexture(size: CGSize, bodyColor: UIColor? = nil) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: true, wingPhase: nil, bodyColor: bodyColor)
+    static func generateLadybugBlinkTexture(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> SKTexture {
+        return drawLadybugSide(size: size, eyesClosed: true, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae)
     }
 
-    static func generateLadybugDeadTexture(size: CGSize, bodyColor: UIColor? = nil) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, dead: true, bodyColor: bodyColor)
+    static func generateLadybugDeadTexture(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> SKTexture {
+        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, dead: true, bodyColor: bodyColor, hideAntennae: hideAntennae)
     }
 
     /// Two frames: wings up and wings down, legs tucked
-    static func generateLadybugFlyFrames(size: CGSize, bodyColor: UIColor? = nil) -> [SKTexture] {
-        return [drawLadybugSide(size: size, eyesClosed: false, wingPhase: 0, bodyColor: bodyColor),
-                drawLadybugSide(size: size, eyesClosed: false, wingPhase: 1, bodyColor: bodyColor)]
+    static func generateLadybugFlyFrames(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> [SKTexture] {
+        return [drawLadybugSide(size: size, eyesClosed: false, wingPhase: 0, bodyColor: bodyColor, hideAntennae: hideAntennae),
+                drawLadybugSide(size: size, eyesClosed: false, wingPhase: 1, bodyColor: bodyColor, hideAntennae: hideAntennae)]
     }
 
     /// wingPhase: nil = walking (legs out), 0 = wings up, 1 = wings down
-    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingPhase: Int?, dead: Bool = false, bodyColor: UIColor? = nil) -> SKTexture {
+    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingPhase: Int?, dead: Bool = false, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
@@ -132,23 +132,22 @@ enum TextureGenerator {
             cg.setFillColor(UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor)
             cg.fillEllipse(in: CGRect(x: headCX - headR, y: headCY - headR, width: headR * 2, height: headR * 2))
 
-            // Antennae (2 visible — front and back)
-            cg.setStrokeColor(UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor)
-            cg.setLineWidth(1.4)
-            // Front antenna (upper)
-            cg.move(to: CGPoint(x: headCX + headR * 0.2, y: headCY - headR * 0.6))
-            cg.addQuadCurve(to: CGPoint(x: w * 0.95, y: h * 0.15),
-                            control: CGPoint(x: w * 0.92, y: h * 0.25))
-            cg.strokePath()
-            // Back antenna (lower, slightly behind)
-            cg.move(to: CGPoint(x: headCX + headR * 0.1, y: headCY - headR * 0.3))
-            cg.addQuadCurve(to: CGPoint(x: w * 0.92, y: h * 0.22),
-                            control: CGPoint(x: w * 0.90, y: h * 0.32))
-            cg.strokePath()
-            // Antenna tips
-            cg.setFillColor(UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.93, y: h * 0.13, width: 4, height: 4))
-            cg.fillEllipse(in: CGRect(x: w * 0.90, y: h * 0.20, width: 3, height: 3))
+            // Antennae (hidden when wearing hat)
+            if !hideAntennae {
+                cg.setStrokeColor(UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor)
+                cg.setLineWidth(1.4)
+                cg.move(to: CGPoint(x: headCX + headR * 0.2, y: headCY - headR * 0.6))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.95, y: h * 0.15),
+                                control: CGPoint(x: w * 0.92, y: h * 0.25))
+                cg.strokePath()
+                cg.move(to: CGPoint(x: headCX + headR * 0.1, y: headCY - headR * 0.3))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.92, y: h * 0.22),
+                                control: CGPoint(x: w * 0.90, y: h * 0.32))
+                cg.strokePath()
+                cg.setFillColor(UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor)
+                cg.fillEllipse(in: CGRect(x: w * 0.93, y: h * 0.13, width: 4, height: 4))
+                cg.fillEllipse(in: CGRect(x: w * 0.90, y: h * 0.20, width: 3, height: 3))
+            }
 
             // Eye
             if dead {
@@ -1956,8 +1955,8 @@ enum TextureGenerator {
             let cg = ctx.cgContext
             let w = size.width; let h = size.height
             let wingOff: CGFloat = wingsUp ? -0.12 : 0.06
-            // Top wing (darker icy blue, visible against snow)
-            cg.setFillColor(UIColor(red: 0.35, green: 0.50, blue: 0.75, alpha: 0.85).cgColor)
+            // Top wing (deep purple-blue, high contrast against white snow)
+            cg.setFillColor(UIColor(red: 0.30, green: 0.20, blue: 0.65, alpha: 0.90).cgColor)
             cg.move(to: CGPoint(x: w * 0.45, y: h * 0.48))
             cg.addCurve(to: CGPoint(x: w * 0.05, y: h * (0.18 + wingOff)),
                         control1: CGPoint(x: w * 0.20, y: h * (0.20 + wingOff)),
@@ -1975,12 +1974,12 @@ enum TextureGenerator {
                         control1: CGPoint(x: w * 0.16, y: h * (0.88 - wingOff)),
                         control2: CGPoint(x: w * 0.32, y: h * 0.72))
             cg.closePath(); cg.fillPath()
-            // Ice crystal patterns on wings
-            cg.setFillColor(UIColor(red: 0.55, green: 0.75, blue: 0.95, alpha: 0.4).cgColor)
+            // Ice crystal patterns on wings (bright accents)
+            cg.setFillColor(UIColor(red: 0.65, green: 0.45, blue: 0.90, alpha: 0.5).cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.12, y: h * (0.22 + wingOff), width: w * 0.14, height: h * 0.12))
             cg.fillEllipse(in: CGRect(x: w * 0.14, y: h * (0.68 - wingOff), width: w * 0.10, height: h * 0.10))
-            // Body (dark blue-gray, fuzzy)
-            cg.setFillColor(UIColor(red: 0.30, green: 0.35, blue: 0.50, alpha: 1).cgColor)
+            // Body (deep indigo, high contrast)
+            cg.setFillColor(UIColor(red: 0.18, green: 0.15, blue: 0.40, alpha: 1).cgColor)
             let bodyPath = UIBezierPath(roundedRect: CGRect(x: w * 0.40, y: h * 0.30, width: w * 0.14, height: h * 0.40), cornerRadius: w * 0.06)
             cg.addPath(bodyPath.cgPath); cg.fillPath()
             // Head
@@ -2708,24 +2707,48 @@ enum TextureGenerator {
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
             let w = size.width; let h = size.height
-            // Glow aura
-            cg.setFillColor(UIColor(red: 0.20, green: 0.85, blue: 0.40, alpha: 0.15).cgColor)
-            cg.fillEllipse(in: CGRect(x: 0, y: 0, width: w, height: h))
-            // Body (segmented worm)
-            cg.setFillColor(UIColor(red: 0.35, green: 0.75, blue: 0.30, alpha: 0.9).cgColor)
-            for i in 0..<4 {
-                let sx = w * (0.15 + CGFloat(i) * 0.18)
-                cg.fillEllipse(in: CGRect(x: sx, y: h * 0.35, width: w * 0.16, height: h * 0.30))
+            // Translucent wings (visible, distinct from firefly)
+            cg.setFillColor(UIColor(red: 0.50, green: 0.80, blue: 0.55, alpha: 0.35).cgColor)
+            // Top wing
+            cg.move(to: CGPoint(x: w * 0.45, y: h * 0.40))
+            cg.addLine(to: CGPoint(x: w * 0.15, y: h * 0.10))
+            cg.addLine(to: CGPoint(x: w * 0.60, y: h * 0.18))
+            cg.closePath(); cg.fillPath()
+            // Bottom wing
+            cg.move(to: CGPoint(x: w * 0.45, y: h * 0.60))
+            cg.addLine(to: CGPoint(x: w * 0.15, y: h * 0.90))
+            cg.addLine(to: CGPoint(x: w * 0.60, y: h * 0.82))
+            cg.closePath(); cg.fillPath()
+            // Wing veins
+            cg.setStrokeColor(UIColor(red: 0.35, green: 0.65, blue: 0.40, alpha: 0.3).cgColor)
+            cg.setLineWidth(0.5)
+            cg.move(to: CGPoint(x: w * 0.45, y: h * 0.42))
+            cg.addLine(to: CGPoint(x: w * 0.22, y: h * 0.14))
+            cg.strokePath()
+            // Glow aura (smaller, dimmer)
+            cg.setFillColor(UIColor(red: 0.20, green: 0.80, blue: 0.35, alpha: 0.10).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.02, y: h * 0.20, width: w * 0.35, height: h * 0.60))
+            // Body (segmented, distinct from firefly — longer/thinner)
+            cg.setFillColor(UIColor(red: 0.30, green: 0.65, blue: 0.25, alpha: 0.9).cgColor)
+            for i in 0..<5 {
+                let sx = w * (0.12 + CGFloat(i) * 0.14)
+                cg.fillEllipse(in: CGRect(x: sx, y: h * 0.38, width: w * 0.12, height: h * 0.24))
             }
-            // Bright tail (bioluminescent)
-            cg.setFillColor(UIColor(red: 0.40, green: 1.0, blue: 0.55, alpha: 0.85).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.08, y: h * 0.32, width: w * 0.20, height: h * 0.36))
-            // Head
-            cg.setFillColor(UIColor(red: 0.28, green: 0.60, blue: 0.22, alpha: 1).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.32, width: w * 0.22, height: h * 0.36))
-            // Eye
-            cg.setFillColor(UIColor.white.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.78, y: h * 0.38, width: 3, height: 3))
+            // Bright tail segment
+            cg.setFillColor(UIColor(red: 0.35, green: 0.95, blue: 0.45, alpha: 0.80).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.06, y: h * 0.35, width: w * 0.16, height: h * 0.30))
+            // Head (darker)
+            cg.setFillColor(UIColor(red: 0.22, green: 0.50, blue: 0.18, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.34, width: w * 0.20, height: h * 0.32))
+            // Eyes
+            cg.setFillColor(UIColor(red: 0.80, green: 0.95, blue: 0.80, alpha: 0.8).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.80, y: h * 0.38, width: 3, height: 3))
+            // Antennae
+            cg.setStrokeColor(UIColor(red: 0.22, green: 0.50, blue: 0.18, alpha: 0.8).cgColor)
+            cg.setLineWidth(0.6)
+            cg.move(to: CGPoint(x: w * 0.86, y: h * 0.36))
+            cg.addLine(to: CGPoint(x: w * 0.94, y: h * 0.22))
+            cg.strokePath()
         }
         return SKTexture(image: image)
     }

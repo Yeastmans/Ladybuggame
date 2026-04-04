@@ -35,7 +35,8 @@ class MenuScene: SKScene {
            let c = item.color {
             menuBodyColor = UIColor(cgColor: c.cgColor)
         }
-        let ladybugTex = TextureGenerator.generateLadybugTexture(size: CGSize(width: 64, height: 64), bodyColor: menuBodyColor)
+        let menuHasHat = ShopScene.equippedHat != nil
+        let ladybugTex = TextureGenerator.generateLadybugTexture(size: CGSize(width: 64, height: 64), bodyColor: menuBodyColor, hideAntennae: menuHasHat)
         let ladybug = SKSpriteNode(texture: ladybugTex)
         ladybug.position = CGPoint(x: size.width * 0.15, y: size.height * 0.35 + 32)
         ladybug.zPosition = 10
@@ -116,6 +117,19 @@ class MenuScene: SKScene {
         addButton(MenuScene.difficulty.name, name: "difficultyBtn",
                   color: diffColor,
                   x: size.width / 2 + 58, y: size.height * 0.44, w: 108)
+        // Difficulty description
+        let diffDesc = SKLabelNode(fontNamed: "AvenirNext-Regular")
+        let descText: String = switch MenuScene.difficulty {
+        case .easy: "More food, fewer enemies"
+        case .normal: "Balanced challenge"
+        case .hard: "Less food, more enemies"
+        }
+        diffDesc.text = descText
+        diffDesc.fontSize = 7
+        diffDesc.fontColor = SKColor(white: 1, alpha: 0.5)
+        diffDesc.position = CGPoint(x: size.width / 2 + 58, y: size.height * 0.44 - 24)
+        diffDesc.zPosition = 20
+        addChild(diffDesc)
 
         // Row 3: Shop + Bugopedia (side by side)
         addButton("Shop", name: "shopButton",
