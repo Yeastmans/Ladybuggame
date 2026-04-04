@@ -407,7 +407,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Resolve equipped body color for texture generation
         var bodyColor: UIColor? = nil
-        if let colorId = ShopScene.equippedColor,
+        if let colorId = ShopScene.equippedColor, colorId != "color_red",
            let item = ShopScene.allItems.first(where: { $0.id == colorId }),
            let c = item.color {
             bodyColor = UIColor(cgColor: c.cgColor)
@@ -1756,8 +1756,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateIceSpiderTexture(size: CGSize(width: 44, height: 36)), name: "Ice Spider") }
             birdTimer += edt
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Snow Owl") }
-            fireflyTimer += dt // Powerups unaffected
-            if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
             waspTimer += edt
             if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnFrostMoth() }
 
@@ -2325,7 +2323,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Fade out and remove all previous sky decorations
         for child in children {
             switch child.name {
-            case "skyBg", "cloud", "hill", "nightBg", "nightOverlay":
+            case "skyBg", "cloud", "hill", "nightBg", "nightOverlay", "biomeSkyDecor":
                 child.run(SKAction.sequence([SKAction.fadeOut(withDuration: 1.5), SKAction.removeFromParent()]))
             default: break
             }
@@ -2374,6 +2372,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             horizonBand.position = CGPoint(x: size.width / 2, y: groundY + size.height * 0.12)
             horizonBand.zPosition = -0.8
             horizonBand.alpha = 0
+            horizonBand.name = "biomeSkyDecor"
             addChild(horizonBand)
             horizonBand.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
 
@@ -2383,6 +2382,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             midBand.position = CGPoint(x: size.width / 2, y: size.height * 0.50)
             midBand.zPosition = -0.8
             midBand.alpha = 0
+            midBand.name = "biomeSkyDecor"
             addChild(midBand)
             midBand.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
         }
@@ -2414,6 +2414,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             horizonBand.position = CGPoint(x: size.width / 2, y: groundY + size.height * 0.10)
             horizonBand.zPosition = -0.8
             horizonBand.alpha = 0
+            horizonBand.name = "biomeSkyDecor"
             addChild(horizonBand)
             horizonBand.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
         }
