@@ -580,10 +580,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Cave terrain advancement
         if isCaveBiome, let terrain = caveTerrain {
             terrain.update(scrollDelta: sd)
-            let wasFull = terrain.transitionProgress >= 1.0
-            terrain.advanceTransition(delta: sd, targetProgress: 1.0)
-            // During transition ramp, regenerate all tile paths every frame so terrain visually matches
-            if !wasFull && terrain.transitionProgress < 1.0 {
+            let target: CGFloat = isBossFight ? 0.0 : 1.0
+            let prev = terrain.transitionProgress
+            terrain.advanceTransition(delta: max(sd, 2.0 * CGFloat(dt)), targetProgress: target)
+            // Regenerate paths when transitioning
+            if abs(terrain.transitionProgress - prev) > 0.001 {
                 regenerateAllCaveTilePaths()
             }
         }
@@ -2374,18 +2375,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if biome == .snow {
             let snowfall = SKAction.run { [weak self] in
                 guard let self = self else { return }
-                let flake = SKShapeNode(circleOfRadius: CGFloat.random(in: 1...3))
+                let flake = SKShapeNode(circleOfRadius: CGFloat.random(in: 1.5...3.5))
                 flake.fillColor = .white
                 flake.strokeColor = .clear
                 flake.position = CGPoint(x: CGFloat.random(in: 0...self.size.width), y: self.size.height + 5)
                 flake.zPosition = 50
-                flake.alpha = CGFloat.random(in: 0.4...0.8)
+                flake.alpha = CGFloat.random(in: 0.6...0.95)
                 self.addChild(flake)
                 let fall = SKAction.moveTo(y: -5, duration: Double.random(in: 2...4))
                 let drift = SKAction.moveBy(x: CGFloat.random(in: -30...10), y: 0, duration: Double.random(in: 2...4))
                 flake.run(SKAction.sequence([SKAction.group([fall, drift]), SKAction.removeFromParent()]))
             }
-            run(SKAction.repeatForever(SKAction.sequence([snowfall, SKAction.wait(forDuration: 0.15)])), withKey: "snowfall")
+            run(SKAction.repeatForever(SKAction.sequence([snowfall, SKAction.wait(forDuration: 0.08)])), withKey: "snowfall")
         }
 
 
@@ -2660,6 +2661,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         bossAttackTimer = 0
         bossAttackPhase = 0
         bossBerryTimer = 0
+
+        // Cave terrain will smooth-flatten via update loop (targets 0 during boss)
 
         // Save checkpoint
         GameScene.hasNightCheckpoint = true
