@@ -33,10 +33,13 @@ class MenuScene: SKScene {
 
         addButton("Start Game", name: "startButton",
                   color: SKColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0),
-                  y: size.height * 0.52)
+                  y: size.height * 0.58)
         addButton("Bugopedia", name: "bugTracker",
                   color: SKColor(red: 0.55, green: 0.35, blue: 0.70, alpha: 1.0),
-                  y: size.height * 0.40)
+                  y: size.height * 0.48)
+        addButton("Shop", name: "shopButton",
+                  color: SKColor(red: 0.82, green: 0.65, blue: 0.12, alpha: 1.0),
+                  y: size.height * 0.38)
         addButton("Leaderboards", name: "leaderboard",
                   color: SKColor(red: 0.25, green: 0.50, blue: 0.75, alpha: 1.0),
                   y: size.height * 0.28)
@@ -46,7 +49,7 @@ class MenuScene: SKScene {
         if !unlocked.isEmpty {
             addButton("Checkpoints", name: "checkpointsMenu",
                       color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
-                      y: size.height * 0.16)
+                      y: size.height * 0.18)
         }
 
         let hsLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
@@ -95,6 +98,12 @@ class MenuScene: SKScene {
                 return
             }
             if node.name == "leaderboard" { showLeaderboard(); return }
+            if node.name == "shopButton" {
+                let shop = ShopScene(size: size)
+                shop.scaleMode = scaleMode
+                view?.presentScene(shop, transition: .fade(withDuration: 0.3))
+                return
+            }
             if node.name == "bugTracker" {
                 let bugopedia = BugopediaScene(size: size)
                 bugopedia.scaleMode = scaleMode
