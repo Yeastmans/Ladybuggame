@@ -10,8 +10,8 @@ class MenuScene: SKScene {
 
     enum Difficulty: Int { case easy = 0, normal = 1, hard = 2
         var name: String { switch self { case .easy: return "Easy"; case .normal: return "Normal"; case .hard: return "Hard" } }
-        var enemyMul: Double { switch self { case .easy: return 1.25; case .normal: return 1.0; case .hard: return 0.5 } }
-        var foodMul: Double { switch self { case .easy: return 0.85; case .normal: return 1.0; case .hard: return 1.8 } }
+        var enemyMul: Double { switch self { case .easy: return 1.5; case .normal: return 1.0; case .hard: return 0.5 } }
+        var foodMul: Double { switch self { case .easy: return 0.65; case .normal: return 1.0; case .hard: return 1.8 } }
     }
     private static let diffKey = "GameDifficulty"
     static var difficulty: Difficulty {
@@ -229,7 +229,7 @@ class MenuScene: SKScene {
         overlay.addChild(title)
 
         let options: [(Difficulty, String, String, SKColor)] = [
-            (.easy, "Easy", "Slightly less food, slightly fewer enemies", SKColor(red: 0.30, green: 0.70, blue: 0.30, alpha: 1)),
+            (.easy, "Easy", "More food, fewer enemies", SKColor(red: 0.30, green: 0.70, blue: 0.30, alpha: 1)),
             (.normal, "Normal", "Balanced challenge", SKColor(red: 0.70, green: 0.55, blue: 0.15, alpha: 1)),
             (.hard, "Hard", "Less food, more enemies", SKColor(red: 0.75, green: 0.20, blue: 0.15, alpha: 1)),
         ]
