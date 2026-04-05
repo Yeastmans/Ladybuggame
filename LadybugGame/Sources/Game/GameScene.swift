@@ -1483,6 +1483,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if ladybug.isSheltered { return }
             if !ladybug.isInvincible {
                 let enemyNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird) ? contact.bodyA.node : contact.bodyB.node
+                // Boss bear — damage but don't remove
+                if enemyNode?.name == "boss" {
+                    takeDamage()
+                    return
+                }
                 // Cave spider stays on web — just damage, don't remove
                 if enemyNode is CaveSpider {
                     unlockBug(.caveSpider)
@@ -2674,7 +2679,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func startBossFight() {
         isBossFight = true
-        bossHP = 20
+        bossHP = 40
         bossAttackTimer = 0
         bossAttackPhase = 0
         bossBerryTimer = 0
@@ -2692,7 +2697,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                child is Frog || child is Dragonfly || child is Firefly || child is HeartBug ||
                child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood ||
                child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider ||
-               child is FallingRock || child.name == "monkey" || child.name == "envDecor" {
+               child is FallingRock || child.name == "monkey" || child.name == "envDecor" ||
+               child.name == "pond" || child.name == "rockShadow" {
                 child.removeFromParent()
             }
         }
@@ -2723,6 +2729,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         bear.xScale = -1
         bear.zPosition = 8
         bear.name = "boss"
+        // Bear physics body — damages ladybug on contact
+        let bearBody = SKPhysicsBody(rectangleOf: CGSize(width: 140, height: 110))
+        bearBody.isDynamic = false
+        bearBody.categoryBitMask = GameScene.PhysicsCategory.bird
+        bearBody.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+        bear.physicsBody = bearBody
         addChild(bear)
         bossNode = bear
 
@@ -2767,7 +2779,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func updateBossHP() {
         guard let boss = bossNode else { return }
-        let ratio = CGFloat(bossHP) / 20.0
+        let ratio = CGFloat(bossHP) / 40.0
         if let bar = boss.childNode(withName: "bossHPBar") as? SKShapeNode {
             let w = 100 * ratio
             bar.path = CGPath(roundedRect: CGRect(x: -w / 2, y: -3, width: w, height: 6), cornerWidth: 2, cornerHeight: 2, transform: nil)
@@ -2796,7 +2808,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         // Boss attacks faster as HP drops — every 2.5s at full HP, 1.2s at low HP
-        let attackInterval = 1.2 + 1.3 * (CGFloat(bossHP) / 20.0)
+        let attackInterval = 1.2 + 1.3 * (CGFloat(bossHP) / 40.0)
         if bossAttackTimer >= Double(attackInterval) {
             bossAttackTimer = 0
             let phase = bossAttackPhase % 4
