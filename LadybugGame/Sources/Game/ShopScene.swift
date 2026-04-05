@@ -2,7 +2,7 @@ import SpriteKit
 
 class ShopScene: SKScene {
 
-    enum Tab: String { case colors = "Colors", hats = "Hats", shoes = "Shoes" }
+    enum Tab: String { case colors = "Colors", hats = "Hats", shoes = "Shoes", wings = "Wings", spots = "Spots" }
 
     struct ShopItem {
         let id: String
@@ -15,46 +15,91 @@ class ShopScene: SKScene {
 
     static let allItems: [ShopItem] = [
         // Colors
-        ShopItem(id: "color_red", displayName: "Classic Red", price: 0, tab: .colors,
-                 color: UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1), isSparkly: false),
-        ShopItem(id: "color_pink", displayName: "Pink", price: 6, tab: .colors,
-                 color: UIColor(red: 1.0, green: 0.55, blue: 0.65, alpha: 1), isSparkly: false),
-        ShopItem(id: "color_purple", displayName: "Purple", price: 6, tab: .colors,
-                 color: UIColor(red: 0.60, green: 0.30, blue: 0.80, alpha: 1), isSparkly: false),
-        ShopItem(id: "color_gold", displayName: "Gold", price: 12, tab: .colors,
-                 color: UIColor(red: 0.90, green: 0.75, blue: 0.20, alpha: 1), isSparkly: false),
-        ShopItem(id: "color_silver", displayName: "Silver", price: 12, tab: .colors,
-                 color: UIColor(red: 0.78, green: 0.78, blue: 0.82, alpha: 1), isSparkly: false),
-        ShopItem(id: "color_blue", displayName: "Blue", price: 6, tab: .colors,
-                 color: UIColor(red: 0.30, green: 0.50, blue: 0.90, alpha: 1), isSparkly: false),
-        ShopItem(id: "color_sparkpink", displayName: "Sparkly Pink", price: 18, tab: .colors,
-                 color: UIColor(red: 1.0, green: 0.45, blue: 0.70, alpha: 1), isSparkly: true),
-        ShopItem(id: "color_magenta", displayName: "Magenta", price: 12, tab: .colors,
-                 color: UIColor(red: 0.85, green: 0.15, blue: 0.55, alpha: 1), isSparkly: false),
-        ShopItem(id: "color_sparkblue", displayName: "Sparkly Blue", price: 18, tab: .colors,
-                 color: UIColor(red: 0.25, green: 0.55, blue: 1.0, alpha: 1), isSparkly: true),
-        // Hats
+        // === COLORS (16) ===
+        ShopItem(id: "color_red", displayName: "Classic Red", price: 0, tab: .colors, color: UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_pink", displayName: "Pink", price: 6, tab: .colors, color: UIColor(red: 1.0, green: 0.55, blue: 0.65, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_purple", displayName: "Purple", price: 6, tab: .colors, color: UIColor(red: 0.60, green: 0.30, blue: 0.80, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_gold", displayName: "Gold", price: 12, tab: .colors, color: UIColor(red: 0.90, green: 0.75, blue: 0.20, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_silver", displayName: "Silver", price: 12, tab: .colors, color: UIColor(red: 0.78, green: 0.78, blue: 0.82, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_blue", displayName: "Blue", price: 6, tab: .colors, color: UIColor(red: 0.30, green: 0.50, blue: 0.90, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_magenta", displayName: "Magenta", price: 12, tab: .colors, color: UIColor(red: 0.85, green: 0.15, blue: 0.55, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_lime", displayName: "Lime", price: 8, tab: .colors, color: UIColor(red: 0.45, green: 0.85, blue: 0.20, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_orange", displayName: "Orange", price: 8, tab: .colors, color: UIColor(red: 0.95, green: 0.55, blue: 0.10, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_teal", displayName: "Teal", price: 10, tab: .colors, color: UIColor(red: 0.15, green: 0.75, blue: 0.70, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_black", displayName: "Midnight", price: 15, tab: .colors, color: UIColor(red: 0.12, green: 0.10, blue: 0.18, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_white", displayName: "Snow", price: 15, tab: .colors, color: UIColor(red: 0.95, green: 0.93, blue: 0.90, alpha: 1), isSparkly: false),
+        ShopItem(id: "color_sparkpink", displayName: "Sparkly Pink", price: 18, tab: .colors, color: UIColor(red: 1.0, green: 0.45, blue: 0.70, alpha: 1), isSparkly: true),
+        ShopItem(id: "color_sparkblue", displayName: "Sparkly Blue", price: 18, tab: .colors, color: UIColor(red: 0.25, green: 0.55, blue: 1.0, alpha: 1), isSparkly: true),
+        ShopItem(id: "color_sparkgold", displayName: "Sparkly Gold", price: 24, tab: .colors, color: UIColor(red: 1.0, green: 0.82, blue: 0.25, alpha: 1), isSparkly: true),
+        ShopItem(id: "color_sparkpurple", displayName: "Sparkly Purple", price: 24, tab: .colors, color: UIColor(red: 0.70, green: 0.30, blue: 0.95, alpha: 1), isSparkly: true),
+        // === HATS (16) ===
         ShopItem(id: "hat_tophat", displayName: "Top Hat", price: 24, tab: .hats, color: nil, isSparkly: false),
         ShopItem(id: "hat_cap", displayName: "Backwards Cap", price: 18, tab: .hats, color: nil, isSparkly: false),
         ShopItem(id: "hat_crown", displayName: "Crown", price: 30, tab: .hats, color: nil, isSparkly: false),
         ShopItem(id: "hat_flower", displayName: "Flower", price: 18, tab: .hats, color: nil, isSparkly: false),
-        // Shoes (same colors)
-        ShopItem(id: "shoe_pink", displayName: "Pink", price: 12, tab: .shoes,
-                 color: UIColor(red: 1.0, green: 0.55, blue: 0.65, alpha: 1), isSparkly: false),
-        ShopItem(id: "shoe_purple", displayName: "Purple", price: 12, tab: .shoes,
-                 color: UIColor(red: 0.60, green: 0.30, blue: 0.80, alpha: 1), isSparkly: false),
-        ShopItem(id: "shoe_gold", displayName: "Gold", price: 18, tab: .shoes,
-                 color: UIColor(red: 0.90, green: 0.75, blue: 0.20, alpha: 1), isSparkly: false),
-        ShopItem(id: "shoe_silver", displayName: "Silver", price: 18, tab: .shoes,
-                 color: UIColor(red: 0.78, green: 0.78, blue: 0.82, alpha: 1), isSparkly: false),
-        ShopItem(id: "shoe_blue", displayName: "Blue", price: 12, tab: .shoes,
-                 color: UIColor(red: 0.30, green: 0.50, blue: 0.90, alpha: 1), isSparkly: false),
-        ShopItem(id: "shoe_sparkpink", displayName: "Sparkly Pink", price: 18, tab: .shoes,
-                 color: UIColor(red: 1.0, green: 0.45, blue: 0.70, alpha: 1), isSparkly: true),
-        ShopItem(id: "shoe_magenta", displayName: "Magenta", price: 12, tab: .shoes,
-                 color: UIColor(red: 0.85, green: 0.15, blue: 0.55, alpha: 1), isSparkly: false),
-        ShopItem(id: "shoe_sparkblue", displayName: "Sparkly Blue", price: 18, tab: .shoes,
-                 color: UIColor(red: 0.25, green: 0.55, blue: 1.0, alpha: 1), isSparkly: true),
+        ShopItem(id: "hat_wizard", displayName: "Wizard", price: 28, tab: .hats, color: nil, isSparkly: false),
+        ShopItem(id: "hat_pirate", displayName: "Pirate", price: 22, tab: .hats, color: nil, isSparkly: false),
+        ShopItem(id: "hat_chef", displayName: "Chef", price: 20, tab: .hats, color: nil, isSparkly: false),
+        ShopItem(id: "hat_cowboy", displayName: "Cowboy", price: 22, tab: .hats, color: nil, isSparkly: false),
+        ShopItem(id: "hat_beanie", displayName: "Beanie", price: 16, tab: .hats, color: nil, isSparkly: false),
+        ShopItem(id: "hat_halo", displayName: "Halo", price: 35, tab: .hats, color: nil, isSparkly: false),
+        ShopItem(id: "hat_horns", displayName: "Devil Horns", price: 28, tab: .hats, color: nil, isSparkly: false),
+        ShopItem(id: "hat_party", displayName: "Party Hat", price: 14, tab: .hats, color: nil, isSparkly: false),
+        ShopItem(id: "hat_bow", displayName: "Bow", price: 12, tab: .hats, color: nil, isSparkly: false),
+        ShopItem(id: "hat_mushroom", displayName: "Mushroom", price: 20, tab: .hats, color: nil, isSparkly: false),
+        ShopItem(id: "hat_leaf", displayName: "Leaf", price: 10, tab: .hats, color: nil, isSparkly: false),
+        ShopItem(id: "hat_gem", displayName: "Gem Crown", price: 50, tab: .hats, color: nil, isSparkly: true),
+        // === SHOES (16) ===
+        ShopItem(id: "shoe_pink", displayName: "Pink", price: 12, tab: .shoes, color: UIColor(red: 1.0, green: 0.55, blue: 0.65, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_purple", displayName: "Purple", price: 12, tab: .shoes, color: UIColor(red: 0.60, green: 0.30, blue: 0.80, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_gold", displayName: "Gold", price: 18, tab: .shoes, color: UIColor(red: 0.90, green: 0.75, blue: 0.20, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_silver", displayName: "Silver", price: 18, tab: .shoes, color: UIColor(red: 0.78, green: 0.78, blue: 0.82, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_blue", displayName: "Blue", price: 12, tab: .shoes, color: UIColor(red: 0.30, green: 0.50, blue: 0.90, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_magenta", displayName: "Magenta", price: 12, tab: .shoes, color: UIColor(red: 0.85, green: 0.15, blue: 0.55, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_lime", displayName: "Lime", price: 10, tab: .shoes, color: UIColor(red: 0.45, green: 0.85, blue: 0.20, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_orange", displayName: "Orange", price: 10, tab: .shoes, color: UIColor(red: 0.95, green: 0.55, blue: 0.10, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_teal", displayName: "Teal", price: 14, tab: .shoes, color: UIColor(red: 0.15, green: 0.75, blue: 0.70, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_black", displayName: "Midnight", price: 16, tab: .shoes, color: UIColor(red: 0.12, green: 0.10, blue: 0.18, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_white", displayName: "Snow", price: 16, tab: .shoes, color: UIColor(red: 0.95, green: 0.93, blue: 0.90, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_red", displayName: "Red", price: 8, tab: .shoes, color: UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1), isSparkly: false),
+        ShopItem(id: "shoe_sparkpink", displayName: "Sparkly Pink", price: 20, tab: .shoes, color: UIColor(red: 1.0, green: 0.45, blue: 0.70, alpha: 1), isSparkly: true),
+        ShopItem(id: "shoe_sparkblue", displayName: "Sparkly Blue", price: 20, tab: .shoes, color: UIColor(red: 0.25, green: 0.55, blue: 1.0, alpha: 1), isSparkly: true),
+        ShopItem(id: "shoe_sparkgold", displayName: "Sparkly Gold", price: 24, tab: .shoes, color: UIColor(red: 1.0, green: 0.82, blue: 0.25, alpha: 1), isSparkly: true),
+        ShopItem(id: "shoe_sparkpurple", displayName: "Sparkly Purple", price: 24, tab: .shoes, color: UIColor(red: 0.70, green: 0.30, blue: 0.95, alpha: 1), isSparkly: true),
+        // === WINGS (16) ===
+        ShopItem(id: "wing_white", displayName: "White", price: 8, tab: .wings, color: UIColor(red: 0.95, green: 0.95, blue: 0.98, alpha: 1), isSparkly: false),
+        ShopItem(id: "wing_blue", displayName: "Blue", price: 10, tab: .wings, color: UIColor(red: 0.40, green: 0.60, blue: 0.95, alpha: 1), isSparkly: false),
+        ShopItem(id: "wing_pink", displayName: "Pink", price: 10, tab: .wings, color: UIColor(red: 1.0, green: 0.55, blue: 0.70, alpha: 1), isSparkly: false),
+        ShopItem(id: "wing_green", displayName: "Green", price: 10, tab: .wings, color: UIColor(red: 0.35, green: 0.80, blue: 0.40, alpha: 1), isSparkly: false),
+        ShopItem(id: "wing_gold", displayName: "Gold", price: 14, tab: .wings, color: UIColor(red: 0.95, green: 0.80, blue: 0.30, alpha: 1), isSparkly: false),
+        ShopItem(id: "wing_purple", displayName: "Purple", price: 12, tab: .wings, color: UIColor(red: 0.65, green: 0.35, blue: 0.90, alpha: 1), isSparkly: false),
+        ShopItem(id: "wing_orange", displayName: "Orange", price: 10, tab: .wings, color: UIColor(red: 0.95, green: 0.60, blue: 0.20, alpha: 1), isSparkly: false),
+        ShopItem(id: "wing_red", displayName: "Red", price: 12, tab: .wings, color: UIColor(red: 0.90, green: 0.20, blue: 0.15, alpha: 1), isSparkly: false),
+        ShopItem(id: "wing_teal", displayName: "Teal", price: 12, tab: .wings, color: UIColor(red: 0.20, green: 0.78, blue: 0.75, alpha: 1), isSparkly: false),
+        ShopItem(id: "wing_silver", displayName: "Silver", price: 14, tab: .wings, color: UIColor(red: 0.80, green: 0.82, blue: 0.88, alpha: 1), isSparkly: false),
+        ShopItem(id: "wing_black", displayName: "Shadow", price: 18, tab: .wings, color: UIColor(red: 0.15, green: 0.12, blue: 0.20, alpha: 1), isSparkly: false),
+        ShopItem(id: "wing_rainbow", displayName: "Rainbow", price: 30, tab: .wings, color: UIColor(red: 0.90, green: 0.40, blue: 0.60, alpha: 1), isSparkly: true),
+        ShopItem(id: "wing_sparkblue", displayName: "Sparkly Blue", price: 22, tab: .wings, color: UIColor(red: 0.30, green: 0.55, blue: 1.0, alpha: 1), isSparkly: true),
+        ShopItem(id: "wing_sparkpink", displayName: "Sparkly Pink", price: 22, tab: .wings, color: UIColor(red: 1.0, green: 0.45, blue: 0.75, alpha: 1), isSparkly: true),
+        ShopItem(id: "wing_sparkgold", displayName: "Sparkly Gold", price: 28, tab: .wings, color: UIColor(red: 1.0, green: 0.85, blue: 0.30, alpha: 1), isSparkly: true),
+        ShopItem(id: "wing_crystal", displayName: "Crystal", price: 35, tab: .wings, color: UIColor(red: 0.70, green: 0.85, blue: 1.0, alpha: 1), isSparkly: true),
+        // === SPOTS (16) — unique colors, none matching body colors ===
+        ShopItem(id: "spot_default", displayName: "Classic", price: 0, tab: .spots, color: UIColor(red: 0.10, green: 0.05, blue: 0.05, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_navy", displayName: "Navy", price: 8, tab: .spots, color: UIColor(red: 0.08, green: 0.12, blue: 0.32, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_forest", displayName: "Forest", price: 8, tab: .spots, color: UIColor(red: 0.05, green: 0.28, blue: 0.12, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_maroon", displayName: "Maroon", price: 10, tab: .spots, color: UIColor(red: 0.38, green: 0.05, blue: 0.08, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_charcoal", displayName: "Charcoal", price: 8, tab: .spots, color: UIColor(red: 0.22, green: 0.22, blue: 0.25, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_plum", displayName: "Plum", price: 10, tab: .spots, color: UIColor(red: 0.35, green: 0.10, blue: 0.38, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_bronze", displayName: "Bronze", price: 12, tab: .spots, color: UIColor(red: 0.45, green: 0.30, blue: 0.12, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_crimson", displayName: "Crimson", price: 10, tab: .spots, color: UIColor(red: 0.55, green: 0.02, blue: 0.15, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_olive", displayName: "Olive", price: 8, tab: .spots, color: UIColor(red: 0.30, green: 0.32, blue: 0.08, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_wine", displayName: "Wine", price: 12, tab: .spots, color: UIColor(red: 0.42, green: 0.08, blue: 0.22, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_slate", displayName: "Slate", price: 10, tab: .spots, color: UIColor(red: 0.28, green: 0.30, blue: 0.38, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_cocoa", displayName: "Cocoa", price: 10, tab: .spots, color: UIColor(red: 0.28, green: 0.18, blue: 0.10, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_ivory", displayName: "Ivory", price: 14, tab: .spots, color: UIColor(red: 0.88, green: 0.85, blue: 0.75, alpha: 1), isSparkly: false),
+        ShopItem(id: "spot_sparkwhite", displayName: "Sparkly White", price: 22, tab: .spots, color: UIColor(red: 0.92, green: 0.90, blue: 0.95, alpha: 1), isSparkly: true),
+        ShopItem(id: "spot_sparkgold", displayName: "Sparkly Gold", price: 24, tab: .spots, color: UIColor(red: 0.72, green: 0.58, blue: 0.15, alpha: 1), isSparkly: true),
+        ShopItem(id: "spot_sparkviolet", displayName: "Sparkly Violet", price: 24, tab: .spots, color: UIColor(red: 0.40, green: 0.15, blue: 0.55, alpha: 1), isSparkly: true),
     ]
 
     // Persistence
@@ -62,6 +107,8 @@ class ShopScene: SKScene {
     private static let equippedColorKey = "EquippedColor"
     private static let equippedHatKey = "EquippedHat"
     private static let equippedShoesKey = "EquippedShoes"
+    private static let equippedWingsKey = "EquippedWings"
+    private static let equippedSpotsKey = "EquippedSpots"
 
     static var ownedItems: [String] {
         get { UserDefaults.standard.stringArray(forKey: ownedKey) ?? [] }
@@ -79,10 +126,18 @@ class ShopScene: SKScene {
         get { UserDefaults.standard.string(forKey: equippedShoesKey) }
         set { UserDefaults.standard.set(newValue, forKey: equippedShoesKey) }
     }
+    static var equippedWings: String? {
+        get { UserDefaults.standard.string(forKey: equippedWingsKey) }
+        set { UserDefaults.standard.set(newValue, forKey: equippedWingsKey) }
+    }
+    static var equippedSpots: String? {
+        get { UserDefaults.standard.string(forKey: equippedSpotsKey) }
+        set { UserDefaults.standard.set(newValue, forKey: equippedSpotsKey) }
+    }
 
-    static func isOwned(_ id: String) -> Bool { id == "color_red" || ownedItems.contains(id) }
+    static func isOwned(_ id: String) -> Bool { id == "color_red" || id == "spot_default" || ownedItems.contains(id) }
     static func isEquipped(_ id: String) -> Bool {
-        id == equippedColor || id == equippedHat || id == equippedShoes
+        id == equippedColor || id == equippedHat || id == equippedShoes || id == equippedWings || id == equippedSpots
     }
 
     private var currentTab: Tab = .colors
@@ -140,12 +195,14 @@ class ShopScene: SKScene {
             (.colors, "Colors", SKColor(red: 0.75, green: 0.25, blue: 0.25, alpha: 1)),
             (.hats, "Hats", SKColor(red: 0.25, green: 0.55, blue: 0.75, alpha: 1)),
             (.shoes, "Shoes", SKColor(red: 0.55, green: 0.65, blue: 0.25, alpha: 1)),
+            (.wings, "Wings", SKColor(red: 0.55, green: 0.35, blue: 0.75, alpha: 1)),
+            (.spots, "Spots", SKColor(red: 0.40, green: 0.30, blue: 0.20, alpha: 1)),
         ]
         for (i, (t, label, color)) in tabs.enumerated() {
-            let tabBg = SKShapeNode(rectOf: CGSize(width: 80, height: 26), cornerRadius: 6)
+            let tabBg = SKShapeNode(rectOf: CGSize(width: 58, height: 24), cornerRadius: 6)
             tabBg.fillColor = t == tab ? color : SKColor(white: 0.20, alpha: 1)
             tabBg.strokeColor = .clear
-            tabBg.position = CGPoint(x: size.width / 2 + CGFloat(i - 1) * 100, y: size.height - 62)
+            tabBg.position = CGPoint(x: size.width / 2 + CGFloat(i) * 64 - CGFloat(tabs.count - 1) * 32, y: size.height - 62)
             tabBg.zPosition = 10
             tabBg.name = "tab_\(t.rawValue)"
             addChild(tabBg)
@@ -209,7 +266,19 @@ class ShopScene: SKScene {
                 case "hat_cap": hatEmoji = "🧢"
                 case "hat_crown": hatEmoji = "👑"
                 case "hat_flower": hatEmoji = "🌸"
-                default: hatEmoji = "?"
+                case "hat_wizard": hatEmoji = "🧙"
+                case "hat_pirate": hatEmoji = "🏴‍☠️"
+                case "hat_chef": hatEmoji = "👨‍🍳"
+                case "hat_cowboy": hatEmoji = "🤠"
+                case "hat_beanie": hatEmoji = "🧶"
+                case "hat_halo": hatEmoji = "😇"
+                case "hat_horns": hatEmoji = "😈"
+                case "hat_party": hatEmoji = "🎉"
+                case "hat_bow": hatEmoji = "🎀"
+                case "hat_mushroom": hatEmoji = "🍄"
+                case "hat_leaf": hatEmoji = "🍃"
+                case "hat_gem": hatEmoji = "💎"
+                default: hatEmoji = "🎭"
                 }
                 let hl = SKLabelNode(text: hatEmoji)
                 hl.fontSize = 20
@@ -280,6 +349,8 @@ class ShopScene: SKScene {
             case .colors: ShopScene.equippedColor = nil
             case .hats: ShopScene.equippedHat = nil
             case .shoes: ShopScene.equippedShoes = nil
+            case .wings: ShopScene.equippedWings = nil
+            case .spots: ShopScene.equippedSpots = nil
             }
             showTab(currentTab)
         } else if ShopScene.isOwned(itemId) {
@@ -288,6 +359,8 @@ class ShopScene: SKScene {
             case .colors: ShopScene.equippedColor = itemId
             case .hats: ShopScene.equippedHat = itemId
             case .shoes: ShopScene.equippedShoes = itemId
+            case .wings: ShopScene.equippedWings = itemId
+            case .spots: ShopScene.equippedSpots = itemId
             }
             showTab(currentTab)
         } else if GameScene.gemCount >= item.price {
@@ -301,6 +374,8 @@ class ShopScene: SKScene {
             case .colors: ShopScene.equippedColor = itemId
             case .hats: ShopScene.equippedHat = itemId
             case .shoes: ShopScene.equippedShoes = itemId
+            case .wings: ShopScene.equippedWings = itemId
+            case .spots: ShopScene.equippedSpots = itemId
             }
             SoundManager.shared.play("powerup")
             showTab(currentTab)

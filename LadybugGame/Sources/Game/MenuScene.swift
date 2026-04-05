@@ -36,7 +36,11 @@ class MenuScene: SKScene {
             menuBodyColor = UIColor(cgColor: c.cgColor)
         }
         let menuHasHat = ShopScene.equippedHat != nil
-        let ladybugTex = TextureGenerator.generateLadybugTexture(size: CGSize(width: 64, height: 64), bodyColor: menuBodyColor, hideAntennae: menuHasHat)
+        var menuSpotColor: UIColor? = nil
+        if let spotId = ShopScene.equippedSpots, spotId != "spot_default",
+           let item = ShopScene.allItems.first(where: { $0.id == spotId }),
+           let c = item.color { menuSpotColor = UIColor(cgColor: c.cgColor) }
+        let ladybugTex = TextureGenerator.generateLadybugTexture(size: CGSize(width: 64, height: 64), bodyColor: menuBodyColor, hideAntennae: menuHasHat, spotColor: menuSpotColor)
         let ladybug = SKSpriteNode(texture: ladybugTex)
         ladybug.position = CGPoint(x: size.width * 0.15, y: size.height * 0.35 + 32)
         ladybug.zPosition = 10

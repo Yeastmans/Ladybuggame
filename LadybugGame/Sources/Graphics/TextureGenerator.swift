@@ -5,32 +5,32 @@ enum TextureGenerator {
 
     // MARK: - Ladybug SIDE VIEW (facing right)
 
-    static func generateLadybugTexture(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae)
+    static func generateLadybugTexture(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false, spotColor: UIColor? = nil) -> SKTexture {
+        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae, spotColor: spotColor)
     }
 
     /// Two walk frames with alternating leg positions
-    static func generateLadybugWalkFrames(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> [SKTexture] {
-        return [drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae, walkPhase: 0),
-                drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae, walkPhase: 1)]
+    static func generateLadybugWalkFrames(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false, spotColor: UIColor? = nil) -> [SKTexture] {
+        return [drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae, walkPhase: 0, spotColor: spotColor),
+                drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae, walkPhase: 1, spotColor: spotColor)]
     }
 
-    static func generateLadybugBlinkTexture(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: true, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae)
+    static func generateLadybugBlinkTexture(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false, spotColor: UIColor? = nil) -> SKTexture {
+        return drawLadybugSide(size: size, eyesClosed: true, wingPhase: nil, bodyColor: bodyColor, hideAntennae: hideAntennae, spotColor: spotColor)
     }
 
-    static func generateLadybugDeadTexture(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> SKTexture {
-        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, dead: true, bodyColor: bodyColor, hideAntennae: hideAntennae)
+    static func generateLadybugDeadTexture(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false, spotColor: UIColor? = nil) -> SKTexture {
+        return drawLadybugSide(size: size, eyesClosed: false, wingPhase: nil, dead: true, bodyColor: bodyColor, hideAntennae: hideAntennae, spotColor: spotColor)
     }
 
     /// Two frames: wings up and wings down, legs tucked
-    static func generateLadybugFlyFrames(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false) -> [SKTexture] {
-        return [drawLadybugSide(size: size, eyesClosed: false, wingPhase: 0, bodyColor: bodyColor, hideAntennae: hideAntennae),
-                drawLadybugSide(size: size, eyesClosed: false, wingPhase: 1, bodyColor: bodyColor, hideAntennae: hideAntennae)]
+    static func generateLadybugFlyFrames(size: CGSize, bodyColor: UIColor? = nil, hideAntennae: Bool = false, wingColor: UIColor? = nil, spotColor: UIColor? = nil) -> [SKTexture] {
+        return [drawLadybugSide(size: size, eyesClosed: false, wingPhase: 0, bodyColor: bodyColor, hideAntennae: hideAntennae, wingColor: wingColor, spotColor: spotColor),
+                drawLadybugSide(size: size, eyesClosed: false, wingPhase: 1, bodyColor: bodyColor, hideAntennae: hideAntennae, wingColor: wingColor, spotColor: spotColor)]
     }
 
     /// wingPhase: nil = walking (legs out), 0 = wings up, 1 = wings down
-    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingPhase: Int?, dead: Bool = false, bodyColor: UIColor? = nil, hideAntennae: Bool = false, walkPhase: Int? = nil) -> SKTexture {
+    private static func drawLadybugSide(size: CGSize, eyesClosed: Bool, wingPhase: Int?, dead: Bool = false, bodyColor: UIColor? = nil, hideAntennae: Bool = false, walkPhase: Int? = nil, wingColor: UIColor? = nil, spotColor: UIColor? = nil) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
@@ -40,6 +40,7 @@ enum TextureGenerator {
             let legColor = UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor
             let isFlying = wingPhase != nil
             let bodyFill = (bodyColor ?? UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0)).cgColor
+            let spotFill = (spotColor ?? UIColor(red: 0.10, green: 0.05, blue: 0.05, alpha: 1.0)).cgColor
             // Derive a darker stroke from body color
             var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
             (bodyColor ?? UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0)).getRed(&br, green: &bg, blue: &bb, alpha: &ba)
@@ -73,14 +74,17 @@ enum TextureGenerator {
                 // === Translucent flight wings (larger, more visible) ===
                 let wingAngle: CGFloat = phase == 0 ? -0.40 : 0.12
                 // Back wing (slightly behind, larger)
-                cg.setFillColor(UIColor(red: 0.72, green: 0.82, blue: 0.90, alpha: 0.32).cgColor)
+                let wc = wingColor ?? UIColor(red: 0.72, green: 0.82, blue: 0.90, alpha: 1)
+                var wr: CGFloat = 0, wg: CGFloat = 0, wb: CGFloat = 0, wa: CGFloat = 0
+                wc.getRed(&wr, green: &wg, blue: &wb, alpha: &wa)
+                cg.setFillColor(UIColor(red: wr, green: wg, blue: wb, alpha: 0.32).cgColor)
                 cg.saveGState()
                 cg.translateBy(x: w * 0.38, y: h * 0.38)
                 cg.rotate(by: wingAngle * 0.8)
                 cg.fillEllipse(in: CGRect(x: -w * 0.22, y: -h * 0.28, width: w * 0.44, height: h * 0.34))
                 cg.restoreGState()
                 // Front wing (main, bright)
-                cg.setFillColor(UIColor(red: 0.80, green: 0.88, blue: 0.95, alpha: 0.50).cgColor)
+                cg.setFillColor(UIColor(red: wr, green: wg, blue: wb, alpha: 0.50).cgColor)
                 cg.saveGState()
                 cg.translateBy(x: w * 0.48, y: h * 0.36)
                 cg.rotate(by: wingAngle)
@@ -105,8 +109,7 @@ enum TextureGenerator {
                 cg.strokeEllipse(in: bodyRect)
 
                 // Spots (matched to walking spots)
-                let spotColor = UIColor(red: 0.10, green: 0.05, blue: 0.05, alpha: 1.0).cgColor
-                cg.setFillColor(spotColor)
+                cg.setFillColor(spotFill)
                 cg.fillEllipse(in: CGRect(x: w * 0.30, y: h * 0.30, width: w * 0.12, height: w * 0.12))
                 cg.fillEllipse(in: CGRect(x: w * 0.50, y: h * 0.28, width: w * 0.15, height: w * 0.15))
                 cg.fillEllipse(in: CGRect(x: w * 0.42, y: h * 0.48, width: w * 0.10, height: w * 0.10))
@@ -123,8 +126,7 @@ enum TextureGenerator {
                 cg.strokeEllipse(in: bodyRect)
 
                 // Spots
-                let spotColor = UIColor(red: 0.10, green: 0.05, blue: 0.05, alpha: 1.0).cgColor
-                cg.setFillColor(spotColor)
+                cg.setFillColor(spotFill)
                 cg.fillEllipse(in: CGRect(x: w * 0.30, y: h * 0.30, width: w * 0.12, height: w * 0.12))
                 cg.fillEllipse(in: CGRect(x: w * 0.50, y: h * 0.28, width: w * 0.15, height: w * 0.15))
                 cg.fillEllipse(in: CGRect(x: w * 0.42, y: h * 0.48, width: w * 0.10, height: w * 0.10))

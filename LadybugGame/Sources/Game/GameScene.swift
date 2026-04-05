@@ -169,7 +169,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             equippedBodyColor = UIColor(cgColor: c.cgColor)
         }
         let hasHatForDead = ShopScene.equippedHat != nil
-        deadTexture = TextureGenerator.generateLadybugDeadTexture(size: CGSize(width: 48, height: 48), bodyColor: equippedBodyColor, hideAntennae: hasHatForDead)
+        var deadSpotColor: UIColor? = nil
+        if let spotId = ShopScene.equippedSpots, spotId != "spot_default",
+           let item = ShopScene.allItems.first(where: { $0.id == spotId }),
+           let c = item.color { deadSpotColor = UIColor(cgColor: c.cgColor) }
+        deadTexture = TextureGenerator.generateLadybugDeadTexture(size: CGSize(width: 48, height: 48), bodyColor: equippedBodyColor, hideAntennae: hasHatForDead, spotColor: deadSpotColor)
         dragonflyFrames = TextureGenerator.generateDragonflyFrames(size: CGSize(width: 48, height: 28))
         fireflyFrames = TextureGenerator.generateFireflyFrames(size: CGSize(width: 24, height: 24))
         heartBugFrames = TextureGenerator.generateHeartBugFrames(size: CGSize(width: 36, height: 36))
@@ -414,10 +418,23 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         let hasHat = ShopScene.equippedHat != nil
-        let walkTex = TextureGenerator.generateLadybugTexture(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat)
-        let blinkTex = TextureGenerator.generateLadybugBlinkTexture(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat)
-        let flyFrames = TextureGenerator.generateLadybugFlyFrames(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat)
-        let walkFrames = TextureGenerator.generateLadybugWalkFrames(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat)
+
+        // Resolve wing color
+        var wingColor: UIColor? = nil
+        if let wingId = ShopScene.equippedWings,
+           let item = ShopScene.allItems.first(where: { $0.id == wingId }),
+           let c = item.color { wingColor = UIColor(cgColor: c.cgColor) }
+
+        // Resolve spot color
+        var spotColor: UIColor? = nil
+        if let spotId = ShopScene.equippedSpots, spotId != "spot_default",
+           let item = ShopScene.allItems.first(where: { $0.id == spotId }),
+           let c = item.color { spotColor = UIColor(cgColor: c.cgColor) }
+
+        let walkTex = TextureGenerator.generateLadybugTexture(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat, spotColor: spotColor)
+        let blinkTex = TextureGenerator.generateLadybugBlinkTexture(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat, spotColor: spotColor)
+        let flyFrames = TextureGenerator.generateLadybugFlyFrames(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat, wingColor: wingColor, spotColor: spotColor)
+        let walkFrames = TextureGenerator.generateLadybugWalkFrames(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat, spotColor: spotColor)
         ladybug = Ladybug(walkTexture: walkTex, blinkTexture: blinkTex, flyFrames: flyFrames, walkFrames: walkFrames)
         ladybug.position = CGPoint(x: size.width * 0.18, y: groundY + bugSize.height / 2)
 
@@ -1714,6 +1731,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if gnatTimer >= 1.0 { gnatTimer = 0; spawnGnatSwarm() }
             aphidTimer += fdt
             if aphidTimer >= 2.0 { aphidTimer = 0; spawnAphid() }
+            flyTimer += fdt // Night crickets
+            if flyTimer >= 3.0 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateDesertCricketTexture(size: CGSize(width: 24, height: 18)), pts: 20, flying: false, name: "Cricket") }
             fireflyTimer += dt // Powerups unaffected by difficulty
             if fireflyTimer >= 22.0 { fireflyTimer = 0; spawnFirefly() }
             spiderTimer += edt
