@@ -398,7 +398,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func updateLivesDisplay() {
         var h = ""
-        for i in 0..<6 { h += i < lives ? "♥" : "♡"; if i < 5 { h += " " } }
+        for i in 0..<lives { if i > 0 { h += " " }; h += "♥" }
         livesLabel.text = h
     }
 
@@ -2707,33 +2707,45 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             }
         }
 
-        // Banner with dramatic entry
-        let banner = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        banner.text = "BOSS FIGHT!"
-        banner.fontSize = 36
-        banner.fontColor = SKColor(red: 1, green: 0.25, blue: 0.15, alpha: 1)
-        banner.position = CGPoint(x: size.width / 2, y: size.height / 2 + 20)
-        banner.zPosition = 130
-        banner.setScale(0.3)
-        addChild(banner)
-        banner.run(SKAction.sequence([
-            SKAction.scale(to: 1.5, duration: 0.4),
-            SKAction.scale(to: 1.0, duration: 0.2),
-            SKAction.wait(forDuration: 1.5),
-            SKAction.fadeOut(withDuration: 0.5),
-            SKAction.removeFromParent()
+        // Spawn one heart bug as a gift before the fight
+        spawnHeartBug()
+
+        // Wait for terrain to flatten, then show banner and bear
+        run(SKAction.sequence([
+            SKAction.wait(forDuration: 5.0),
+            SKAction.run { [weak self] in
+                guard let self = self else { return }
+                SoundManager.shared.play("roar")
+
+                let banner = SKLabelNode(fontNamed: "AvenirNext-Bold")
+                banner.text = "BOSS FIGHT!"
+                banner.fontSize = 36
+                banner.fontColor = SKColor(red: 1, green: 0.25, blue: 0.15, alpha: 1)
+                banner.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2 + 20)
+                banner.zPosition = 130
+                banner.setScale(0.3)
+                self.addChild(banner)
+                banner.run(SKAction.sequence([
+                    SKAction.scale(to: 1.5, duration: 0.4),
+                    SKAction.scale(to: 1.0, duration: 0.2),
+                    SKAction.wait(forDuration: 1.5),
+                    SKAction.fadeOut(withDuration: 0.5),
+                    SKAction.removeFromParent()
+                ]))
+
+                self.spawnBear()
+            }
         ]))
 
-        SoundManager.shared.play("roar")
+    }
 
-        // Bear appears from right — big and menacing
+    private func spawnBear() {
         let bearTex = TextureGenerator.generateBearTexture(size: CGSize(width: 200, height: 150))
         let bear = SKSpriteNode(texture: bearTex, size: CGSize(width: 200, height: 150))
         bear.position = CGPoint(x: size.width + 120, y: groundY + 75)
         bear.xScale = -1
         bear.zPosition = 8
         bear.name = "boss"
-        // Bear physics body — damages ladybug on contact
         let bearBody = SKPhysicsBody(rectangleOf: CGSize(width: 140, height: 110))
         bearBody.isDynamic = false
         bearBody.categoryBitMask = GameScene.PhysicsCategory.bird
@@ -2742,25 +2754,21 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(bear)
         bossNode = bear
 
-        // Dramatic entrance: shake + walk in
         bear.run(SKAction.sequence([
             SKAction.wait(forDuration: 0.5),
             SKAction.moveTo(x: size.width * 0.75, duration: 1.5)
         ]))
-        // Bear idle breathing + menacing sway
         let breathe = SKAction.sequence([
             SKAction.scaleY(to: 1.03, duration: 0.8),
             SKAction.scaleY(to: 0.97, duration: 0.8),
         ])
         bear.run(SKAction.repeatForever(breathe), withKey: "breathe")
-        // Subtle side-to-side sway
         let sway = SKAction.sequence([
             SKAction.moveBy(x: 8, y: 0, duration: 1.2),
             SKAction.moveBy(x: -8, y: 0, duration: 1.2),
         ])
         bear.run(SKAction.repeatForever(sway), withKey: "sway")
 
-        // Health bar background (above bear)
         let hpBg = SKShapeNode(rectOf: CGSize(width: 104, height: 10), cornerRadius: 3)
         hpBg.fillColor = SKColor(red: 0.2, green: 0.1, blue: 0.1, alpha: 0.8)
         hpBg.strokeColor = SKColor(white: 0.5, alpha: 0.6)
@@ -2770,15 +2778,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         hpBg.name = "bossHPBg"
         bear.addChild(hpBg)
 
-        // Health bar fill
         let hpBar = SKShapeNode(rectOf: CGSize(width: 100, height: 6), cornerRadius: 2)
-        hpBar.fillColor = SKColor(red: 0.85, green: 0.15, blue: 0.10, alpha: 1)
+        hpBar.fillColor = SKColor(red: 0.15, green: 0.75, blue: 0.15, alpha: 1)
         hpBar.strokeColor = .clear
         hpBar.position = CGPoint(x: 0, y: 85)
         hpBar.zPosition = 11
         hpBar.name = "bossHPBar"
         bear.addChild(hpBar)
-        bossHPLabel = nil // Not using text anymore
     }
 
     private func updateBossHP() {
@@ -2996,38 +3002,71 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         enumerateChildNodes(withName: "shockwave") { n, _ in n.removeFromParent() }
         enumerateChildNodes(withName: "bubbleBerry") { n, _ in n.removeFromParent() }
         enumerateChildNodes(withName: "bubble") { n, _ in n.removeFromParent() }
+        // Bonus: 50 gems if no checkpoint used, 10 if checkpoint
+        let bonusGems = startFromCheckpoint ? 10 : 50
+
         // Victory banner
         let victory = SKLabelNode(fontNamed: "AvenirNext-Bold")
         victory.text = "VICTORY!"
-        victory.fontSize = 40
+        victory.fontSize = 44
         victory.fontColor = SKColor(red: 1, green: 0.85, blue: 0.0, alpha: 1)
-        victory.position = CGPoint(x: size.width / 2, y: size.height / 2 + 10)
+        victory.position = CGPoint(x: size.width / 2, y: size.height / 2 + 30)
         victory.zPosition = 130
+        victory.setScale(0.3)
         addChild(victory)
         victory.run(SKAction.sequence([
-            SKAction.group([SKAction.scale(to: 1.4, duration: 0.5), SKAction.fadeAlpha(to: 1, duration: 0.1)]),
-            SKAction.wait(forDuration: 3.0),
-            SKAction.fadeOut(withDuration: 1.0),
-            SKAction.removeFromParent(),
-            SKAction.run { [weak self] in
-                guard let self = self else { return }
-                // Award bonus gems
-                GameScene.gemCount += 10
-                self.gemLabel.text = "\(GameScene.gemCount)"
-                // Return to menu
-                let menu = MenuScene(size: self.size)
-                menu.scaleMode = self.scaleMode
-                self.view?.presentScene(menu, transition: .fade(withDuration: 0.5))
-            }
+            SKAction.scale(to: 1.5, duration: 0.4),
+            SKAction.scale(to: 1.0, duration: 0.2),
         ]))
+
         // Gem reward text
         let gemReward = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        gemReward.text = "+10 💎"
-        gemReward.fontSize = 22
+        gemReward.text = "+\(bonusGems) 💎"
+        gemReward.fontSize = 26
         gemReward.fontColor = SKColor(red: 0.75, green: 0.55, blue: 1.0, alpha: 1)
-        gemReward.position = CGPoint(x: size.width / 2, y: size.height / 2 - 30)
+        gemReward.position = CGPoint(x: size.width / 2, y: size.height / 2 - 10)
         gemReward.zPosition = 130
+        gemReward.alpha = 0
         addChild(gemReward)
+        gemReward.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), SKAction.fadeIn(withDuration: 0.5)]))
+
+        // No checkpoint bonus message
+        if !startFromCheckpoint {
+            let bonusMsg = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            bonusMsg.text = "FULL RUN BONUS!"
+            bonusMsg.fontSize = 16
+            bonusMsg.fontColor = SKColor(red: 1, green: 0.65, blue: 0.0, alpha: 1)
+            bonusMsg.position = CGPoint(x: size.width / 2, y: size.height / 2 - 40)
+            bonusMsg.zPosition = 130
+            bonusMsg.alpha = 0
+            addChild(bonusMsg)
+            bonusMsg.run(SKAction.sequence([SKAction.wait(forDuration: 1.5), SKAction.fadeIn(withDuration: 0.5)]))
+        }
+
+        // Score display
+        let scoreMsg = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        scoreMsg.text = "Final Score: \(score)"
+        scoreMsg.fontSize = 14
+        scoreMsg.fontColor = SKColor(white: 0.8, alpha: 1)
+        scoreMsg.position = CGPoint(x: size.width / 2, y: size.height / 2 - 65)
+        scoreMsg.zPosition = 130
+        scoreMsg.alpha = 0
+        addChild(scoreMsg)
+        scoreMsg.run(SKAction.sequence([SKAction.wait(forDuration: 2.0), SKAction.fadeIn(withDuration: 0.5)]))
+
+        // Award gems and go to menu after 8 seconds
+        run(SKAction.sequence([
+            SKAction.wait(forDuration: 8.0),
+            SKAction.run { [weak self] in
+                guard let self = self else { return }
+                GameScene.gemCount += bonusGems
+                self.gemLabel.text = "\(GameScene.gemCount)"
+                if self.score > MenuScene.highScore { MenuScene.highScore = self.score }
+                let menu = MenuScene(size: self.size)
+                menu.scaleMode = self.scaleMode
+                self.view?.presentScene(menu, transition: .fade(withDuration: 0.8))
+            }
+        ]))
         gemReward.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), SKAction.fadeOut(withDuration: 3.0), SKAction.removeFromParent()]))
     }
 
