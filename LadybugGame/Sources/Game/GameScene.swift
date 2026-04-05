@@ -3003,7 +3003,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         enumerateChildNodes(withName: "bubbleBerry") { n, _ in n.removeFromParent() }
         enumerateChildNodes(withName: "bubble") { n, _ in n.removeFromParent() }
         // Bonus: 50 gems if no checkpoint used, 10 if checkpoint
-        let bonusGems = startFromCheckpoint ? 10 : 50
+        let baseBonus = startFromCheckpoint ? 10 : 50
+        let diffMul: Int = switch MenuScene.difficulty { case .easy: 1; case .normal: 2; case .hard: 4 }
+        let bonusGems = (baseBonus * diffMul) / 2  // Easy=25, Normal=50, Hard=100 (full run)
 
         // Victory banner
         let victory = SKLabelNode(fontNamed: "AvenirNext-Bold")
