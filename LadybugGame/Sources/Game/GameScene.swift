@@ -1058,6 +1058,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             spawnJungleDecor(x: x)
         case .cave:
             spawnCaveDecor(x: x)
+        case .underwater:
+            spawnUnderwaterDecor(x: x)
+        case .volcano:
+            spawnVolcanoDecor(x: x)
+        case .cloud:
+            spawnCloudDecor(x: x)
+        case .swamp:
+            spawnSwampDecor(x: x)
+        case .city:
+            spawnCityDecor(x: x)
         }
     }
 
@@ -1246,6 +1256,174 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
 
+    private func spawnUnderwaterDecor(x: CGFloat) {
+        let roll = Int.random(in: 0...4)
+        switch roll {
+        case 0: // Seaweed
+            let h = CGFloat.random(in: 20...50)
+            let weed = SKShapeNode(rectOf: CGSize(width: 3, height: h))
+            weed.fillColor = SKColor(red: 0.15, green: CGFloat.random(in: 0.45...0.60), blue: 0.25, alpha: 0.7)
+            weed.zRotation = CGFloat.random(in: -0.15...0.15)
+            addDecor(weed, x: x, y: groundY + h / 2)
+        case 1: // Coral
+            let coral = SKShapeNode(circleOfRadius: CGFloat.random(in: 8...16))
+            coral.fillColor = [SKColor.orange, SKColor.magenta, SKColor(red: 0.9, green: 0.4, blue: 0.5, alpha: 1)].randomElement()!.withAlphaComponent(0.7)
+            addDecor(coral, x: x, y: groundY + CGFloat.random(in: 4...10))
+        case 2: // Bubbles rising
+            for _ in 0..<Int.random(in: 2...4) {
+                let bub = SKShapeNode(circleOfRadius: CGFloat.random(in: 1.5...3.5))
+                bub.fillColor = SKColor(red: 0.50, green: 0.70, blue: 0.90, alpha: 0.3)
+                bub.strokeColor = SKColor(red: 0.60, green: 0.80, blue: 1.0, alpha: 0.4)
+                bub.lineWidth = 0.5
+                bub.position = CGPoint(x: x + CGFloat.random(in: -8...8), y: groundY + CGFloat.random(in: 10...40))
+                bub.zPosition = 1
+                bub.name = "envDecor"
+                addChild(bub)
+                bub.run(SKAction.sequence([SKAction.moveBy(x: 0, y: CGFloat.random(in: 40...80), duration: Double.random(in: 2...4)), SKAction.removeFromParent()]))
+            }
+        case 3: // Shell
+            let shell = SKShapeNode(circleOfRadius: CGFloat.random(in: 4...7))
+            shell.fillColor = SKColor(red: 0.85, green: 0.78, blue: 0.65, alpha: 0.7)
+            addDecor(shell, x: x, y: groundY + 3)
+        default: // Sand ripple
+            let ripple = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 15...30), height: 3))
+            ripple.fillColor = SKColor(red: 0.20, green: 0.35, blue: 0.50, alpha: 0.3)
+            addDecor(ripple, x: x, y: groundY + 1)
+        }
+    }
+
+    private func spawnVolcanoDecor(x: CGFloat) {
+        let roll = Int.random(in: 0...4)
+        switch roll {
+        case 0: // Lava pool
+            let pool = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 20...40), height: 8))
+            pool.fillColor = SKColor(red: 0.95, green: 0.40, blue: 0.05, alpha: 0.6)
+            pool.strokeColor = SKColor(red: 0.80, green: 0.25, blue: 0.05, alpha: 0.4)
+            addDecor(pool, x: x, y: groundY + 2)
+        case 1: // Volcanic rock
+            let rock = SKShapeNode(rectOf: CGSize(width: CGFloat.random(in: 8...18), height: CGFloat.random(in: 6...12)), cornerRadius: 3)
+            rock.fillColor = SKColor(red: 0.22, green: 0.18, blue: 0.16, alpha: 0.8)
+            addDecor(rock, x: x, y: groundY + 3)
+        case 2: // Smoke/steam vent
+            let smoke = SKShapeNode(circleOfRadius: CGFloat.random(in: 4...8))
+            smoke.fillColor = SKColor(white: 0.5, alpha: 0.2)
+            smoke.position = CGPoint(x: x, y: groundY + 10)
+            smoke.zPosition = 1; smoke.name = "envDecor"
+            addChild(smoke)
+            smoke.run(SKAction.sequence([SKAction.group([SKAction.moveBy(x: 0, y: 30, duration: 1.5), SKAction.fadeOut(withDuration: 1.5)]), SKAction.removeFromParent()]))
+        case 3: // Obsidian shard
+            let shard = SKShapeNode(rectOf: CGSize(width: 3, height: CGFloat.random(in: 10...22)))
+            shard.fillColor = SKColor(red: 0.12, green: 0.10, blue: 0.15, alpha: 0.85)
+            shard.zRotation = CGFloat.random(in: -0.3...0.3)
+            addDecor(shard, x: x, y: groundY + shard.frame.height / 2)
+        default: // Ember particles
+            let ember = SKShapeNode(circleOfRadius: 1.5)
+            ember.fillColor = SKColor(red: 1.0, green: CGFloat.random(in: 0.4...0.7), blue: 0.1, alpha: 0.8)
+            ember.position = CGPoint(x: x, y: groundY + CGFloat.random(in: 5...30))
+            ember.zPosition = 1; ember.name = "envDecor"
+            addChild(ember)
+            ember.run(SKAction.sequence([SKAction.group([SKAction.moveBy(x: CGFloat.random(in: -10...10), y: 25, duration: 1.0), SKAction.fadeOut(withDuration: 1.0)]), SKAction.removeFromParent()]))
+        }
+    }
+
+    private func spawnCloudDecor(x: CGFloat) {
+        let roll = Int.random(in: 0...4)
+        switch roll {
+        case 0: // Cloud puff on ground
+            let puff = SKShapeNode(circleOfRadius: CGFloat.random(in: 12...22))
+            puff.fillColor = SKColor(white: 1.0, alpha: CGFloat.random(in: 0.3...0.5))
+            addDecor(puff, x: x, y: groundY + CGFloat.random(in: 5...15))
+        case 1: // Rainbow fragment
+            let colors: [SKColor] = [.red, .orange, .yellow, .green, .blue, .purple]
+            for (i, c) in colors.enumerated() {
+                let arc = SKShapeNode(rectOf: CGSize(width: 2, height: 4))
+                arc.fillColor = c.withAlphaComponent(0.4)
+                arc.strokeColor = .clear
+                addDecor(arc, x: x + CGFloat(i) * 3 - 8, y: groundY + 20 + CGFloat(i) * 2)
+            }
+        case 2: // Star
+            let star = SKShapeNode(circleOfRadius: CGFloat.random(in: 2...4))
+            star.fillColor = SKColor(red: 1.0, green: 0.95, blue: 0.60, alpha: 0.7)
+            addDecor(star, x: x, y: CGFloat.random(in: groundY + 30...size.height * 0.70))
+        case 3: // Wind streak
+            let streak = SKShapeNode(rectOf: CGSize(width: CGFloat.random(in: 20...40), height: 1.5))
+            streak.fillColor = SKColor(white: 1.0, alpha: 0.2)
+            addDecor(streak, x: x, y: CGFloat.random(in: groundY + 20...size.height * 0.60))
+        default: // Floating crystal
+            let crystal = SKShapeNode(rectOf: CGSize(width: 4, height: CGFloat.random(in: 8...14)))
+            crystal.fillColor = SKColor(red: 0.80, green: 0.88, blue: 1.0, alpha: 0.5)
+            crystal.zRotation = .pi / 4
+            addDecor(crystal, x: x, y: groundY + CGFloat.random(in: 15...35))
+        }
+    }
+
+    private func spawnSwampDecor(x: CGFloat) {
+        let roll = Int.random(in: 0...4)
+        switch roll {
+        case 0: // Dead tree
+            let trunk = SKShapeNode(rectOf: CGSize(width: 6, height: CGFloat.random(in: 30...55)))
+            trunk.fillColor = SKColor(red: 0.30, green: 0.22, blue: 0.15, alpha: 0.8)
+            addDecor(trunk, x: x, y: groundY + trunk.frame.height / 2)
+        case 1: // Lily pad on water
+            let pad = SKShapeNode(circleOfRadius: CGFloat.random(in: 6...10))
+            pad.fillColor = SKColor(red: 0.25, green: 0.55, blue: 0.18, alpha: 0.6)
+            addDecor(pad, x: x, y: groundY + 2)
+        case 2: // Fog/mist
+            let fog = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 30...60), height: 10))
+            fog.fillColor = SKColor(red: 0.40, green: 0.45, blue: 0.30, alpha: 0.12)
+            addDecor(fog, x: x, y: groundY + CGFloat.random(in: 10...25))
+        case 3: // Mushroom cluster
+            for i in 0..<Int.random(in: 2...3) {
+                let cap = SKShapeNode(circleOfRadius: CGFloat.random(in: 3...6))
+                cap.fillColor = SKColor(red: 0.55, green: 0.40, blue: 0.25, alpha: 0.7)
+                addDecor(cap, x: x + CGFloat(i) * 6 - 4, y: groundY + 5)
+            }
+        default: // Cattail/reed
+            let stem = SKShapeNode(rectOf: CGSize(width: 1.5, height: CGFloat.random(in: 15...30)))
+            stem.fillColor = SKColor(red: 0.35, green: 0.40, blue: 0.22, alpha: 0.6)
+            addDecor(stem, x: x, y: groundY + stem.frame.height / 2)
+            let top = SKShapeNode(ellipseOf: CGSize(width: 4, height: 8))
+            top.fillColor = SKColor(red: 0.45, green: 0.35, blue: 0.20, alpha: 0.7)
+            addDecor(top, x: x, y: groundY + stem.frame.height + 2)
+        }
+    }
+
+    private func spawnCityDecor(x: CGFloat) {
+        let roll = Int.random(in: 0...4)
+        switch roll {
+        case 0: // Flower pot
+            let pot = SKShapeNode(rectOf: CGSize(width: 14, height: 10), cornerRadius: 2)
+            pot.fillColor = SKColor(red: 0.65, green: 0.35, blue: 0.18, alpha: 0.8)
+            addDecor(pot, x: x, y: groundY + 5)
+            let flower = SKShapeNode(circleOfRadius: 5)
+            flower.fillColor = [SKColor.red, .yellow, .magenta, .orange].randomElement()!
+            addDecor(flower, x: x, y: groundY + 14)
+        case 1: // Pebble path
+            for i in 0..<3 {
+                let peb = SKShapeNode(circleOfRadius: CGFloat.random(in: 2...4))
+                peb.fillColor = SKColor(white: CGFloat.random(in: 0.55...0.70), alpha: 0.6)
+                addDecor(peb, x: x + CGFloat(i) * 6 - 5, y: groundY + 2)
+            }
+        case 2: // Garden fence post
+            let post = SKShapeNode(rectOf: CGSize(width: 4, height: 18))
+            post.fillColor = SKColor(red: 0.75, green: 0.70, blue: 0.60, alpha: 0.7)
+            addDecor(post, x: x, y: groundY + 9)
+        case 3: // Leaf pile
+            for _ in 0..<Int.random(in: 3...5) {
+                let leaf = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 4...7), height: CGFloat.random(in: 3...5)))
+                leaf.fillColor = [SKColor(red: 0.70, green: 0.55, blue: 0.15, alpha: 0.6), SKColor(red: 0.80, green: 0.30, blue: 0.10, alpha: 0.6), SKColor(red: 0.60, green: 0.50, blue: 0.20, alpha: 0.6)].randomElement()!
+                leaf.zRotation = CGFloat.random(in: -.pi...(.pi))
+                addDecor(leaf, x: x + CGFloat.random(in: -8...8), y: groundY + CGFloat.random(in: 2...6))
+            }
+        default: // Grass tuft
+            for i in 0..<3 {
+                let blade = SKShapeNode(rectOf: CGSize(width: 1.5, height: CGFloat.random(in: 8...16)))
+                blade.fillColor = SKColor(red: 0.35, green: CGFloat.random(in: 0.58...0.72), blue: 0.22, alpha: 0.7)
+                addDecor(blade, x: x + CGFloat(i) * 3, y: groundY + blade.frame.height / 2)
+            }
+        }
+    }
+
     private func spawnCaveDecor(x: CGFloat) {
         guard let terrain = caveTerrain else { return }
         let gY = terrain.groundY(atScreenX: x)
@@ -1403,6 +1581,22 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 case "Cave Cricket":    unlockBug(.caveCricket);    SoundManager.shared.play("skitter")
                 case "Glowworm":        unlockBug(.glowworm);       SoundManager.shared.play("flutter")
                 case "Crystal Beetle":  unlockBug(.crystalBeetle);  SoundManager.shared.play("skitter")
+                case "Sea Snail":      unlockBug(.seaSnail);      SoundManager.shared.play("skitter")
+                case "Plankton":       unlockBug(.plankton);       SoundManager.shared.play("pop")
+                case "Shrimplet":      unlockBug(.shrimplet);      SoundManager.shared.play("pop")
+                case "Ember Beetle":   unlockBug(.emberBeetle);    SoundManager.shared.play("skitter")
+                case "Ash Moth":       unlockBug(.ashMoth);        SoundManager.shared.play("flutter")
+                case "Magma Snail":    unlockBug(.magmaSnail);     SoundManager.shared.play("skitter")
+                case "Cloud Mite":     unlockBug(.cloudMite);      SoundManager.shared.play("pop")
+                case "Star Bug":       unlockBug(.starBug);        SoundManager.shared.play("pop")
+                case "Sky Jelly":      unlockBug(.skyJelly);       SoundManager.shared.play("pop")
+                case "Mud Cricket":    unlockBug(.mudCricket);     SoundManager.shared.play("skitter")
+                case "Swamp Fly":      unlockBug(.swampFly);       SoundManager.shared.play("flutter")
+                case "Leech":          unlockBug(.leech);          SoundManager.shared.play("skitter")
+                case "Garden Ant":     unlockBug(.gardenAnt);      SoundManager.shared.play("skitter")
+                case "Honeybee":       unlockBug(.honeybee);       SoundManager.shared.play("buzz")
+                case "Pill Bug":       unlockBug(.pillBug);        SoundManager.shared.play("skitter")
+                case "Cricket":        SoundManager.shared.play("skitter")
                 default: break
                 }
                 return
@@ -1545,6 +1739,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Vampire Bat": unlockBug(.vampireBat)
                     case "Frost Moth": unlockBug(.frostMoth)
                     case "Cicada Bee": unlockBug(.cicadaBee)
+                    case "Jellyfish": unlockBug(.jellyfish)
+                    case "Angler Fish": unlockBug(.anglerFish)
+                    case "Phoenix": unlockBug(.phoenixBird)
+                    case "Storm Hawk": unlockBug(.stormHawk)
+                    case "Thunder Wasp": unlockBug(.thunderWasp)
+                    case "Mosquito Swarm": unlockBug(.mosquitoSwarm)
+                    case "Yellow Jacket": unlockBug(.yellowJacket)
                     default: break
                     }
                 }
@@ -1555,6 +1756,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Ice Spider": unlockBug(.iceSpider)
                     case "Jungle Spider": unlockBug(.jungleSpider)
                     case "Rock Worm": unlockBug(.rockWorm)
+                    case "Sea Urchin": unlockBug(.seaUrchin)
+                    case "Electric Eel": unlockBug(.electricEel)
+                    case "Lava Slime": unlockBug(.lavaSlime)
+                    case "Fire Ant": unlockBug(.fireAnt)
+                    case "Obsidian Golem": unlockBug(.obsidianGolem)
+                    case "Wind Sprite": unlockBug(.windSprite)
+                    case "Lightning Bug": unlockBug(.lightningBug)
+                    case "Bog Spider": unlockBug(.bogSpider)
+                    case "Swamp Snake": unlockBug(.swampSnake)
+                    case "Garden Spider": unlockBug(.gardenSpider)
+                    case "Garden Snake": unlockBug(.gardenSnake)
+                    case "House Cat": unlockBug(.houseCat)
                     default: break
                     }
                 }
@@ -1821,6 +2034,86 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if fireflyTimer >= 15.0 { fireflyTimer = 0; spawnFirefly() }
             frogTimer += dt // Cave pools with fish
             if frogTimer >= max(5.0, 10.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnCavePool() }
+
+        case .underwater:
+            aphidTimer += fdt // Sea snails
+            if aphidTimer >= 1.4 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 20), bodyColor: UIColor(red: 0.55, green: 0.45, blue: 0.60, alpha: 1), eyeColor: .white), pts: 20, flying: false, name: "Sea Snail") }
+            flyTimer += fdt // Plankton (flying/floating)
+            if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 18, height: 18), bodyColor: UIColor(red: 0.30, green: 0.80, blue: 0.70, alpha: 1), eyeColor: .white), pts: 30, flying: true, name: "Plankton") }
+            gnatTimer += fdt // Shrimplets
+            if gnatTimer >= 2.5 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 16), bodyColor: UIColor(red: 0.90, green: 0.55, blue: 0.45, alpha: 1), eyeColor: .black), pts: 40, flying: true, name: "Shrimplet") }
+            spiderTimer += edt // Sea urchins (ground)
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 36, height: 36), bodyColor: UIColor(red: 0.20, green: 0.15, blue: 0.25, alpha: 1), eyeColor: .red), name: "Sea Urchin") }
+            birdTimer += edt // Jellyfish (swooper)
+            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Jellyfish") }
+            dragonflyTimer += edt // Electric eel (ground patrol)
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 56, height: 24), bodyColor: UIColor(red: 0.25, green: 0.35, blue: 0.55, alpha: 1), eyeColor: .yellow), name: "Electric Eel") }
+            waspTimer += edt // Angler fish (sky patrol)
+            if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeSwooper(name: "Angler Fish") }
+
+        case .volcano:
+            aphidTimer += fdt // Ember beetles
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 26, height: 22), bodyColor: UIColor(red: 0.70, green: 0.30, blue: 0.10, alpha: 1), eyeColor: .orange), pts: 25, flying: false, name: "Ember Beetle") }
+            flyTimer += fdt // Ash moths
+            if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 20), bodyColor: UIColor(red: 0.50, green: 0.48, blue: 0.45, alpha: 1), eyeColor: .white), pts: 30, flying: true, name: "Ash Moth") }
+            gnatTimer += fdt // Magma snails
+            if gnatTimer >= 3.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 20), bodyColor: UIColor(red: 0.85, green: 0.40, blue: 0.10, alpha: 1), eyeColor: .yellow), pts: 45, flying: false, name: "Magma Snail") }
+            spiderTimer += edt // Fire ants
+            if spiderTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 30, height: 26), bodyColor: UIColor(red: 0.75, green: 0.15, blue: 0.08, alpha: 1), eyeColor: .orange), name: "Fire Ant") }
+            birdTimer += edt // Phoenix (swooper)
+            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Phoenix") }
+            dragonflyTimer += edt // Lava slime (ground)
+            if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 34, height: 28), bodyColor: UIColor(red: 0.90, green: 0.30, blue: 0.05, alpha: 1), eyeColor: .yellow), name: "Lava Slime") }
+            waspTimer += edt // Obsidian golem (sky patrol)
+            if waspTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 48, height: 40), bodyColor: UIColor(red: 0.18, green: 0.15, blue: 0.20, alpha: 1), eyeColor: .red), name: "Obsidian Golem") }
+
+        case .cloud:
+            aphidTimer += fdt // Cloud mites
+            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 18), bodyColor: UIColor(red: 0.90, green: 0.92, blue: 0.98, alpha: 1), eyeColor: UIColor(red: 0.4, green: 0.6, blue: 0.9, alpha: 1)), pts: 20, flying: false, name: "Cloud Mite") }
+            flyTimer += fdt // Star bugs (flying)
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 22), bodyColor: UIColor(red: 0.95, green: 0.88, blue: 0.40, alpha: 1), eyeColor: .white), pts: 35, flying: true, name: "Star Bug") }
+            gnatTimer += fdt // Sky jellies
+            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 24), bodyColor: UIColor(red: 0.70, green: 0.80, blue: 0.95, alpha: 1), eyeColor: .white), pts: 40, flying: true, name: "Sky Jelly") }
+            spiderTimer += edt // Wind sprites (ground)
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 30, height: 28), bodyColor: UIColor(red: 0.80, green: 0.90, blue: 0.95, alpha: 1), eyeColor: .cyan), name: "Wind Sprite") }
+            birdTimer += edt // Storm hawks (swooper)
+            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Storm Hawk") }
+            waspTimer += edt // Thunder wasps (sky patrol)
+            if waspTimer >= max(4.5, 8.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeSwooper(name: "Thunder Wasp") }
+            dragonflyTimer += edt // Lightning bugs
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 28, height: 24), bodyColor: UIColor(red: 0.95, green: 0.90, blue: 0.30, alpha: 1), eyeColor: .blue), name: "Lightning Bug") }
+
+        case .swamp:
+            aphidTimer += fdt // Mud crickets
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 20), bodyColor: UIColor(red: 0.45, green: 0.38, blue: 0.25, alpha: 1), eyeColor: .white), pts: 20, flying: false, name: "Mud Cricket") }
+            flyTimer += fdt // Swamp flies
+            if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 18), bodyColor: UIColor(red: 0.35, green: 0.42, blue: 0.22, alpha: 1), eyeColor: .red), pts: 25, flying: true, name: "Swamp Fly") }
+            gnatTimer += fdt // Leeches
+            if gnatTimer >= 2.5 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 16), bodyColor: UIColor(red: 0.30, green: 0.18, blue: 0.15, alpha: 1), eyeColor: .white), pts: 35, flying: false, name: "Leech") }
+            spiderTimer += edt // Bog spiders
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 40, height: 34), bodyColor: UIColor(red: 0.35, green: 0.30, blue: 0.22, alpha: 1), eyeColor: .red), name: "Bog Spider") }
+            birdTimer += edt // Mosquito swarms (swooper)
+            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Mosquito Swarm") }
+            dragonflyTimer += edt // Swamp snakes
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 52, height: 30), bodyColor: UIColor(red: 0.32, green: 0.35, blue: 0.20, alpha: 1), eyeColor: .yellow), name: "Swamp Snake") }
+            frogTimer += edt // Alligators at ponds
+            if frogTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnPondCreature() }
+
+        case .city:
+            aphidTimer += fdt // Garden ants
+            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 18), bodyColor: UIColor(red: 0.18, green: 0.15, blue: 0.12, alpha: 1), eyeColor: .white), pts: 15, flying: false, name: "Garden Ant") }
+            flyTimer += fdt // Honeybees (flying food)
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 20), bodyColor: UIColor(red: 0.92, green: 0.75, blue: 0.15, alpha: 1), eyeColor: .black), pts: 30, flying: true, name: "Honeybee") }
+            gnatTimer += fdt // Pill bugs
+            if gnatTimer >= 2.2 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 20), bodyColor: UIColor(red: 0.45, green: 0.45, blue: 0.48, alpha: 1), eyeColor: .white), pts: 25, flying: false, name: "Pill Bug") }
+            spiderTimer += edt // Garden spiders
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 40, height: 34), bodyColor: UIColor(red: 0.50, green: 0.42, blue: 0.25, alpha: 1), eyeColor: .red), name: "Garden Spider") }
+            birdTimer += edt // Yellow jackets (swooper)
+            if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Yellow Jacket") }
+            dragonflyTimer += edt // Garden snakes
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 52, height: 28), bodyColor: UIColor(red: 0.30, green: 0.55, blue: 0.22, alpha: 1), eyeColor: .yellow), name: "Garden Snake") }
+            waspTimer += edt // House cat (rare, big, charges)
+            if waspTimer >= max(8.0, 14.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 70, height: 50), bodyColor: UIColor(red: 0.75, green: 0.55, blue: 0.35, alpha: 1), eyeColor: .green), name: "House Cat") }
         }
     }
 
@@ -1932,6 +2225,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Frost Moth": frames = frostMothFrames
         case "Snow Owl": frames = owlFrames
         case "Toucan": frames = toucanFrames
+        case "Jellyfish": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 36, height: 36), bodyColor: UIColor(red: 0.70, green: 0.50, blue: 0.85, alpha: 1), eyeColor: .white)]
+        case "Angler Fish": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 44, height: 30), bodyColor: UIColor(red: 0.25, green: 0.20, blue: 0.30, alpha: 1), eyeColor: .yellow)]
+        case "Phoenix": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 50, height: 36), bodyColor: UIColor(red: 0.95, green: 0.55, blue: 0.10, alpha: 1), eyeColor: .red)]
+        case "Storm Hawk": frames = hawkFrames
+        case "Thunder Wasp": frames = waspFrames
+        case "Mosquito Swarm": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 30, height: 30), bodyColor: UIColor(red: 0.35, green: 0.30, blue: 0.28, alpha: 1), eyeColor: .red)]
+        case "Yellow Jacket": frames = waspFrames
         default: frames = birdTextures
         }
         let swooper = BiomeSwooper(textures: frames, biomeName: name)
@@ -1945,6 +2245,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Hawk": SoundManager.shared.play("screech")
         case "Vampire Bat": SoundManager.shared.play("screech")
         case "Frost Moth": SoundManager.shared.play("flutter")
+        case "Jellyfish": SoundManager.shared.play("splash")
+        case "Angler Fish": SoundManager.shared.play("screech")
+        case "Phoenix": SoundManager.shared.play("screech")
+        case "Storm Hawk": SoundManager.shared.play("screech")
+        case "Thunder Wasp": SoundManager.shared.play("buzz")
+        case "Mosquito Swarm": SoundManager.shared.play("buzz")
+        case "Yellow Jacket": SoundManager.shared.play("buzz")
         case "Snow Owl": SoundManager.shared.play("hoot")
         case "Toucan": SoundManager.shared.play("squawk")
         default: SoundManager.shared.play("caw")
@@ -2344,6 +2651,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Stop previous biome effects
         removeAction(forKey: "snowfall")
         removeAction(forKey: "shootingStars")
+        removeAction(forKey: "underwaterBubbles")
+        removeAction(forKey: "volcanoEmbers")
+        removeAction(forKey: "cloudDrift")
+        removeAction(forKey: "swampFog")
 
         // Fade out and remove all previous sky decorations
         for child in children {
@@ -2468,6 +2779,85 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             ambient.position = CGPoint(x: size.width / 2, y: size.height / 2)
             ambient.zPosition = 45
             addChild(ambient)
+        }
+
+        // Underwater: bubbles rising constantly
+        if biome == .underwater {
+            let bubbles = SKAction.run { [weak self] in
+                guard let self = self else { return }
+                let bub = SKShapeNode(circleOfRadius: CGFloat.random(in: 1...3))
+                bub.fillColor = SKColor(red: 0.50, green: 0.70, blue: 0.90, alpha: 0.25)
+                bub.strokeColor = SKColor(red: 0.60, green: 0.80, blue: 1.0, alpha: 0.3)
+                bub.lineWidth = 0.5
+                bub.position = CGPoint(x: CGFloat.random(in: 0...self.size.width), y: self.groundY + 5)
+                bub.zPosition = 48
+                self.addChild(bub)
+                bub.run(SKAction.sequence([
+                    SKAction.group([SKAction.moveTo(y: self.size.height + 5, duration: Double.random(in: 3...6)),
+                                    SKAction.moveBy(x: CGFloat.random(in: -15...15), y: 0, duration: 4)]),
+                    SKAction.removeFromParent()
+                ]))
+            }
+            run(SKAction.repeatForever(SKAction.sequence([bubbles, SKAction.wait(forDuration: 0.25)])), withKey: "underwaterBubbles")
+            // Blue tint overlay
+            let waterOverlay = SKShapeNode(rectOf: CGSize(width: size.width + 20, height: size.height))
+            waterOverlay.fillColor = SKColor(red: 0.05, green: 0.20, blue: 0.45, alpha: 0.15)
+            waterOverlay.strokeColor = .clear
+            waterOverlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            waterOverlay.zPosition = 46
+            addChild(waterOverlay)
+        }
+
+        // Volcano: falling embers
+        if biome == .volcano {
+            let embers = SKAction.run { [weak self] in
+                guard let self = self else { return }
+                let ember = SKShapeNode(circleOfRadius: CGFloat.random(in: 1...2.5))
+                ember.fillColor = SKColor(red: 1.0, green: CGFloat.random(in: 0.3...0.6), blue: 0.05, alpha: 0.7)
+                ember.strokeColor = .clear
+                ember.position = CGPoint(x: CGFloat.random(in: 0...self.size.width), y: self.size.height + 5)
+                ember.zPosition = 48
+                self.addChild(ember)
+                ember.run(SKAction.sequence([
+                    SKAction.group([SKAction.moveTo(y: -5, duration: Double.random(in: 2...4)),
+                                    SKAction.moveBy(x: CGFloat.random(in: -20...5), y: 0, duration: 3),
+                                    SKAction.fadeOut(withDuration: 3)]),
+                    SKAction.removeFromParent()
+                ]))
+            }
+            run(SKAction.repeatForever(SKAction.sequence([embers, SKAction.wait(forDuration: 0.12)])), withKey: "volcanoEmbers")
+        }
+
+        // Cloud: drifting cloud puffs
+        if biome == .cloud {
+            let cloudDrift = SKAction.run { [weak self] in
+                guard let self = self else { return }
+                let puff = SKShapeNode(circleOfRadius: CGFloat.random(in: 15...30))
+                puff.fillColor = SKColor(white: 1.0, alpha: CGFloat.random(in: 0.15...0.30))
+                puff.strokeColor = .clear
+                puff.position = CGPoint(x: self.size.width + 40, y: CGFloat.random(in: self.groundY + 20...self.size.height * 0.80))
+                puff.zPosition = -3
+                puff.name = "biomeSkyDecor"
+                self.addChild(puff)
+                puff.run(SKAction.sequence([SKAction.moveBy(x: -(self.size.width + 100), y: 0, duration: Double.random(in: 6...12)), SKAction.removeFromParent()]))
+            }
+            run(SKAction.repeatForever(SKAction.sequence([cloudDrift, SKAction.wait(forDuration: 1.5)])), withKey: "cloudDrift")
+        }
+
+        // Swamp: fog particles
+        if biome == .swamp {
+            let fog = SKAction.run { [weak self] in
+                guard let self = self else { return }
+                let mist = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 40...80), height: CGFloat.random(in: 8...16)))
+                mist.fillColor = SKColor(red: 0.35, green: 0.40, blue: 0.25, alpha: 0.08)
+                mist.strokeColor = .clear
+                mist.position = CGPoint(x: self.size.width + 50, y: self.groundY + CGFloat.random(in: 10...self.size.height * 0.30))
+                mist.zPosition = 47
+                mist.name = "biomeSkyDecor"
+                self.addChild(mist)
+                mist.run(SKAction.sequence([SKAction.moveBy(x: -(self.size.width + 120), y: 0, duration: Double.random(in: 8...14)), SKAction.removeFromParent()]))
+            }
+            run(SKAction.repeatForever(SKAction.sequence([fog, SKAction.wait(forDuration: 0.8)])), withKey: "swampFog")
         }
     }
 

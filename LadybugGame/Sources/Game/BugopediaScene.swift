@@ -18,6 +18,11 @@ class BugopediaScene: SKScene {
         case .snow: return [.snowFlea, .iceMoth, .iceSpider, .snowOwl, .frostMoth]
         case .jungle: return [.jungleBeetle, .butterfly, .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee]
         case .cave: return [.caveCricket, .glowworm, .crystalBeetle, .caveSpider, .vampireBat, .rockWorm, .caveFish]
+        case .underwater: return [.seaSnail, .plankton, .shrimplet, .jellyfish, .anglerFish, .seaUrchin, .electricEel]
+        case .volcano: return [.emberBeetle, .ashMoth, .magmaSnail, .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem]
+        case .cloud: return [.cloudMite, .starBug, .skyJelly, .stormHawk, .windSprite, .thunderWasp, .lightningBug]
+        case .swamp: return [.mudCricket, .swampFly, .leech, .mosquitoSwarm, .alligator, .swampSnake, .bogSpider]
+        case .city: return [.gardenAnt, .honeybee, .pillBug, .houseCat, .gardenSnake, .yellowJacket, .gardenSpider]
         }
     }
 
@@ -61,12 +66,14 @@ class BugopediaScene: SKScene {
         let biomes: [(Biome, String)] = [
             (.meadowDay, "Meadow"), (.meadowNight, "Night"), (.desert, "Desert"),
             (.snow, "Tundra"), (.jungle, "Jungle"), (.cave, "Cave"),
+            (.underwater, "Sea"), (.volcano, "Volcano"), (.cloud, "Sky"),
+            (.swamp, "Swamp"), (.city, "Garden"),
         ]
-        let tabW: CGFloat = 62
+        let tabW: CGFloat = 38
         let tabStartX = (size.width - CGFloat(biomes.count) * tabW) / 2 + tabW / 2
         for (i, (b, name)) in biomes.enumerated() {
             let active = b == biome
-            let tab = SKShapeNode(rectOf: CGSize(width: tabW - 4, height: 22), cornerRadius: 6)
+            let tab = SKShapeNode(rectOf: CGSize(width: tabW - 3, height: 20), cornerRadius: 5)
             tab.fillColor = active ? b.skyColor.withAlphaComponent(0.8) : SKColor(white: 0.18, alpha: 1)
             tab.strokeColor = active ? .white : .clear
             tab.lineWidth = active ? 1.5 : 0
@@ -77,7 +84,7 @@ class BugopediaScene: SKScene {
 
             let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
             label.text = name
-            label.fontSize = 9
+            label.fontSize = 7
             label.fontColor = .white
             label.verticalAlignmentMode = .center
             label.name = "biome_\(b.rawValue)"
