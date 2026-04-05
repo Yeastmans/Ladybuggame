@@ -2112,14 +2112,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if isNearBiomeEnemy(x: spawnX, range: 140) { return }
 
         let gY = terrain.groundY(atScreenX: spawnX)
-        let poolW = CGFloat.random(in: 140...200)
+        let poolW = CGFloat.random(in: 170...240)
 
         // Large deep pool
-        let pool = SKShapeNode(ellipseOf: CGSize(width: poolW, height: 32))
+        let pool = SKShapeNode(ellipseOf: CGSize(width: poolW, height: 40))
         pool.fillColor = SKColor(red: 0.08, green: 0.18, blue: 0.35, alpha: 0.75)
         pool.strokeColor = SKColor(red: 0.15, green: 0.28, blue: 0.42, alpha: 0.6)
         pool.lineWidth = 2
-        pool.position = CGPoint(x: spawnX, y: gY - 6)
+        pool.position = CGPoint(x: spawnX, y: gY - 10)
         pool.zPosition = 2
         pool.name = "pond"
         addChild(pool)
@@ -2133,10 +2133,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(surface)
 
         // Swimming fish (larger, 3x size)
-        let fishTex = TextureGenerator.generateCaveFishTexture(size: CGSize(width: 36, height: 22))
+        let fishTex = TextureGenerator.generateCaveFishTexture(size: CGSize(width: 44, height: 28))
         let fishCount = Int.random(in: 2...3)
         for i in 0..<fishCount {
-            let fish = SKSpriteNode(texture: fishTex, size: CGSize(width: 36, height: 22))
+            let fish = SKSpriteNode(texture: fishTex, size: CGSize(width: 44, height: 28))
             fish.position = CGPoint(x: spawnX + CGFloat(i * 30 - 30), y: gY - 10)
             fish.zPosition = 3
             fish.name = "envDecor"
@@ -2156,8 +2156,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         // Jumping fish — larger, stops swimming during jump
-        let jumpFishTex = TextureGenerator.generateCaveFishTexture(size: CGSize(width: 40, height: 26))
-        let jumpFish = SKSpriteNode(texture: jumpFishTex, size: CGSize(width: 40, height: 26))
+        let jumpFishTex = TextureGenerator.generateCaveFishTexture(size: CGSize(width: 50, height: 32))
+        let jumpFish = SKSpriteNode(texture: jumpFishTex, size: CGSize(width: 50, height: 32))
         jumpFish.position = CGPoint(x: spawnX, y: gY - 10)
         jumpFish.zPosition = 7
         jumpFish.name = "envDecor"
