@@ -63,6 +63,7 @@ final class BugTracker: @unchecked Sendable {
         case rockWorm = "Rock Worm"
         case caveFish = "Cave Fish"
         // Underwater food
+        case clownfish = "Clownfish"
         case seaSnail = "Sea Snail"
         case plankton = "Plankton"
         case shrimplet = "Shrimplet"
@@ -71,6 +72,8 @@ final class BugTracker: @unchecked Sendable {
         case anglerFish = "Angler Fish"
         case seaUrchin = "Sea Urchin"
         case electricEel = "Electric Eel"
+        case stingray = "Stingray"
+        case pufferfish = "Pufferfish"
         // Volcano food
         case emberBeetle = "Ember Beetle"
         case ashMoth = "Ash Moth"
@@ -150,7 +153,7 @@ final class BugTracker: @unchecked Sendable {
                  .firefly, .heartBug, .gnatSwarm, .desertBeetle, .sandFly, .desertCricket,
                  .snowFlea, .iceMoth, .jungleBeetle, .butterfly,
                  .caveCricket, .glowworm, .crystalBeetle,
-                 .seaSnail, .plankton, .shrimplet,
+                 .clownfish, .seaSnail, .plankton, .shrimplet,
                  .emberBeetle, .ashMoth, .magmaSnail,
                  .cloudMite, .starBug, .skyJelly,
                  .mudCricket, .swampFly, .leech,
@@ -164,7 +167,7 @@ final class BugTracker: @unchecked Sendable {
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl, .frostMoth,
                  .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee,
                  .caveSpider, .vampireBat, .rockWorm, .caveFish,
-                 .jellyfish, .anglerFish, .seaUrchin, .electricEel,
+                 .jellyfish, .anglerFish, .seaUrchin, .electricEel, .stingray, .pufferfish,
                  .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem,
                  .stormHawk, .windSprite, .thunderWasp, .lightningBug,
                  .mosquitoSwarm, .alligator, .swampSnake, .bogSpider,
@@ -223,13 +226,16 @@ final class BugTracker: @unchecked Sendable {
             case .rockWorm: return "Armored tunnel worm. Patrols the cave floor."
             case .caveFish: return "Blind pale fish. Leaps from underground pools!"
             // Underwater
+            case .clownfish: return "Friendly orange fish hiding in anemones. Just keep swimming!"
             case .seaSnail: return "Slow spiral shell. Slides along the sea floor."
             case .plankton: return "Glowing plankton cloud. Floats in the current."
-            case .shrimplet: return "Tiny shrimp. Darts through the water!"
-            case .jellyfish: return "Translucent and deadly. Tentacles sting on contact!"
-            case .anglerFish: return "Deep sea hunter. Lures with its glowing light!"
-            case .seaUrchin: return "Spiny ball on the ocean floor. Don't touch!"
-            case .electricEel: return "Zaps nearby bugs with electric shocks!"
+            case .shrimplet: return "Tiny pink shrimp. Darts through the water!"
+            case .jellyfish: return "Translucent and deadly. Long tentacles sting on contact!"
+            case .anglerFish: return "Deep sea hunter with a glowing lure. Massive jaws!"
+            case .seaUrchin: return "Spiny purple ball on the ocean floor. Don't touch the spines!"
+            case .electricEel: return "Long serpentine eel. Zaps with electric shocks!"
+            case .stingray: return "Flat gliding ray. Sweeps along the sea floor silently!"
+            case .pufferfish: return "Inflates when scared! Covered in sharp spines!"
             // Volcano
             case .emberBeetle: return "Fireproof beetle. Glows with inner heat."
             case .ashMoth: return "Gray moth dancing in volcanic ash."
@@ -314,6 +320,7 @@ final class BugTracker: @unchecked Sendable {
             case .caveCricket: return "25 pts"
             case .glowworm: return "35 pts"
             case .crystalBeetle: return "50 pts"
+            case .clownfish: return "35 pts"
             case .seaSnail: return "20 pts"
             case .plankton: return "30 pts"
             case .shrimplet: return "40 pts"
@@ -349,7 +356,7 @@ final class BugTracker: @unchecked Sendable {
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl, .frostMoth,
                  .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee,
                  .caveSpider, .vampireBat, .rockWorm, .caveFish,
-                 .jellyfish, .anglerFish, .seaUrchin, .electricEel,
+                 .jellyfish, .anglerFish, .seaUrchin, .electricEel, .stingray, .pufferfish,
                  .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem,
                  .stormHawk, .windSprite, .thunderWasp, .lightningBug,
                  .mosquitoSwarm, .alligator, .swampSnake, .bogSpider,
@@ -434,6 +441,7 @@ final class BugTracker: @unchecked Sendable {
         case .rockWorm: return TextureGenerator.generateRockWormTexture(size: size)
         case .caveFish: return TextureGenerator.generateCaveFishTexture(size: size)
         // Underwater
+        case .clownfish: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.95, green: 0.50, blue: 0.10, alpha: 1), eyeColor: .white)
         case .seaSnail: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.55, green: 0.45, blue: 0.60, alpha: 1), eyeColor: .white)
         case .plankton: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.30, green: 0.80, blue: 0.70, alpha: 1), eyeColor: .white)
         case .shrimplet: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.90, green: 0.55, blue: 0.45, alpha: 1), eyeColor: .black)
@@ -441,6 +449,8 @@ final class BugTracker: @unchecked Sendable {
         case .anglerFish: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.25, green: 0.20, blue: 0.30, alpha: 1), eyeColor: UIColor.yellow)
         case .seaUrchin: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.20, green: 0.15, blue: 0.25, alpha: 1), eyeColor: .red)
         case .electricEel: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.25, green: 0.35, blue: 0.55, alpha: 1), eyeColor: UIColor.yellow)
+        case .stingray: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.35, green: 0.40, blue: 0.50, alpha: 1), eyeColor: .white)
+        case .pufferfish: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.85, green: 0.75, blue: 0.35, alpha: 1), eyeColor: .black)
         // Volcano
         case .emberBeetle: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.70, green: 0.30, blue: 0.10, alpha: 1), eyeColor: UIColor.orange)
         case .ashMoth: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.50, green: 0.48, blue: 0.45, alpha: 1), eyeColor: .white)

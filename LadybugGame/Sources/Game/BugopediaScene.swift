@@ -18,7 +18,7 @@ class BugopediaScene: SKScene {
         case .snow: return [.snowFlea, .iceMoth, .iceSpider, .snowOwl, .frostMoth]
         case .jungle: return [.jungleBeetle, .butterfly, .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee]
         case .cave: return [.caveCricket, .glowworm, .crystalBeetle, .caveSpider, .vampireBat, .rockWorm, .caveFish]
-        case .underwater: return [.seaSnail, .plankton, .shrimplet, .jellyfish, .anglerFish, .seaUrchin, .electricEel]
+        case .underwater: return [.clownfish, .seaSnail, .plankton, .shrimplet, .jellyfish, .anglerFish, .seaUrchin, .electricEel, .stingray, .pufferfish]
         case .volcano: return [.emberBeetle, .ashMoth, .magmaSnail, .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem]
         case .cloud: return [.cloudMite, .starBug, .skyJelly, .stormHawk, .windSprite, .thunderWasp, .lightningBug]
         case .swamp: return [.mudCricket, .swampFly, .leech, .mosquitoSwarm, .alligator, .swampSnake, .bogSpider]

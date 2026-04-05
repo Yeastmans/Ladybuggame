@@ -30,7 +30,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var score: Int = 0 {
         didSet {
             scoreLabel.text = "\(score)"
-            if score >= 6000 && !isBossFight && currentBiome == .cave { startBossFight() }
+            if score >= 6000 && !isBossFight && !hasBeatenBoss && currentBiome == .cave { startBossFight() }
             if score >= 500 && !hasShownRainbow {
                 hasShownRainbow = true
                 showRainbow()
@@ -131,6 +131,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var bubbleTimer: TimeInterval = 0
     private var bubbleDuration: TimeInterval = 0
     private var bossBerryTimer: TimeInterval = 0
+    private var hasBeatenBoss = false
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
@@ -1708,6 +1709,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 case "Glowworm":        unlockBug(.glowworm);       SoundManager.shared.play("flutter")
                 case "Crystal Beetle":  unlockBug(.crystalBeetle);  SoundManager.shared.play("skitter")
                 case "Sea Snail":      unlockBug(.seaSnail);      SoundManager.shared.play("skitter")
+                case "Clownfish":      unlockBug(.clownfish);      SoundManager.shared.play("pop")
                 case "Plankton":       unlockBug(.plankton);       SoundManager.shared.play("pop")
                 case "Shrimplet":      unlockBug(.shrimplet);      SoundManager.shared.play("pop")
                 case "Ember Beetle":   unlockBug(.emberBeetle);    SoundManager.shared.play("skitter")
@@ -1901,6 +1903,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Rock Worm": unlockBug(.rockWorm)
                     case "Sea Urchin": unlockBug(.seaUrchin)
                     case "Electric Eel": unlockBug(.electricEel)
+                    case "Stingray": unlockBug(.stingray)
+                    case "Pufferfish": unlockBug(.pufferfish)
                     case "Lava Slime": unlockBug(.lavaSlime)
                     case "Fire Ant": unlockBug(.fireAnt)
                     case "Obsidian Golem": unlockBug(.obsidianGolem)
@@ -2190,20 +2194,26 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if frogTimer >= max(5.0, 10.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnCavePool() }
 
         case .underwater:
-            aphidTimer += fdt // Sea snails
-            if aphidTimer >= 1.4 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 20), bodyColor: UIColor(red: 0.55, green: 0.45, blue: 0.60, alpha: 1), eyeColor: .white), pts: 20, flying: false, name: "Sea Snail") }
-            flyTimer += fdt // Plankton (flying/floating)
-            if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 18, height: 18), bodyColor: UIColor(red: 0.30, green: 0.80, blue: 0.70, alpha: 1), eyeColor: .white), pts: 30, flying: true, name: "Plankton") }
-            gnatTimer += fdt // Shrimplets
-            if gnatTimer >= 2.5 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 16), bodyColor: UIColor(red: 0.90, green: 0.55, blue: 0.45, alpha: 1), eyeColor: .black), pts: 40, flying: true, name: "Shrimplet") }
-            spiderTimer += edt // Sea urchins (ground)
-            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 36, height: 36), bodyColor: UIColor(red: 0.20, green: 0.15, blue: 0.25, alpha: 1), eyeColor: .red), name: "Sea Urchin") }
-            birdTimer += edt // Jellyfish (swooper)
+            aphidTimer += fdt // Clownfish (ground food, orange)
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 28, height: 20), bodyColor: UIColor(red: 0.95, green: 0.50, blue: 0.10, alpha: 1), eyeColor: .white), pts: 35, flying: false, name: "Clownfish") }
+            flyTimer += fdt // Plankton (floating clouds)
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 20), bodyColor: UIColor(red: 0.30, green: 0.80, blue: 0.70, alpha: 1), eyeColor: .white), pts: 30, flying: true, name: "Plankton") }
+            gnatTimer += fdt // Shrimplets (darting)
+            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 26, height: 16), bodyColor: UIColor(red: 0.90, green: 0.55, blue: 0.45, alpha: 1), eyeColor: .black), pts: 40, flying: true, name: "Shrimplet") }
+            fireflyTimer += fdt // Sea snails (slow ground)
+            if fireflyTimer >= 2.5 { fireflyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 22), bodyColor: UIColor(red: 0.55, green: 0.45, blue: 0.60, alpha: 1), eyeColor: .white), pts: 20, flying: false, name: "Sea Snail") }
+            spiderTimer += edt // Sea urchins (ground, spiny)
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 38, height: 38), bodyColor: UIColor(red: 0.20, green: 0.15, blue: 0.25, alpha: 1), eyeColor: .red), name: "Sea Urchin") }
+            birdTimer += edt // Jellyfish (swooper, translucent)
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Jellyfish") }
-            dragonflyTimer += edt // Electric eel (ground patrol)
-            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 56, height: 24), bodyColor: UIColor(red: 0.25, green: 0.35, blue: 0.55, alpha: 1), eyeColor: .yellow), name: "Electric Eel") }
-            waspTimer += edt // Angler fish (sky patrol)
+            dragonflyTimer += edt // Electric eel (long ground patrol)
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 60, height: 24), bodyColor: UIColor(red: 0.25, green: 0.35, blue: 0.55, alpha: 1), eyeColor: .yellow), name: "Electric Eel") }
+            waspTimer += edt // Angler fish (sky patrol, glowing lure)
             if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeSwooper(name: "Angler Fish") }
+            frogTimer += edt // Stingray (ground swooper, flat)
+            if frogTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 54, height: 22), bodyColor: UIColor(red: 0.35, green: 0.40, blue: 0.50, alpha: 1), eyeColor: .white), name: "Stingray") }
+            caveSpiderTimer += edt // Pufferfish (ground, inflates)
+            if caveSpiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { caveSpiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 34, height: 34), bodyColor: UIColor(red: 0.85, green: 0.75, blue: 0.35, alpha: 1), eyeColor: .black), name: "Pufferfish") }
 
         case .volcano:
             aphidTimer += fdt // Ember beetles
@@ -3677,6 +3687,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func bossDefeated() {
+        hasBeatenBoss = true
         SoundManager.shared.play("powerup")
         // Bear runs away
         bossNode?.run(SKAction.sequence([
