@@ -598,7 +598,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             terrain.update(scrollDelta: sd)
             let target: CGFloat = isBossFight ? 0.0 : 1.0
             let prev = terrain.transitionProgress
-            terrain.advanceTransition(delta: max(sd, 2.0 * CGFloat(dt)), targetProgress: target)
+            let rampSpeed: CGFloat = isBossFight ? 200.0 * CGFloat(dt) : max(sd, 2.0 * CGFloat(dt))
+            terrain.advanceTransition(delta: rampSpeed, targetProgress: target)
             // Regenerate paths when transitioning
             if abs(terrain.transitionProgress - prev) > 0.001 {
                 regenerateAllCaveTilePaths()
@@ -2686,6 +2687,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Cave terrain will smooth-flatten via update loop (targets 0 during boss)
 
+        // Move ladybug to safe starting position (left side)
+        ladybug.position.x = size.width * 0.15
+
         // Save checkpoint
         GameScene.hasNightCheckpoint = true
         GameScene.checkpointScore = 6000
@@ -2979,7 +2983,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func bossDefeated() {
-        isBossFight = false
+        // Keep isBossFight true to prevent scrolling/spawning until menu transition
+        isGameOver = true // Stops the update loop
         SoundManager.shared.play("powerup")
         // Bear runs away
         bossNode?.run(SKAction.sequence([
