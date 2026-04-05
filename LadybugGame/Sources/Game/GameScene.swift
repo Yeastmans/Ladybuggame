@@ -490,13 +490,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if let shoeId = ShopScene.equippedShoes,
            let item = ShopScene.allItems.first(where: { $0.id == shoeId }),
            let shoeColor = item.color {
-            for dx in [CGFloat(-10), -3, 5] {
+            for dx in [CGFloat(-11), -4, 4] {
                 let shoe = SKShapeNode(ellipseOf: CGSize(width: 6, height: 4))
                 shoe.fillColor = SKColor(cgColor: shoeColor.cgColor)
                 shoe.strokeColor = SKColor(white: 0, alpha: 0.3)
                 shoe.lineWidth = 0.5
-                shoe.position = CGPoint(x: dx, y: -21)
-                shoe.zPosition = -1
+                shoe.position = CGPoint(x: dx, y: -23)
+                shoe.zPosition = 1
                 shoe.name = "shoe"
                 ladybug.addChild(shoe)
             }

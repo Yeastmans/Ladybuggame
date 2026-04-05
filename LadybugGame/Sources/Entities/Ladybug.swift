@@ -60,7 +60,7 @@ class Ladybug: SKSpriteNode {
         // Animate shoes in sync with leg movement
         let shoeNodes = children.filter { $0.name == "shoe" }
         guard !shoeNodes.isEmpty else { return }
-        let walkXs: [CGFloat] = [-10, -3, 5]
+        let walkXs: [CGFloat] = [-11, -4, 4]
         let offset: CGFloat = 2.0 // matches leg ±0.04 * 48px
         for (i, shoe) in shoeNodes.enumerated() {
             let baseX = i < walkXs.count ? walkXs[i] : 0
@@ -88,10 +88,10 @@ class Ladybug: SKSpriteNode {
         let flap = SKAction.animate(with: flyFrames, timePerFrame: 0.08)
         run(SKAction.repeatForever(flap), withKey: "flap")
         // Move shoes to flying leg positions (tucked up)
-        let flyXs: [CGFloat] = [-8, -1, 6]
+        let flyXs: [CGFloat] = [-9, -2, 5]
         var i = 0
         for child in children where child.name == "shoe" {
-            if i < flyXs.count { child.position = CGPoint(x: flyXs[i], y: -13) }
+            if i < flyXs.count { child.position = CGPoint(x: flyXs[i], y: -15) }
             i += 1
         }
     }
@@ -101,7 +101,7 @@ class Ladybug: SKSpriteNode {
         texture = walkTexture
         startWalkAnimation()
         // Move shoes back to walking leg positions
-        let walkXs: [CGFloat] = [-10, -3, 5]
+        let walkXs: [CGFloat] = [-11, -4, 4]
         var i = 0
         for child in children where child.name == "shoe" {
             if i < walkXs.count { child.position = CGPoint(x: walkXs[i], y: -21) }
