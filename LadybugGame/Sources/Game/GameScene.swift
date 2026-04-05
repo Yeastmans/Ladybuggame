@@ -123,6 +123,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var isBossFight = false
     private var bossNode: SKSpriteNode?
     private var bossHP = 5
+    private var bossMaxHP = 40
     private var bossHPLabel: SKLabelNode?
     private var bossAttackTimer: TimeInterval = 0
     private var bossAttackPhase = 0
@@ -3366,7 +3367,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func startBossFight() {
         isBossFight = true
-        bossHP = 40
+        bossMaxHP = switch MenuScene.difficulty { case .easy: 25; case .normal: 40; case .hard: 60 }
+        bossHP = bossMaxHP
         bossAttackTimer = 0
         bossAttackPhase = 0
         bossBerryTimer = 0
@@ -3475,7 +3477,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func updateBossHP() {
         guard let boss = bossNode else { return }
-        let ratio = CGFloat(bossHP) / 40.0
+        let ratio = CGFloat(bossHP) / CGFloat(bossMaxHP)
         if let bar = boss.childNode(withName: "bossHPBar") as? SKShapeNode {
             let w = 100 * ratio
             bar.path = CGPath(roundedRect: CGRect(x: -w / 2, y: -3, width: w, height: 6), cornerWidth: 2, cornerHeight: 2, transform: nil)
@@ -3504,7 +3506,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         // Boss attacks faster as HP drops — every 2.5s at full HP, 1.2s at low HP
-        let attackInterval = 1.2 + 1.3 * (CGFloat(bossHP) / 40.0)
+        let attackInterval = 1.2 + 1.3 * (CGFloat(bossHP) / CGFloat(bossMaxHP))
         if bossAttackTimer >= Double(attackInterval) {
             bossAttackTimer = 0
             let phase = bossAttackPhase % 4
@@ -3675,87 +3677,55 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func bossDefeated() {
-        // Keep isBossFight true to prevent scrolling/spawning until menu transition
-        isGameOver = true // Stops the update loop
         SoundManager.shared.play("powerup")
         // Bear runs away
         bossNode?.run(SKAction.sequence([
             SKAction.moveTo(x: size.width + 200, duration: 1.0),
             SKAction.removeFromParent()
         ]))
+        bossNode = nil
         // Clean up boss projectiles
         enumerateChildNodes(withName: "bossRock") { n, _ in n.removeFromParent() }
         enumerateChildNodes(withName: "shockwave") { n, _ in n.removeFromParent() }
         enumerateChildNodes(withName: "bubbleBerry") { n, _ in n.removeFromParent() }
         enumerateChildNodes(withName: "bubble") { n, _ in n.removeFromParent() }
-        // Bonus: 50 gems if no checkpoint used, 10 if checkpoint
+
+        // Award gems
         let baseBonus = startFromCheckpoint ? 10 : 50
         let diffMul: Int = switch MenuScene.difficulty { case .easy: 1; case .normal: 2; case .hard: 4 }
-        let bonusGems = (baseBonus * diffMul) / 2  // Easy=25, Normal=50, Hard=100 (full run)
+        let bonusGems = (baseBonus * diffMul) / 2
+        GameScene.gemCount += bonusGems
+        gemLabel.text = "\(GameScene.gemCount)"
 
-        // Victory banner
+        // Victory banner (brief, then resume)
         let victory = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        victory.text = "VICTORY!"
-        victory.fontSize = 44
+        victory.text = "BEAR DEFEATED! +\(bonusGems) 💎"
+        victory.fontSize = 28
         victory.fontColor = SKColor(red: 1, green: 0.85, blue: 0.0, alpha: 1)
-        victory.position = CGPoint(x: size.width / 2, y: size.height / 2 + 30)
+        victory.position = CGPoint(x: size.width / 2, y: size.height / 2 + 20)
         victory.zPosition = 130
         victory.setScale(0.3)
         addChild(victory)
         victory.run(SKAction.sequence([
-            SKAction.scale(to: 1.5, duration: 0.4),
-            SKAction.scale(to: 1.0, duration: 0.2),
+            SKAction.scale(to: 1.3, duration: 0.3),
+            SKAction.scale(to: 1.0, duration: 0.15),
+            SKAction.wait(forDuration: 3.0),
+            SKAction.fadeOut(withDuration: 0.5),
+            SKAction.removeFromParent()
         ]))
 
-        // Gem reward text
-        let gemReward = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        gemReward.text = "+\(bonusGems) 💎"
-        gemReward.fontSize = 26
-        gemReward.fontColor = SKColor(red: 0.75, green: 0.55, blue: 1.0, alpha: 1)
-        gemReward.position = CGPoint(x: size.width / 2, y: size.height / 2 - 10)
-        gemReward.zPosition = 130
-        gemReward.alpha = 0
-        addChild(gemReward)
-        gemReward.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), SKAction.fadeIn(withDuration: 0.5)]))
-
-        // No checkpoint bonus message
-        if !startFromCheckpoint {
-            let bonusMsg = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            bonusMsg.text = "FULL RUN BONUS!"
-            bonusMsg.fontSize = 16
-            bonusMsg.fontColor = SKColor(red: 1, green: 0.65, blue: 0.0, alpha: 1)
-            bonusMsg.position = CGPoint(x: size.width / 2, y: size.height / 2 - 40)
-            bonusMsg.zPosition = 130
-            bonusMsg.alpha = 0
-            addChild(bonusMsg)
-            bonusMsg.run(SKAction.sequence([SKAction.wait(forDuration: 1.5), SKAction.fadeIn(withDuration: 0.5)]))
-        }
-
-        // Score display
-        let scoreMsg = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        scoreMsg.text = "Final Score: \(score)"
-        scoreMsg.fontSize = 14
-        scoreMsg.fontColor = SKColor(white: 0.8, alpha: 1)
-        scoreMsg.position = CGPoint(x: size.width / 2, y: size.height / 2 - 65)
-        scoreMsg.zPosition = 130
-        scoreMsg.alpha = 0
-        addChild(scoreMsg)
-        scoreMsg.run(SKAction.sequence([SKAction.wait(forDuration: 2.0), SKAction.fadeIn(withDuration: 0.5)]))
-
-        // Award gems and go to menu after 8 seconds
+        // Resume gameplay after 3.5s — transition into underwater biome
+        isBossFight = false
+        isBubbleMode = false
+        ladybug.colorBlendFactor = 0
         run(SKAction.sequence([
-            SKAction.wait(forDuration: 8.0),
+            SKAction.wait(forDuration: 3.5),
             SKAction.run { [weak self] in
                 guard let self = self else { return }
-                GameScene.gemCount += bonusGems
-                self.gemLabel.text = "\(GameScene.gemCount)"
-                if self.score > MenuScene.highScore { MenuScene.highScore = self.score }
-                let menu = MenuScene(size: self.size)
-                menu.scaleMode = self.scaleMode
-                self.view?.presentScene(menu, transition: .fade(withDuration: 0.8))
+                // Score jumps to next biome threshold to trigger transition
+                if self.score < 7000 { self.score = 7000 }
             }
         ]))
-        gemReward.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), SKAction.fadeOut(withDuration: 3.0), SKAction.removeFromParent()]))
     }
 
     private func gameOver() {
