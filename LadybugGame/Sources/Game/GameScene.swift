@@ -1303,8 +1303,71 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func spawnVolcanoDecor(x: CGFloat) {
-        let roll = Int.random(in: 0...4)
+        let roll = Int.random(in: 0...5)
         switch roll {
+        case 5: // Mini volcano (half screen, spits fire)
+            let volcH = size.height * 0.45
+            let volcW: CGFloat = 100
+            let volcano = SKShapeNode()
+            let vp = UIBezierPath()
+            vp.move(to: CGPoint(x: -volcW / 2, y: 0))
+            vp.addLine(to: CGPoint(x: -15, y: volcH))
+            vp.addLine(to: CGPoint(x: 15, y: volcH))
+            vp.addLine(to: CGPoint(x: volcW / 2, y: 0))
+            vp.close()
+            volcano.path = vp.cgPath
+            volcano.fillColor = SKColor(red: 0.30, green: 0.18, blue: 0.12, alpha: 0.9)
+            volcano.strokeColor = .clear
+            volcano.position = CGPoint(x: x, y: groundY)
+            volcano.zPosition = 1
+            volcano.name = "envDecor"
+            addChild(volcano)
+            // Crater glow at top
+            let glow = SKShapeNode(circleOfRadius: 12)
+            glow.fillColor = SKColor(red: 0.95, green: 0.40, blue: 0.05, alpha: 0.5)
+            glow.strokeColor = .clear
+            glow.position = CGPoint(x: x, y: groundY + volcH + 2)
+            glow.zPosition = 2
+            glow.name = "envDecor"
+            addChild(glow)
+            // Fire spitting from top (repeating)
+            let spit = SKAction.run { [weak self] in
+                guard let self = self else { return }
+                let fireball = SKShapeNode(circleOfRadius: CGFloat.random(in: 3...6))
+                fireball.fillColor = SKColor(red: 1.0, green: CGFloat.random(in: 0.3...0.6), blue: 0.05, alpha: 0.8)
+                fireball.strokeColor = .clear
+                fireball.position = CGPoint(x: x + CGFloat.random(in: -8...8), y: groundY + volcH + 5)
+                fireball.zPosition = 8
+                fireball.name = "envDecor"
+                // Fireball is dangerous!
+                let fb = SKPhysicsBody(circleOfRadius: 4)
+                fb.isDynamic = false
+                fb.categoryBitMask = GameScene.PhysicsCategory.bird
+                fb.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+                fireball.physicsBody = fb
+                self.addChild(fireball)
+                let arc = SKAction.sequence([
+                    SKAction.group([
+                        SKAction.moveBy(x: CGFloat.random(in: -40...40), y: CGFloat.random(in: 30...60), duration: 0.5),
+                        SKAction.scale(to: 0.5, duration: 0.5),
+                    ]),
+                    SKAction.group([
+                        SKAction.moveBy(x: 0, y: -80, duration: 0.4),
+                        SKAction.fadeOut(withDuration: 0.4),
+                    ]),
+                    SKAction.removeFromParent()
+                ])
+                fireball.run(arc)
+            }
+            let spitWait = SKAction.wait(forDuration: Double.random(in: 1.5...3.0))
+            let volcAction = SKAction.repeatForever(SKAction.sequence([spit, spitWait]))
+            // Attach to a named node for cleanup
+            let volcTimer = SKNode()
+            volcTimer.name = "envDecor"
+            volcTimer.position = CGPoint(x: x, y: groundY)
+            addChild(volcTimer)
+            volcTimer.run(volcAction)
+            return
         case 0: // Lava pool
             let pool = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 20...40), height: 8))
             pool.fillColor = SKColor(red: 0.95, green: 0.40, blue: 0.05, alpha: 0.6)
@@ -2195,7 +2258,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         case .underwater:
             aphidTimer += fdt // Clownfish (ground food, orange)
-            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 28, height: 20), bodyColor: UIColor(red: 0.95, green: 0.50, blue: 0.10, alpha: 1), eyeColor: .white), pts: 35, flying: false, name: "Clownfish") }
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateClownfishTexture(size: CGSize(width: 30, height: 22)), pts: 35, flying: false, name: "Clownfish") }
             flyTimer += fdt // Plankton (floating clouds)
             if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 20), bodyColor: UIColor(red: 0.30, green: 0.80, blue: 0.70, alpha: 1), eyeColor: .white), pts: 30, flying: true, name: "Plankton") }
             gnatTimer += fdt // Shrimplets (darting)
@@ -2203,17 +2266,17 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             fireflyTimer += fdt // Sea snails (slow ground)
             if fireflyTimer >= 2.5 { fireflyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 22), bodyColor: UIColor(red: 0.55, green: 0.45, blue: 0.60, alpha: 1), eyeColor: .white), pts: 20, flying: false, name: "Sea Snail") }
             spiderTimer += edt // Sea urchins (ground, spiny)
-            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 38, height: 38), bodyColor: UIColor(red: 0.20, green: 0.15, blue: 0.25, alpha: 1), eyeColor: .red), name: "Sea Urchin") }
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSeaUrchinTexture(size: CGSize(width: 38, height: 38)), name: "Sea Urchin") }
             birdTimer += edt // Jellyfish (swooper, translucent)
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Jellyfish") }
             dragonflyTimer += edt // Electric eel (long ground patrol)
-            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 60, height: 24), bodyColor: UIColor(red: 0.25, green: 0.35, blue: 0.55, alpha: 1), eyeColor: .yellow), name: "Electric Eel") }
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateElectricEelTexture(size: CGSize(width: 60, height: 24)), name: "Electric Eel") }
             waspTimer += edt // Angler fish (sky patrol, glowing lure)
             if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeSwooper(name: "Angler Fish") }
             frogTimer += edt // Stingray (ground swooper, flat)
-            if frogTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 54, height: 22), bodyColor: UIColor(red: 0.35, green: 0.40, blue: 0.50, alpha: 1), eyeColor: .white), name: "Stingray") }
+            if frogTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateStingrayTexture(size: CGSize(width: 54, height: 32)), name: "Stingray") }
             caveSpiderTimer += edt // Pufferfish (ground, inflates)
-            if caveSpiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { caveSpiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 34, height: 34), bodyColor: UIColor(red: 0.85, green: 0.75, blue: 0.35, alpha: 1), eyeColor: .black), name: "Pufferfish") }
+            if caveSpiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { caveSpiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generatePufferfishTexture(size: CGSize(width: 36, height: 36)), name: "Pufferfish") }
 
         case .volcano:
             aphidTimer += fdt // Ember beetles
@@ -2227,7 +2290,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             birdTimer += edt // Phoenix (swooper)
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Phoenix") }
             dragonflyTimer += edt // Lava slime (ground)
-            if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 34, height: 28), bodyColor: UIColor(red: 0.90, green: 0.30, blue: 0.05, alpha: 1), eyeColor: .yellow), name: "Lava Slime") }
+            if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateLavaSlimeTexture(size: CGSize(width: 36, height: 30)), name: "Lava Slime") }
             waspTimer += edt // Obsidian golem (sky patrol)
             if waspTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 48, height: 40), bodyColor: UIColor(red: 0.18, green: 0.15, blue: 0.20, alpha: 1), eyeColor: .red), name: "Obsidian Golem") }
 
@@ -2453,9 +2516,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Frost Moth": frames = frostMothFrames
         case "Snow Owl": frames = owlFrames
         case "Toucan": frames = toucanFrames
-        case "Jellyfish": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 36, height: 36), bodyColor: UIColor(red: 0.70, green: 0.50, blue: 0.85, alpha: 1), eyeColor: .white)]
-        case "Angler Fish": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 44, height: 30), bodyColor: UIColor(red: 0.25, green: 0.20, blue: 0.30, alpha: 1), eyeColor: .yellow)]
-        case "Phoenix": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 50, height: 36), bodyColor: UIColor(red: 0.95, green: 0.55, blue: 0.10, alpha: 1), eyeColor: .red)]
+        case "Jellyfish": frames = [TextureGenerator.generateJellyfishTexture(size: CGSize(width: 40, height: 44))]
+        case "Angler Fish": frames = [TextureGenerator.generateAnglerFishTexture(size: CGSize(width: 48, height: 34))]
+        case "Phoenix": frames = TextureGenerator.generatePhoenixFrames(size: CGSize(width: 56, height: 40))
         case "Storm Hawk": frames = hawkFrames
         case "Thunder Wasp": frames = waspFrames
         case "Mosquito Swarm": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 30, height: 30), bodyColor: UIColor(red: 0.35, green: 0.30, blue: 0.28, alpha: 1), eyeColor: .red)]
@@ -2463,8 +2526,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Curse Wraith": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 40, height: 34), bodyColor: UIColor(red: 0.40, green: 0.35, blue: 0.50, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.2, blue: 0.8, alpha: 1))]
         case "Toxic Spore": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 30, height: 30), bodyColor: UIColor(red: 0.50, green: 0.65, blue: 0.15, alpha: 1), eyeColor: .yellow)]
         case "Refractor": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 36, height: 32), bodyColor: UIColor(red: 0.75, green: 0.80, blue: 0.95, alpha: 1), eyeColor: UIColor(red: 0.9, green: 0.5, blue: 0.9, alpha: 1))]
-        case "Void Moth": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 42, height: 34), bodyColor: UIColor(red: 0.15, green: 0.10, blue: 0.25, alpha: 1), eyeColor: UIColor(red: 0.6, green: 0.0, blue: 0.8, alpha: 1))]
-        case "Alien Drone": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 32, height: 28), bodyColor: UIColor(red: 0.30, green: 0.55, blue: 0.35, alpha: 1), eyeColor: UIColor(red: 0.0, green: 1.0, blue: 0.5, alpha: 1))]
+        case "Void Moth": frames = TextureGenerator.generateVoidMothFrames(size: CGSize(width: 44, height: 36))
+        case "Alien Drone": frames = [TextureGenerator.generateAlienDroneTexture(size: CGSize(width: 36, height: 28))]
         default: frames = birdTextures
         }
         let swooper = BiomeSwooper(textures: frames, biomeName: name)

@@ -441,23 +441,23 @@ final class BugTracker: @unchecked Sendable {
         case .rockWorm: return TextureGenerator.generateRockWormTexture(size: size)
         case .caveFish: return TextureGenerator.generateCaveFishTexture(size: size)
         // Underwater
-        case .clownfish: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.95, green: 0.50, blue: 0.10, alpha: 1), eyeColor: .white)
+        case .clownfish: return TextureGenerator.generateClownfishTexture(size: size)
         case .seaSnail: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.55, green: 0.45, blue: 0.60, alpha: 1), eyeColor: .white)
         case .plankton: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.30, green: 0.80, blue: 0.70, alpha: 1), eyeColor: .white)
         case .shrimplet: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.90, green: 0.55, blue: 0.45, alpha: 1), eyeColor: .black)
-        case .jellyfish: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.70, green: 0.50, blue: 0.85, alpha: 1), eyeColor: .white)
-        case .anglerFish: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.25, green: 0.20, blue: 0.30, alpha: 1), eyeColor: UIColor.yellow)
-        case .seaUrchin: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.20, green: 0.15, blue: 0.25, alpha: 1), eyeColor: .red)
-        case .electricEel: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.25, green: 0.35, blue: 0.55, alpha: 1), eyeColor: UIColor.yellow)
-        case .stingray: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.35, green: 0.40, blue: 0.50, alpha: 1), eyeColor: .white)
-        case .pufferfish: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.85, green: 0.75, blue: 0.35, alpha: 1), eyeColor: .black)
+        case .jellyfish: return TextureGenerator.generateJellyfishTexture(size: size)
+        case .anglerFish: return TextureGenerator.generateAnglerFishTexture(size: size)
+        case .seaUrchin: return TextureGenerator.generateSeaUrchinTexture(size: size)
+        case .electricEel: return TextureGenerator.generateElectricEelTexture(size: size)
+        case .stingray: return TextureGenerator.generateStingrayTexture(size: size)
+        case .pufferfish: return TextureGenerator.generatePufferfishTexture(size: size)
         // Volcano
         case .emberBeetle: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.70, green: 0.30, blue: 0.10, alpha: 1), eyeColor: UIColor.orange)
         case .ashMoth: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.50, green: 0.48, blue: 0.45, alpha: 1), eyeColor: .white)
         case .magmaSnail: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.85, green: 0.40, blue: 0.10, alpha: 1), eyeColor: UIColor.yellow)
-        case .lavaSlime: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.90, green: 0.30, blue: 0.05, alpha: 1), eyeColor: UIColor.yellow)
+        case .lavaSlime: return TextureGenerator.generateLavaSlimeTexture(size: size)
         case .fireAnt: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.75, green: 0.15, blue: 0.08, alpha: 1), eyeColor: UIColor.orange)
-        case .phoenixBird: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.95, green: 0.55, blue: 0.10, alpha: 1), eyeColor: UIColor.red)
+        case .phoenixBird: return TextureGenerator.generatePhoenixFrames(size: size).first!
         case .obsidianGolem: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.18, green: 0.15, blue: 0.20, alpha: 1), eyeColor: UIColor.red)
         // Cloud
         case .cloudMite: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.90, green: 0.92, blue: 0.98, alpha: 1), eyeColor: UIColor(red: 0.4, green: 0.6, blue: 0.9, alpha: 1))
@@ -511,9 +511,9 @@ final class BugTracker: @unchecked Sendable {
         case .cosmicDust: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.60, green: 0.55, blue: 0.80, alpha: 1), eyeColor: .white)
         case .starLarva: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.95, green: 0.85, blue: 0.35, alpha: 1), eyeColor: UIColor(red: 1.0, green: 0.9, blue: 0.5, alpha: 1))
         case .nebulaJelly: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.60, green: 0.30, blue: 0.80, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.5, blue: 1.0, alpha: 1))
-        case .alienDrone: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.30, green: 0.55, blue: 0.35, alpha: 1), eyeColor: UIColor(red: 0.0, green: 1.0, blue: 0.5, alpha: 1))
+        case .alienDrone: return TextureGenerator.generateAlienDroneTexture(size: size)
         case .asteroidBeetle: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.40, green: 0.38, blue: 0.35, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.4, blue: 0.2, alpha: 1))
-        case .voidMoth: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.15, green: 0.10, blue: 0.25, alpha: 1), eyeColor: UIColor(red: 0.6, green: 0.0, blue: 0.8, alpha: 1))
+        case .voidMoth: return TextureGenerator.generateVoidMothFrames(size: size).first!
         case .cosmicSerpent: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.25, green: 0.20, blue: 0.45, alpha: 1), eyeColor: UIColor(red: 0.5, green: 0.8, blue: 1.0, alpha: 1))
         }
     }
