@@ -13,6 +13,10 @@ enum Biome: Int, CaseIterable {
     case cloud = 8
     case swamp = 9
     case city = 10
+    case ruins = 11
+    case mushroom = 12
+    case crystal = 13
+    case space = 14
 
     var name: String {
         switch self {
@@ -27,6 +31,10 @@ enum Biome: Int, CaseIterable {
         case .cloud: return "Sky Kingdom"
         case .swamp: return "Swamp"
         case .city: return "Garden"
+        case .ruins: return "Ancient Ruins"
+        case .mushroom: return "Mushroom Forest"
+        case .crystal: return "Crystal Caverns"
+        case .space: return "Space"
         }
     }
 
@@ -43,6 +51,10 @@ enum Biome: Int, CaseIterable {
         case .cloud: return 9000
         case .swamp: return 10000
         case .city: return 11000
+        case .ruins: return 12000
+        case .mushroom: return 13000
+        case .crystal: return 14000
+        case .space: return 15000
         }
     }
 
@@ -59,6 +71,10 @@ enum Biome: Int, CaseIterable {
         case .cloud: return SKColor(red: 0.60, green: 0.78, blue: 0.95, alpha: 1.0)
         case .swamp: return SKColor(red: 0.25, green: 0.32, blue: 0.18, alpha: 1.0)
         case .city: return SKColor(red: 0.50, green: 0.72, blue: 0.88, alpha: 1.0)
+        case .ruins: return SKColor(red: 0.55, green: 0.48, blue: 0.35, alpha: 1.0)
+        case .mushroom: return SKColor(red: 0.22, green: 0.15, blue: 0.30, alpha: 1.0)
+        case .crystal: return SKColor(red: 0.12, green: 0.08, blue: 0.22, alpha: 1.0)
+        case .space: return SKColor(red: 0.02, green: 0.02, blue: 0.06, alpha: 1.0)
         }
     }
 
@@ -75,6 +91,10 @@ enum Biome: Int, CaseIterable {
         case .cloud: return SKColor(red: 0.85, green: 0.88, blue: 0.95, alpha: 1.0)
         case .swamp: return SKColor(red: 0.28, green: 0.35, blue: 0.18, alpha: 1.0)
         case .city: return SKColor(red: 0.55, green: 0.55, blue: 0.52, alpha: 1.0)
+        case .ruins: return SKColor(red: 0.58, green: 0.50, blue: 0.38, alpha: 1.0)
+        case .mushroom: return SKColor(red: 0.30, green: 0.22, blue: 0.18, alpha: 1.0)
+        case .crystal: return SKColor(red: 0.18, green: 0.15, blue: 0.28, alpha: 1.0)
+        case .space: return SKColor(red: 0.10, green: 0.10, blue: 0.14, alpha: 1.0)
         }
     }
 
@@ -91,6 +111,10 @@ enum Biome: Int, CaseIterable {
         case .cloud: return SKColor(red: 0.75, green: 0.80, blue: 0.90, alpha: 1.0)
         case .swamp: return SKColor(red: 0.22, green: 0.28, blue: 0.12, alpha: 1.0)
         case .city: return SKColor(red: 0.45, green: 0.42, blue: 0.38, alpha: 1.0)
+        case .ruins: return SKColor(red: 0.48, green: 0.40, blue: 0.28, alpha: 1.0)
+        case .mushroom: return SKColor(red: 0.22, green: 0.16, blue: 0.12, alpha: 1.0)
+        case .crystal: return SKColor(red: 0.14, green: 0.10, blue: 0.22, alpha: 1.0)
+        case .space: return SKColor(red: 0.08, green: 0.08, blue: 0.12, alpha: 1.0)
         }
     }
 
@@ -107,6 +131,10 @@ enum Biome: Int, CaseIterable {
         case .cloud: return SKColor(red: 0.78, green: 0.82, blue: 0.92, alpha: 1.0)
         case .swamp: return SKColor(red: 0.20, green: 0.30, blue: 0.12, alpha: 1.0)
         case .city: return SKColor(red: 0.48, green: 0.48, blue: 0.45, alpha: 1.0)
+        case .ruins: return SKColor(red: 0.52, green: 0.45, blue: 0.32, alpha: 1.0)
+        case .mushroom: return SKColor(red: 0.35, green: 0.20, blue: 0.30, alpha: 1.0)
+        case .crystal: return SKColor(red: 0.25, green: 0.20, blue: 0.40, alpha: 1.0)
+        case .space: return SKColor(red: 0.12, green: 0.12, blue: 0.18, alpha: 1.0)
         }
     }
 
@@ -114,6 +142,7 @@ enum Biome: Int, CaseIterable {
         switch self {
         case .cave: return SKColor(red: 0.22, green: 0.18, blue: 0.16, alpha: 1.0)
         case .underwater: return SKColor(red: 0.03, green: 0.10, blue: 0.25, alpha: 1.0)
+        case .crystal: return SKColor(red: 0.15, green: 0.10, blue: 0.25, alpha: 1.0)
         default: return .clear
         }
     }
@@ -121,7 +150,7 @@ enum Biome: Int, CaseIterable {
     /// Whether this biome has a ceiling that constrains the ladybug
     var hasCeiling: Bool {
         switch self {
-        case .cave, .underwater: return true
+        case .cave, .underwater, .crystal: return true
         default: return false
         }
     }

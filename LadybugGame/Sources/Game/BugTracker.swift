@@ -107,6 +107,42 @@ final class BugTracker: @unchecked Sendable {
         case gardenSnake = "Garden Snake"
         case yellowJacket = "Yellow Jacket"
         case gardenSpider = "Garden Spider"
+        // Ruins food
+        case scarab = "Scarab"
+        case dustMite = "Dust Mite"
+        case templeWorm = "Temple Worm"
+        // Ruins enemies
+        case stoneGuardian = "Stone Guardian"
+        case tombSpider = "Tomb Spider"
+        case curseWraith = "Curse Wraith"
+        case sandViper = "Sand Viper"
+        // Mushroom food
+        case sporeBug = "Spore Bug"
+        case glowShroom = "Glow Shroom"
+        case fungusGnat = "Fungus Gnat"
+        // Mushroom enemies
+        case toxicSpore = "Toxic Spore"
+        case shroomGolem = "Shroom Golem"
+        case myceliumCrawler = "Mycelium Crawler"
+        case capBouncer = "Cap Bouncer"
+        // Crystal food
+        case gemLarva = "Gem Larva"
+        case prismFly = "Prism Fly"
+        case crystalMite = "Crystal Mite"
+        // Crystal enemies
+        case shardSentinel = "Shard Sentinel"
+        case crystalWyrm = "Crystal Wyrm"
+        case refractor = "Refractor"
+        case geodeRoller = "Geode Roller"
+        // Space food
+        case cosmicDust = "Cosmic Dust"
+        case starLarva = "Star Larva"
+        case nebulaJelly = "Nebula Jelly"
+        // Space enemies
+        case alienDrone = "Alien Drone"
+        case asteroidBeetle = "Asteroid Beetle"
+        case voidMoth = "Void Moth"
+        case cosmicSerpent = "Cosmic Serpent"
 
         var category: Category {
             switch self {
@@ -118,7 +154,11 @@ final class BugTracker: @unchecked Sendable {
                  .emberBeetle, .ashMoth, .magmaSnail,
                  .cloudMite, .starBug, .skyJelly,
                  .mudCricket, .swampFly, .leech,
-                 .gardenAnt, .honeybee, .pillBug:
+                 .gardenAnt, .honeybee, .pillBug,
+                 .scarab, .dustMite, .templeWorm,
+                 .sporeBug, .glowShroom, .fungusGnat,
+                 .gemLarva, .prismFly, .crystalMite,
+                 .cosmicDust, .starLarva, .nebulaJelly:
                 return .food
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl, .frostMoth,
@@ -128,7 +168,11 @@ final class BugTracker: @unchecked Sendable {
                  .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem,
                  .stormHawk, .windSprite, .thunderWasp, .lightningBug,
                  .mosquitoSwarm, .alligator, .swampSnake, .bogSpider,
-                 .houseCat, .gardenSnake, .yellowJacket, .gardenSpider:
+                 .houseCat, .gardenSnake, .yellowJacket, .gardenSpider,
+                 .stoneGuardian, .tombSpider, .curseWraith, .sandViper,
+                 .toxicSpore, .shroomGolem, .myceliumCrawler, .capBouncer,
+                 .shardSentinel, .crystalWyrm, .refractor, .geodeRoller,
+                 .alienDrone, .asteroidBeetle, .voidMoth, .cosmicSerpent:
                 return .enemy
             }
         }
@@ -218,6 +262,38 @@ final class BugTracker: @unchecked Sendable {
             case .gardenSnake: return "Small green snake in the flower bed."
             case .yellowJacket: return "Aggressive wasp. Patrols the garden aggressively!"
             case .gardenSpider: return "Orb weaver in the bushes. Web traps you!"
+            // Ruins
+            case .scarab: return "Golden scarab beetle. Ancient treasure!"
+            case .dustMite: return "Tiny dust dweller in crumbling stone."
+            case .templeWorm: return "Wriggles through ancient cracks. Chewy!"
+            case .stoneGuardian: return "Animated stone protector. Slow but deadly!"
+            case .tombSpider: return "Ancient spider guarding old tombs!"
+            case .curseWraith: return "Ghostly swooper from cursed depths!"
+            case .sandViper: return "Quick desert viper hiding in ruins!"
+            // Mushroom
+            case .sporeBug: return "Tiny bug covered in spores. Nutritious!"
+            case .glowShroom: return "Edible glowing mushroom bug. Tasty!"
+            case .fungusGnat: return "Gnat living among giant fungi."
+            case .toxicSpore: return "Poisonous spore cloud! Don't breathe it in!"
+            case .shroomGolem: return "Walking mushroom. Stomps toward you!"
+            case .myceliumCrawler: return "Underground root creature. Surfaces to attack!"
+            case .capBouncer: return "Bouncy mushroom cap that launches at you!"
+            // Crystal
+            case .gemLarva: return "Larva with crystalline shell. Crunchy gems!"
+            case .prismFly: return "Rainbow-refracting flying insect. Beautiful!"
+            case .crystalMite: return "Tiny mite living in crystal formations."
+            case .shardSentinel: return "Crystal guardian that fires sharp shards!"
+            case .crystalWyrm: return "Serpentine creature made of living crystal!"
+            case .refractor: return "Bends light to confuse. Watch for shimmers!"
+            case .geodeRoller: return "Rolls across the ground as a geode ball!"
+            // Space
+            case .cosmicDust: return "Edible stardust particles. Mmm, cosmic!"
+            case .starLarva: return "Baby star creature. Warm and glowing!"
+            case .nebulaJelly: return "Floating space jellyfish. Colorful snack!"
+            case .alienDrone: return "Small alien scout. Zips around erratically!"
+            case .asteroidBeetle: return "Beetle made of space rock. Tough shell!"
+            case .voidMoth: return "Dark matter moth. Swoops from the void!"
+            case .cosmicSerpent: return "Space snake slithering through stars!"
             }
         }
 
@@ -253,6 +329,18 @@ final class BugTracker: @unchecked Sendable {
             case .gardenAnt: return "15 pts"
             case .honeybee: return "30 pts"
             case .pillBug: return "25 pts"
+            case .scarab: return "35 pts"
+            case .dustMite: return "25 pts"
+            case .templeWorm: return "40 pts"
+            case .sporeBug: return "30 pts"
+            case .glowShroom: return "40 pts"
+            case .fungusGnat: return "25 pts"
+            case .gemLarva: return "45 pts"
+            case .prismFly: return "50 pts"
+            case .crystalMite: return "35 pts"
+            case .cosmicDust: return "40 pts"
+            case .starLarva: return "55 pts"
+            case .nebulaJelly: return "50 pts"
             case .snowFlea: return "15 pts"
             case .iceMoth: return "25 pts"
             case .jungleBeetle: return "30 pts"
@@ -265,7 +353,11 @@ final class BugTracker: @unchecked Sendable {
                  .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem,
                  .stormHawk, .windSprite, .thunderWasp, .lightningBug,
                  .mosquitoSwarm, .alligator, .swampSnake, .bogSpider,
-                 .houseCat, .gardenSnake, .yellowJacket, .gardenSpider:
+                 .houseCat, .gardenSnake, .yellowJacket, .gardenSpider,
+                 .stoneGuardian, .tombSpider, .curseWraith, .sandViper,
+                 .toxicSpore, .shroomGolem, .myceliumCrawler, .capBouncer,
+                 .shardSentinel, .crystalWyrm, .refractor, .geodeRoller,
+                 .alienDrone, .asteroidBeetle, .voidMoth, .cosmicSerpent:
                 return "Danger!"
             }
         }
@@ -381,6 +473,38 @@ final class BugTracker: @unchecked Sendable {
         case .gardenSnake: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.30, green: 0.55, blue: 0.22, alpha: 1), eyeColor: UIColor.yellow)
         case .yellowJacket: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.90, green: 0.78, blue: 0.10, alpha: 1), eyeColor: .black)
         case .gardenSpider: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.50, green: 0.42, blue: 0.25, alpha: 1), eyeColor: .red)
+        // Ruins
+        case .scarab: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.75, green: 0.62, blue: 0.20, alpha: 1), eyeColor: .black)
+        case .dustMite: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.65, green: 0.58, blue: 0.45, alpha: 1), eyeColor: .white)
+        case .templeWorm: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.55, green: 0.42, blue: 0.30, alpha: 1), eyeColor: .white)
+        case .stoneGuardian: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.48, green: 0.45, blue: 0.40, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.6, blue: 0.1, alpha: 1))
+        case .tombSpider: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.35, green: 0.28, blue: 0.22, alpha: 1), eyeColor: UIColor(red: 0.6, green: 0.9, blue: 0.3, alpha: 1))
+        case .curseWraith: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.40, green: 0.35, blue: 0.50, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.2, blue: 0.8, alpha: 1))
+        case .sandViper: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.70, green: 0.58, blue: 0.35, alpha: 1), eyeColor: .yellow)
+        // Mushroom
+        case .sporeBug: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.55, green: 0.40, blue: 0.55, alpha: 1), eyeColor: .white)
+        case .glowShroom: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.40, green: 0.70, blue: 0.45, alpha: 1), eyeColor: UIColor(red: 0.8, green: 1.0, blue: 0.5, alpha: 1))
+        case .fungusGnat: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.45, green: 0.35, blue: 0.30, alpha: 1), eyeColor: .white)
+        case .toxicSpore: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.50, green: 0.65, blue: 0.15, alpha: 1), eyeColor: .yellow)
+        case .shroomGolem: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.50, green: 0.35, blue: 0.28, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.9, blue: 0.4, alpha: 1))
+        case .myceliumCrawler: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.60, green: 0.50, blue: 0.42, alpha: 1), eyeColor: .white)
+        case .capBouncer: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.80, green: 0.25, blue: 0.20, alpha: 1), eyeColor: .white)
+        // Crystal
+        case .gemLarva: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.50, green: 0.35, blue: 0.75, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.9, blue: 1.0, alpha: 1))
+        case .prismFly: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.70, green: 0.55, blue: 0.90, alpha: 1), eyeColor: .white)
+        case .crystalMite: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.55, green: 0.65, blue: 0.85, alpha: 1), eyeColor: UIColor(red: 0.9, green: 0.9, blue: 1.0, alpha: 1))
+        case .shardSentinel: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.35, green: 0.25, blue: 0.55, alpha: 1), eyeColor: UIColor(red: 0.9, green: 0.4, blue: 0.9, alpha: 1))
+        case .crystalWyrm: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.45, green: 0.30, blue: 0.65, alpha: 1), eyeColor: UIColor(red: 0.6, green: 0.8, blue: 1.0, alpha: 1))
+        case .refractor: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.75, green: 0.80, blue: 0.95, alpha: 1), eyeColor: UIColor(red: 0.9, green: 0.5, blue: 0.9, alpha: 1))
+        case .geodeRoller: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.40, green: 0.35, blue: 0.50, alpha: 1), eyeColor: UIColor(red: 0.7, green: 0.5, blue: 0.9, alpha: 1))
+        // Space
+        case .cosmicDust: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.60, green: 0.55, blue: 0.80, alpha: 1), eyeColor: .white)
+        case .starLarva: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.95, green: 0.85, blue: 0.35, alpha: 1), eyeColor: UIColor(red: 1.0, green: 0.9, blue: 0.5, alpha: 1))
+        case .nebulaJelly: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.60, green: 0.30, blue: 0.80, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.5, blue: 1.0, alpha: 1))
+        case .alienDrone: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.30, green: 0.55, blue: 0.35, alpha: 1), eyeColor: UIColor(red: 0.0, green: 1.0, blue: 0.5, alpha: 1))
+        case .asteroidBeetle: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.40, green: 0.38, blue: 0.35, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.4, blue: 0.2, alpha: 1))
+        case .voidMoth: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.15, green: 0.10, blue: 0.25, alpha: 1), eyeColor: UIColor(red: 0.6, green: 0.0, blue: 0.8, alpha: 1))
+        case .cosmicSerpent: return TextureGenerator.generateSimpleCreature(size: size, bodyColor: UIColor(red: 0.25, green: 0.20, blue: 0.45, alpha: 1), eyeColor: UIColor(red: 0.5, green: 0.8, blue: 1.0, alpha: 1))
         }
     }
 

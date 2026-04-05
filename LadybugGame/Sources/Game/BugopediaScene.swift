@@ -23,6 +23,10 @@ class BugopediaScene: SKScene {
         case .cloud: return [.cloudMite, .starBug, .skyJelly, .stormHawk, .windSprite, .thunderWasp, .lightningBug]
         case .swamp: return [.mudCricket, .swampFly, .leech, .mosquitoSwarm, .alligator, .swampSnake, .bogSpider]
         case .city: return [.gardenAnt, .honeybee, .pillBug, .houseCat, .gardenSnake, .yellowJacket, .gardenSpider]
+        case .ruins: return [.scarab, .dustMite, .templeWorm, .stoneGuardian, .tombSpider, .curseWraith, .sandViper]
+        case .mushroom: return [.sporeBug, .glowShroom, .fungusGnat, .toxicSpore, .shroomGolem, .myceliumCrawler, .capBouncer]
+        case .crystal: return [.gemLarva, .prismFly, .crystalMite, .shardSentinel, .crystalWyrm, .refractor, .geodeRoller]
+        case .space: return [.cosmicDust, .starLarva, .nebulaJelly, .alienDrone, .asteroidBeetle, .voidMoth, .cosmicSerpent]
         }
     }
 
@@ -68,8 +72,9 @@ class BugopediaScene: SKScene {
             (.snow, "Tundra"), (.jungle, "Jungle"), (.cave, "Cave"),
             (.underwater, "Sea"), (.volcano, "Volcano"), (.cloud, "Sky"),
             (.swamp, "Swamp"), (.city, "Garden"),
+            (.ruins, "Ruins"), (.mushroom, "Shroom"), (.crystal, "Crystal"), (.space, "Space"),
         ]
-        let tabW: CGFloat = 38
+        let tabW: CGFloat = 32
         let tabStartX = (size.width - CGFloat(biomes.count) * tabW) / 2 + tabW / 2
         for (i, (b, name)) in biomes.enumerated() {
             let active = b == biome
