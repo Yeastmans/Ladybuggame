@@ -3218,12 +3218,12 @@ enum TextureGenerator {
             let bodyPath = UIBezierPath()
             bodyPath.move(to: CGPoint(x: w * 0.02, y: h * 0.42))
             bodyPath.addCurve(to: CGPoint(x: w * 0.90, y: h * 0.45),
-                              control1: CGPoint(x: w * 0.30, y: h * 0.25),
-                              control2: CGPoint(x: w * 0.60, y: h * 0.65))
+                              controlPoint1: CGPoint(x: w * 0.30, y: h * 0.25),
+                              controlPoint2: CGPoint(x: w * 0.60, y: h * 0.65))
             bodyPath.addLine(to: CGPoint(x: w * 0.90, y: h * 0.55))
             bodyPath.addCurve(to: CGPoint(x: w * 0.02, y: h * 0.58),
-                              control1: CGPoint(x: w * 0.60, y: h * 0.75),
-                              control2: CGPoint(x: w * 0.30, y: h * 0.35))
+                              controlPoint1: CGPoint(x: w * 0.60, y: h * 0.75),
+                              controlPoint2: CGPoint(x: w * 0.30, y: h * 0.35))
             bodyPath.close()
             cg.addPath(bodyPath.cgPath); cg.fillPath()
             // Yellow belly stripe
@@ -3317,9 +3317,10 @@ enum TextureGenerator {
             let cg = ctx.cgContext; let w = size.width; let h = size.height
             // Dripping base
             cg.setFillColor(UIColor(red: 0.85, green: 0.25, blue: 0.05, alpha: 0.7).cgColor)
-            for dx in [CGFloat(0.20), 0.45, 0.65] {
+            let dripXs: [CGFloat] = [0.20, 0.45, 0.65]
+            for dx in dripXs {
                 cg.move(to: CGPoint(x: w * dx, y: h * 0.70))
-                cg.addQuadCurve(to: CGPoint(x: w * (dx + 0.10), y: h * 0.70), controlPoint: CGPoint(x: w * (dx + 0.05), y: h * 0.92))
+                cg.addQuadCurve(to: CGPoint(x: w * (dx + 0.10), y: h * 0.70), control: CGPoint(x: w * (dx + 0.05), y: h * 0.92))
                 cg.fillPath()
             }
             // Body (blob shape)
