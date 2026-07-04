@@ -2593,14 +2593,16 @@ enum TextureGenerator {
 
     // MARK: - Butterfly (proper wings, jungle food)
 
-    static func generateButterflyTexture(size: CGSize) -> SKTexture {
+    static func generateButterflyTexture(size: CGSize,
+                                         upperWing: UIColor = UIColor(red: 0.92, green: 0.50, blue: 0.08, alpha: 0.95),
+                                         lowerWing: UIColor = UIColor(red: 0.88, green: 0.42, blue: 0.05, alpha: 0.90)) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
             let w = size.width; let h = size.height
 
-            // Top wings (large, rounded triangles, orange/black monarch style)
-            cg.setFillColor(UIColor(red: 0.92, green: 0.50, blue: 0.08, alpha: 0.95).cgColor)
+            // Top wings (large, rounded triangles)
+            cg.setFillColor(upperWing.cgColor)
             // Left top wing
             cg.move(to: CGPoint(x: w * 0.44, y: h * 0.50))
             cg.addCurve(to: CGPoint(x: w * 0.04, y: h * 0.28),
@@ -2621,7 +2623,7 @@ enum TextureGenerator {
             cg.closePath(); cg.fillPath()
 
             // Bottom wings (smaller, rounder)
-            cg.setFillColor(UIColor(red: 0.88, green: 0.42, blue: 0.05, alpha: 0.90).cgColor)
+            cg.setFillColor(lowerWing.cgColor)
             // Left bottom wing
             cg.move(to: CGPoint(x: w * 0.44, y: h * 0.54))
             cg.addCurve(to: CGPoint(x: w * 0.08, y: h * 0.82),

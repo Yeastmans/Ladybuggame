@@ -1124,8 +1124,10 @@ extension TextureGenerator {
             return generateFoodCreature(size: size, style: .mite, body: UIColor(red: 0.90, green: 0.92, blue: 0.98, alpha: 1), accent: UIColor(red: 0.55, green: 0.70, blue: 0.95, alpha: 1))
         case "Star Bug":
             return generateFoodCreature(size: size, style: .star, body: UIColor(red: 0.95, green: 0.88, blue: 0.40, alpha: 1), accent: UIColor(red: 1.00, green: 0.97, blue: 0.75, alpha: 1))
-        case "Sky Jelly":
-            return generateFoodCreature(size: size, style: .jelly, body: UIColor(red: 0.70, green: 0.80, blue: 0.95, alpha: 1), accent: UIColor(red: 0.92, green: 0.96, blue: 1.00, alpha: 1))
+        case "Sky Butterfly":
+            return generateButterflyTexture(size: size,
+                                            upperWing: UIColor(red: 0.30, green: 0.55, blue: 0.95, alpha: 0.95),
+                                            lowerWing: UIColor(red: 0.22, green: 0.42, blue: 0.85, alpha: 0.90))
         case "Wind Sprite":
             return generateEnemyCreature(size: size, style: .wisp, body: UIColor(red: 0.72, green: 0.85, blue: 0.92, alpha: 1), eye: UIColor(red: 0.05, green: 0.55, blue: 0.75, alpha: 1), accent: UIColor.white)
         case "Lightning Bug":

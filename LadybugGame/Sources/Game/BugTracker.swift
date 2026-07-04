@@ -89,7 +89,7 @@ final class BugTracker: @unchecked Sendable {
         // Cloud food
         case cloudMite = "Cloud Mite"
         case starBug = "Star Bug"
-        case skyJelly = "Sky Jelly"
+        case skyButterfly = "Sky Butterfly"
         // Cloud enemies
         case stormHawk = "Storm Hawk"
         case windSprite = "Wind Sprite"
@@ -159,7 +159,7 @@ final class BugTracker: @unchecked Sendable {
                  .caveCricket, .glowworm, .crystalBeetle,
                  .clownfish, .seaSnail, .starfish, .shrimplet, .seahorse,
                  .emberBeetle, .ashMoth, .magmaSnail,
-                 .cloudMite, .starBug, .skyJelly,
+                 .cloudMite, .starBug, .skyButterfly,
                  .mudCricket, .swampFly, .leech,
                  .gardenAnt, .honeybee, .pillBug,
                  .scarab, .dustMite, .templeWorm,
@@ -254,7 +254,7 @@ final class BugTracker: @unchecked Sendable {
             // Cloud
             case .cloudMite: return "Tiny fluffy mite bouncing on clouds."
             case .starBug: return "Sparkling bug made of starlight."
-            case .skyJelly: return "Floating jellyfish of the sky. Harmless and delicious!"
+            case .skyButterfly: return "Sky-blue butterfly dancing between the clouds!"
             case .stormHawk: return "Dark hawk riding storm winds. Swoops with lightning!"
             case .windSprite: return "Invisible air spirit. Pushes you with gusts!"
             case .thunderWasp: return "Electric wasp. Buzzes with crackling energy!"
@@ -338,7 +338,7 @@ final class BugTracker: @unchecked Sendable {
             case .magmaSnail: return "45 pts"
             case .cloudMite: return "20 pts"
             case .starBug: return "35 pts"
-            case .skyJelly: return "40 pts"
+            case .skyButterfly: return "40 pts"
             case .mudCricket: return "20 pts"
             case .swampFly: return "25 pts"
             case .leech: return "35 pts"
@@ -475,7 +475,7 @@ final class BugTracker: @unchecked Sendable {
         // Cloud
         case .cloudMite: return TextureGenerator.biomeCreatureTexture(named: "Cloud Mite", size: size)
         case .starBug: return TextureGenerator.biomeCreatureTexture(named: "Star Bug", size: size)
-        case .skyJelly: return TextureGenerator.biomeCreatureTexture(named: "Sky Jelly", size: size)
+        case .skyButterfly: return TextureGenerator.biomeCreatureTexture(named: "Sky Butterfly", size: size)
         case .stormHawk: return TextureGenerator.generateHawkFrames(size: size).first!
         case .windSprite: return TextureGenerator.biomeCreatureTexture(named: "Wind Sprite", size: size)
         case .thunderWasp: return TextureGenerator.generateDesertWaspFrames(size: size).first!

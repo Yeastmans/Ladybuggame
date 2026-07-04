@@ -62,10 +62,10 @@ class BiomeFood: SKSpriteNode {
                 var dy = CGFloat.random(in: 8...22) * (Bool.random() ? 1.0 : -1.0)
                 var dx = CGFloat.random(in: 3...10) * (Bool.random() ? 1.0 : -1.0)
                 // Butterfly/glowworm/seahorse evasion: flee if player is close
-                if (self.biomeName == "Butterfly" || self.biomeName == "Glowworm" || self.biomeName == "Seahorse"), let player = self.playerRef {
+                if (self.biomeName.contains("Butterfly") || self.biomeName == "Glowworm" || self.biomeName == "Seahorse"), let player = self.playerRef {
                     let dist = hypot(player.position.x - self.position.x, player.position.y - self.position.y)
-                    let fleeRange: CGFloat = self.biomeName == "Butterfly" ? 120 : (self.biomeName == "Seahorse" ? 150 : 80)
-                    let fleeFactor: CGFloat = self.biomeName == "Butterfly" ? 0.40 : (self.biomeName == "Seahorse" ? 0.55 : 0.30)
+                    let fleeRange: CGFloat = self.biomeName.contains("Butterfly") ? 120 : (self.biomeName == "Seahorse" ? 150 : 80)
+                    let fleeFactor: CGFloat = self.biomeName.contains("Butterfly") ? 0.40 : (self.biomeName == "Seahorse" ? 0.55 : 0.30)
                     if dist < fleeRange {
                         dx = (self.position.x - player.position.x) * fleeFactor
                         dy = (self.position.y - player.position.y) * fleeFactor
@@ -85,8 +85,8 @@ class BiomeFood: SKSpriteNode {
             run(SKAction.repeatForever(SKAction.sequence([bob, SKAction.wait(forDuration: 0.3), clamp])), withKey: "fly")
 
             // Body tilt/flap — faster for butterflies
-            let tiltSpeed = (biomeName == "Butterfly") ? 0.15 : (biomeName == "Glowworm" ? 0.25 : 0.4)
-            let tiltAngle: CGFloat = (biomeName == "Butterfly") ? 0.25 : (biomeName == "Glowworm" ? 0.18 : 0.12)
+            let tiltSpeed = biomeName.contains("Butterfly") ? 0.15 : (biomeName == "Glowworm" ? 0.25 : 0.4)
+            let tiltAngle: CGFloat = biomeName.contains("Butterfly") ? 0.25 : (biomeName == "Glowworm" ? 0.18 : 0.12)
             let tilt = SKAction.sequence([
                 SKAction.rotate(toAngle: tiltAngle, duration: tiltSpeed),
                 SKAction.rotate(toAngle: -tiltAngle, duration: tiltSpeed),

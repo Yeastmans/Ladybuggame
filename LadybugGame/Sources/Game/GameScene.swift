@@ -147,6 +147,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var arenaBugTimer: TimeInterval = 0
     private var isVacuumMode = false
     private var vacuumDuration: TimeInterval = 0
+    private var isReflectMode = false
+    private var reflectDuration: TimeInterval = 0
     private var bearIdleFrames: [SKTexture] = []
     private var bearThrowTexture: SKTexture?
     private var bearRoarTexture: SKTexture?
@@ -1871,7 +1873,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 case "Magma Snail":    unlockBug(.magmaSnail);     SoundManager.shared.play("skitter")
                 case "Cloud Mite":     unlockBug(.cloudMite);      SoundManager.shared.play("pop")
                 case "Star Bug":       unlockBug(.starBug);        SoundManager.shared.play("pop")
-                case "Sky Jelly":      unlockBug(.skyJelly);       SoundManager.shared.play("pop")
+                case "Sky Butterfly":  unlockBug(.skyButterfly);   SoundManager.shared.play("flutter")
                 case "Mud Cricket":    unlockBug(.mudCricket);     SoundManager.shared.play("skitter")
                 case "Swamp Fly":      unlockBug(.swampFly);       SoundManager.shared.play("flutter")
                 case "Leech":          unlockBug(.leech);          SoundManager.shared.play("skitter")
@@ -1919,11 +1921,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 collectBubbleBerry()
                 return
             }
-            // Bug magnet / vacuum (crow and UFO fight power-up)
+            // Golden feather (crow fight) / vacuum (UFO fight) power-up
             if contact.bodyA.node?.name == "magnetPickup" || contact.bodyB.node?.name == "magnetPickup" {
                 let pickup = contact.bodyA.node?.name == "magnetPickup" ? contact.bodyA.node : contact.bodyB.node
                 pickup?.removeFromParent()
-                collectMagnet()
+                if bossLevel == 2 { collectGoldenFeather() } else { collectMagnet() }
                 return
             }
             // Vacuum power-up (world drop after the second boss)
@@ -2026,6 +2028,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                         return
                     }
                     takeDamage()
+                    return
+                }
+                // Golden feather (crow fight): incoming attacks bounce back
+                if isReflectMode, let n = enemyNode, n.name == "bossRock" || n.name == "shockwave" {
+                    reflectProjectile(n)
                     return
                 }
                 // Bubble shield: knock the enemy out instead of taking damage
@@ -2447,7 +2454,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             flyTimer += fdt // Star bugs (flying)
             if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Star Bug", size: CGSize(width: 22, height: 22)), pts: 35, flying: true, name: "Star Bug") }
             gnatTimer += fdt // Sky jellies
-            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Sky Jelly", size: CGSize(width: 24, height: 24)), pts: 40, flying: true, name: "Sky Jelly") }
+            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Sky Butterfly", size: CGSize(width: 24, height: 22)), pts: 40, flying: true, name: "Sky Butterfly") }
             spiderTimer += edt // Wind sprites (ground)
             if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Wind Sprite", size: CGSize(width: 30, height: 28)), name: "Wind Sprite") }
             birdTimer += edt // Storm hawks (swooper)
@@ -2565,7 +2572,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         food.position = CGPoint(x: spawnX, y: y)
         food.minY = groundY
         // Butterflies and glowworms evade the player
-        if food.biomeName == "Butterfly" {
+        if food.biomeName.contains("Butterfly") {
             food.position.y = groundY + CGFloat.random(in: 80...size.height * 0.55)
             food.playerRef = ladybug
         }
@@ -4332,7 +4339,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Bug magnet / vacuum (the way to beat bosses 2 and 3)
 
     private func spawnMagnetPickup() {
-        let pickup = SKLabelNode(text: bossLevel == 3 ? "🌀" : "🧲")
+        // Crow fight: golden feather (reflect). UFO fight: vacuum (pull in star bugs).
+        let pickup = SKLabelNode(text: bossLevel == 3 ? "🌀" : "🪶")
         pickup.fontSize = 26
         pickup.verticalAlignmentMode = .center
         pickup.horizontalAlignmentMode = .center
@@ -4349,6 +4357,50 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let pulse = SKAction.sequence([SKAction.fadeAlpha(to: 0.5, duration: 0.4), SKAction.fadeAlpha(to: 1.0, duration: 0.4)])
         pickup.run(SKAction.repeatForever(pulse))
         pickup.run(SKAction.sequence([SKAction.wait(forDuration: 7), SKAction.fadeOut(withDuration: 0.5), SKAction.removeFromParent()]))
+    }
+
+    /// Crow fight power-up: while the golden feather shimmers, the crow's own
+    /// feathers and gusts bounce off the ladybug and home back into it
+    private func collectGoldenFeather() {
+        isReflectMode = true
+        reflectDuration = 6.0
+        SoundManager.shared.play("powerup")
+        ladybug.childNode(withName: "reflectRing")?.removeFromParent()
+        let ring = SKShapeNode(circleOfRadius: 26)
+        ring.name = "reflectRing"
+        ring.strokeColor = SKColor(red: 1.0, green: 0.85, blue: 0.25, alpha: 0.9)
+        ring.fillColor = SKColor(red: 1.0, green: 0.85, blue: 0.25, alpha: 0.12)
+        ring.lineWidth = 2.5
+        ring.zPosition = -1
+        ladybug.addChild(ring)
+        ring.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.group([SKAction.scale(to: 1.2, duration: 0.3), SKAction.fadeAlpha(to: 0.6, duration: 0.3)]),
+            SKAction.group([SKAction.scale(to: 1.0, duration: 0.3), SKAction.fadeAlpha(to: 1.0, duration: 0.3)]),
+        ])))
+        let txt = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        txt.text = "GOLDEN FEATHER! Reflect its attacks!"
+        txt.fontSize = 16
+        txt.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.25, alpha: 1)
+        txt.position = CGPoint(x: size.width / 2, y: size.height / 2 + 30)
+        txt.zPosition = 130
+        addChild(txt)
+        txt.run(SKAction.sequence([SKAction.wait(forDuration: 1.4), SKAction.fadeOut(withDuration: 0.3), SKAction.removeFromParent()]))
+    }
+
+    /// Turn an incoming boss projectile around: it becomes a golden seeker
+    /// that homes back into the boss
+    private func reflectProjectile(_ node: SKNode) {
+        node.physicsBody = nil
+        node.removeAllActions()
+        node.name = "seekerBug"
+        if let shape = node as? SKShapeNode {
+            shape.fillColor = SKColor(red: 1.0, green: 0.85, blue: 0.25, alpha: 0.95)
+            shape.strokeColor = SKColor(white: 1.0, alpha: 0.9)
+        } else if let sprite = node as? SKSpriteNode {
+            sprite.color = SKColor(red: 1.0, green: 0.85, blue: 0.25, alpha: 1.0)
+            sprite.colorBlendFactor = 0.8
+        }
+        SoundManager.shared.play("pop")
     }
 
     private func collectMagnet() {
@@ -4368,7 +4420,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             SKAction.scale(to: 1.0, duration: 0.35),
         ])))
         let txt = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        txt.text = bossLevel == 3 ? "VACUUM!" : "BUG MAGNET!"
+        txt.text = "VACUUM!"
         txt.fontSize = 18
         txt.fontColor = SKColor(red: 1.0, green: 0.35, blue: 0.60, alpha: 1)
         txt.position = CGPoint(x: size.width / 2, y: size.height / 2 + 30)
@@ -4397,10 +4449,24 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         bug.run(SKAction.repeatForever(wander), withKey: "wander")
     }
 
-    /// Snack bugs flutter around the arena. With the magnet/vacuum active they
-    /// get pulled onto the ladybug, turn angry, and dive-bomb the boss — the
-    /// only way to damage the crow and the UFO.
+    /// Boss 2: reflected attacks home back into the crow.
+    /// Boss 3: star bugs flutter around, the vacuum pulls them onto the
+    /// ladybug, and they dive-bomb the UFO. Seekers are shared by both.
     private func updateCrowFightExtras(dt: TimeInterval) {
+        // Golden feather timer (crow fight)
+        if isReflectMode {
+            reflectDuration -= dt
+            if reflectDuration <= 0 {
+                isReflectMode = false
+                ladybug.childNode(withName: "reflectRing")?.removeFromParent()
+            }
+        }
+
+        // Arena star bugs + vacuum only exist in the UFO fight
+        guard bossLevel == 3 else {
+            updateSeekers(dt: dt)
+            return
+        }
         arenaBugTimer += dt
         if arenaBugTimer >= 1.2 {
             arenaBugTimer = 0
@@ -4435,8 +4501,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             }
         }
 
-        // Seeker bugs home in on the boss
+        updateSeekers(dt: dt)
+    }
+
+    /// Golden seekers (reflected attacks or vacuumed star bugs) home into the boss
+    private func updateSeekers(dt: TimeInterval) {
         let speed: CGFloat = 420 * CGFloat(dt)
+        let dmg = bossLevel == 2 ? 6 : 4
         for child in children where child.name == "seekerBug" {
             guard let boss = bossNode else { child.removeFromParent(); continue }
             let dx = boss.position.x - child.position.x
@@ -4446,7 +4517,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             child.position.y += dy / dist * speed
             if boss.frame.contains(child.position) {
                 child.removeFromParent()
-                damageBoss(4)
+                damageBoss(dmg)
             }
         }
     }
@@ -4538,6 +4609,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         enumerateChildNodes(withName: "magnetPickup") { n, _ in n.removeFromParent() }
         isMagnetMode = false
         ladybug.childNode(withName: "magnetRing")?.removeFromParent()
+        isReflectMode = false
+        ladybug.childNode(withName: "reflectRing")?.removeFromParent()
 
         // Award gems
         let baseBonus = startFromCheckpoint ? 10 : 50
@@ -4592,6 +4665,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         isVacuumMode = false
         ladybug.childNode(withName: "vacuumRing")?.removeFromParent()
         ladybug.childNode(withName: "magnetRing")?.removeFromParent()
+        ladybug.childNode(withName: "reflectRing")?.removeFromParent()
 
         // Death animation — flip over with X eyes, fall to ground
         let bugGroundY = groundY + ladybug.size.height / 2
