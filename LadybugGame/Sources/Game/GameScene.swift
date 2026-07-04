@@ -30,7 +30,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var score: Int = 0 {
         didSet {
             scoreLabel.text = "\(score)"
-            if score >= 6000 && !isBossFight && !hasBeatenBoss && currentBiome == .cave { startBossFight() }
+            if score >= 6000 && !isBossFight && !hasBeatenBoss && currentBiome == .cave { startBossFight(level: 1) }
+            if score >= 11600 && !isBossFight && !hasBeatenBoss2 && currentBiome == .city { startBossFight(level: 2) }
             if score >= 500 && !hasShownRainbow {
                 hasShownRainbow = true
                 showRainbow()
@@ -136,6 +137,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var bubbleDuration: TimeInterval = 0
     private var bossBerryTimer: TimeInterval = 0
     private var hasBeatenBoss = false
+    private var hasBeatenBoss2 = false
+    private var bossLevel = 1
+    private var bubblePowerupTimer: TimeInterval = 0
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
@@ -605,6 +609,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         checkLavaContact()
         checkSpiderJumps()
         checkCaveEntities()
+        updateBubblePowerup(dt: dt)
 
         // Scrolling (stops during boss fight)
         if !isBossFight {
@@ -797,7 +802,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func scrollWorldObjects(delta: CGFloat) {
         for child in children {
-            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood || child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider || child is FallingRock {
+            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood || child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider || child is FallingRock || child is Bubble {
                 child.position.x -= delta
                 // Cave ground tracking: snap ground entities to terrain
                 if isCaveBiome, let terrain = caveTerrain {
@@ -1886,6 +1891,22 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 unlockBug(.gnatSwarm)
                 return
             }
+            // Bubble power-up — ride the bubble: enemies get knocked off screen
+            if let bubble = (contact.bodyA.node as? Bubble) ?? (contact.bodyB.node as? Bubble) {
+                bubble.removeFromParent()
+                ladybug.enterBubble(duration: 8.0)
+                ladybug.pulse()
+                SoundManager.shared.play("powerup")
+                let txt = SKLabelNode(fontNamed: "AvenirNext-Bold")
+                txt.text = "BUBBLE SHIELD!"
+                txt.fontSize = 18
+                txt.fontColor = SKColor(red: 0.3, green: 0.8, blue: 1.0, alpha: 1)
+                txt.position = CGPoint(x: size.width / 2, y: size.height / 2 + 30)
+                txt.zPosition = 130
+                addChild(txt)
+                txt.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), SKAction.fadeOut(withDuration: 0.3), SKAction.removeFromParent()]))
+                return
+            }
             // HeartBug — restore a life
             if let hb = (contact.bodyA.node as? HeartBug) ?? (contact.bodyB.node as? HeartBug) {
                 if lives < 6 { lives += 1; updateLivesDisplay() }
@@ -1945,9 +1966,22 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if ladybug.isSheltered { return }
             if !ladybug.isInvincible {
                 let enemyNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird) ? contact.bodyA.node : contact.bodyB.node
-                // Boss bear — damage but don't remove
+                // Boss — damage but don't remove (a bubble absorbs the hit instead)
                 if enemyNode?.name == "boss" {
+                    if ladybug.isInBubble {
+                        ladybug.exitBubble()
+                        SoundManager.shared.play("pop")
+                        return
+                    }
                     takeDamage()
+                    return
+                }
+                // Bubble shield: knock the enemy out instead of taking damage
+                if ladybug.isInBubble {
+                    if let n = enemyNode {
+                        if n.parent is Frog { return } // tongue bounces off the bubble
+                        flingEnemyOffscreen(n)
+                    }
                     return
                 }
                 // Cave spider stays on web — just damage, don't remove
@@ -3150,6 +3184,45 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
 
+    // MARK: - Bubble power-up (unlocked after the first boss)
+
+    private func updateBubblePowerup(dt: TimeInterval) {
+        guard !isBossFight, !isGameOver, hasBeatenBoss || score >= 7000 else { return }
+        bubblePowerupTimer += dt
+        if bubblePowerupTimer >= 45.0 {
+            bubblePowerupTimer = 0
+            // Very rare: coin flip on each 45s window, one on screen at most
+            if Bool.random() { spawnBubblePowerup() }
+        }
+    }
+
+    private func spawnBubblePowerup() {
+        guard !children.contains(where: { $0 is Bubble }) else { return }
+        let bubble = Bubble()
+        bubble.position = CGPoint(x: CGFloat.random(in: size.width * 0.45...size.width * 0.90), y: size.height + 25)
+        bubble.setupPhysics()
+        bubble.startDrifting(floorY: groundY)
+        addChild(bubble)
+    }
+
+    /// Bubble kill: flip the enemy upside down and drop it off the bottom of the screen
+    private func flingEnemyOffscreen(_ node: SKNode) {
+        node.physicsBody = nil
+        node.removeAllActions()
+        SoundManager.shared.play("pop")
+        let dir: CGFloat = node.position.x >= ladybug.position.x ? 1.0 : -1.0
+        let flip = SKAction.rotate(toAngle: .pi, duration: 0.25)
+        let toss = SKAction.moveBy(x: 40 * dir, y: 60, duration: 0.25)
+        toss.timingMode = .easeOut
+        let fall = SKAction.moveBy(x: 60 * dir, y: -(size.height + 200), duration: 0.8)
+        fall.timingMode = .easeIn
+        node.run(SKAction.sequence([
+            SKAction.group([flip, toss]),
+            fall,
+            SKAction.removeFromParent(),
+        ]))
+    }
+
     private var lastLavaTime: TimeInterval = 0
     private func checkLavaContact() {
         guard currentBiome == .volcano, ladybug.isOnGround else { return }
@@ -3658,9 +3731,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     // MARK: - Boss Fight
 
-    private func startBossFight() {
+    private func startBossFight(level: Int = 1) {
         isBossFight = true
+        bossLevel = level
         bossMaxHP = switch MenuScene.difficulty { case .easy: 25; case .normal: 40; case .hard: 60 }
+        if level == 2 { bossMaxHP = bossMaxHP * 3 / 2 } // Crow is tougher than the bear
         bossHP = bossMaxHP
         bossAttackTimer = 0
         bossAttackPhase = 0
@@ -3673,8 +3748,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Save checkpoint
         GameScene.hasNightCheckpoint = true
-        GameScene.checkpointScore = 6000
-        GameScene.unlockBiome(.cave)
+        GameScene.checkpointScore = level == 2 ? 11600 : 6000
+        GameScene.unlockBiome(level == 2 ? .city : .cave)
 
         // Clear all existing entities from screen
         for child in children {
@@ -3682,7 +3757,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                child is Frog || child is Dragonfly || child is Firefly || child is HeartBug ||
                child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood ||
                child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider ||
-               child is FallingRock || child.name == "monkey" || child.name == "envDecor" ||
+               child is FallingRock || child is Bubble || child.name == "monkey" || child.name == "envDecor" ||
                child.name == "pond" || child.name == "rockShadow" ||
                child.name == "slothRig" || child.name == "lavaPool" {
                 child.removeFromParent()
@@ -3692,9 +3767,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Spawn one heart bug as a gift before the fight
         spawnHeartBug()
 
-        // Wait for terrain to flatten, then show banner and bear
+        // Wait for terrain to flatten, then show banner and boss
+        // (garden is already flat, so the crow arrives sooner)
         run(SKAction.sequence([
-            SKAction.wait(forDuration: 5.0),
+            SKAction.wait(forDuration: level == 2 ? 1.5 : 5.0),
             SKAction.run { [weak self] in
                 guard let self = self else { return }
                 SoundManager.shared.play("roar")
@@ -3722,7 +3798,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func spawnBear() {
-        let bearTex = TextureGenerator.generateBearTexture(size: CGSize(width: 200, height: 150))
+        let bearTex = bossLevel == 2
+            ? TextureGenerator.generateCrowBossTexture(size: CGSize(width: 200, height: 150))
+            : TextureGenerator.generateBearTexture(size: CGSize(width: 200, height: 150))
         let bear = SKSpriteNode(texture: bearTex, size: CGSize(width: 200, height: 150))
         bear.position = CGPoint(x: size.width + 120, y: groundY + 75)
         bear.xScale = -1
@@ -3971,7 +4049,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func bossDefeated() {
-        hasBeatenBoss = true
+        if bossLevel == 2 { hasBeatenBoss2 = true } else { hasBeatenBoss = true }
         SoundManager.shared.play("powerup")
         // Bear runs away
         bossNode?.run(SKAction.sequence([
@@ -3994,7 +4072,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Victory banner (brief, then resume)
         let victory = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        victory.text = "BEAR DEFEATED! +\(bonusGems) 💎"
+        victory.text = bossLevel == 2 ? "CROW DEFEATED! +\(bonusGems) 💎" : "BEAR DEFEATED! +\(bonusGems) 💎"
         victory.fontSize = 28
         victory.fontColor = SKColor(red: 1, green: 0.85, blue: 0.0, alpha: 1)
         victory.position = CGPoint(x: size.width / 2, y: size.height / 2 + 20)
@@ -4018,7 +4096,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             SKAction.run { [weak self] in
                 guard let self = self else { return }
                 // Score jumps to next biome threshold to trigger transition
-                if self.score < 7000 { self.score = 7000 }
+                let nextThreshold = self.bossLevel == 2 ? 12000 : 7000
+                if self.score < nextThreshold { self.score = nextThreshold }
             }
         ]))
     }
@@ -4029,6 +4108,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         SoundManager.shared.play("death")
         SoundManager.shared.play("gameOver")
         if score > MenuScene.highScore { MenuScene.highScore = score }
+        ladybug.exitBubble()
 
         // Death animation — flip over with X eyes, fall to ground
         let bugGroundY = groundY + ladybug.size.height / 2

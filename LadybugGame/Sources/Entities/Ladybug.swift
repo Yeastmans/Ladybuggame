@@ -23,6 +23,7 @@ class Ladybug: SKSpriteNode {
 
     var isInvincible: Bool { invincibleTimer > 0 }
     var isSheltered: Bool { isInsideLog && isOnGround }
+    private(set) var isInBubble = false
 
     init(walkTexture: SKTexture, blinkTexture: SKTexture, flyFrames: [SKTexture], walkFrames: [SKTexture] = []) {
         self.walkTexture = walkTexture
@@ -196,6 +197,63 @@ class Ladybug: SKSpriteNode {
     func flash() {
         let blink = SKAction.sequence([SKAction.fadeAlpha(to: 0.3, duration: 0.08), SKAction.fadeAlpha(to: 1.0, duration: 0.08)])
         run(SKAction.repeat(blink, count: 4))
+    }
+
+    // MARK: - Bubble power-up
+
+    /// Ride inside a bubble: enemies that touch it get knocked off screen
+    func enterBubble(duration: TimeInterval) {
+        isInBubble = true
+        childNode(withName: "bubbleShield")?.removeFromParent()
+        let radius = max(size.width, size.height) * 0.80
+        let shield = SKShapeNode(circleOfRadius: radius)
+        shield.name = "bubbleShield"
+        shield.fillColor = SKColor(red: 0.55, green: 0.80, blue: 1.0, alpha: 0.22)
+        shield.strokeColor = SKColor(red: 0.75, green: 0.92, blue: 1.0, alpha: 0.7)
+        shield.lineWidth = 1.5
+        shield.zPosition = 3
+        addChild(shield)
+        let gleam = SKShapeNode(ellipseOf: CGSize(width: radius * 0.55, height: radius * 0.28))
+        gleam.fillColor = SKColor(white: 1.0, alpha: 0.45)
+        gleam.strokeColor = .clear
+        gleam.position = CGPoint(x: -radius * 0.35, y: radius * 0.45)
+        gleam.zRotation = 0.6
+        shield.addChild(gleam)
+        let wobble = SKAction.sequence([
+            SKAction.scale(to: 1.06, duration: 0.4),
+            SKAction.scale(to: 0.96, duration: 0.4),
+        ])
+        shield.run(SKAction.repeatForever(wobble), withKey: "wobble")
+
+        // Blink warning for the last 2 seconds, then pop
+        removeAction(forKey: "bubbleTimer")
+        let warnAt = max(0.0, duration - 2.0)
+        run(SKAction.sequence([
+            SKAction.wait(forDuration: warnAt),
+            SKAction.run { [weak shield] in
+                shield?.run(SKAction.repeatForever(SKAction.sequence([
+                    SKAction.fadeAlpha(to: 0.35, duration: 0.15),
+                    SKAction.fadeAlpha(to: 1.0, duration: 0.15),
+                ])), withKey: "warn")
+            },
+            SKAction.wait(forDuration: 2.0),
+            SKAction.run { [weak self] in self?.exitBubble() },
+        ]), withKey: "bubbleTimer")
+    }
+
+    func exitBubble() {
+        isInBubble = false
+        removeAction(forKey: "bubbleTimer")
+        if let shield = childNode(withName: "bubbleShield") {
+            shield.removeAllActions()
+            shield.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.scale(to: 1.4, duration: 0.15),
+                    SKAction.fadeOut(withDuration: 0.15),
+                ]),
+                SKAction.removeFromParent(),
+            ]))
+        }
     }
 
     func playDeathAnimation(groundY: CGFloat, deadTexture: SKTexture) {

@@ -921,6 +921,100 @@ extension TextureGenerator {
         return SKTexture(image: image)
     }
 
+    static func generateBubblePowerupTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            // Translucent body
+            cg.setFillColor(UIColor(red: 0.55, green: 0.80, blue: 1.00, alpha: 0.30).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.04, y: h * 0.04, width: w * 0.92, height: h * 0.92))
+            // Rim
+            cg.setStrokeColor(UIColor(red: 0.75, green: 0.92, blue: 1.00, alpha: 0.85).cgColor)
+            cg.setLineWidth(max(1.2, w * 0.05))
+            cg.strokeEllipse(in: CGRect(x: w * 0.06, y: h * 0.06, width: w * 0.88, height: h * 0.88))
+            // Gleam highlight (upper left)
+            cg.setFillColor(UIColor(white: 1.0, alpha: 0.65).cgColor)
+            cg.saveGState()
+            cg.translateBy(x: w * 0.32, y: h * 0.24)
+            cg.rotate(by: -0.5)
+            cg.fillEllipse(in: CGRect(x: -w * 0.13, y: -h * 0.07, width: w * 0.26, height: h * 0.14))
+            cg.restoreGState()
+            // Tiny sparkle lower right
+            cg.setFillColor(UIColor(white: 1.0, alpha: 0.5).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.64, y: h * 0.62, width: w * 0.10, height: h * 0.10))
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateCrowBossTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            let feather = UIColor(red: 0.13, green: 0.13, blue: 0.17, alpha: 1)
+            let sheen = UIColor(red: 0.30, green: 0.28, blue: 0.45, alpha: 1)
+            // Tail feathers (left)
+            cg.setFillColor(feather.cgColor)
+            let tailYs: [CGFloat] = [0.42, 0.50, 0.58]
+            for ty in tailYs {
+                cg.move(to: CGPoint(x: w * 0.22, y: h * ty))
+                cg.addLine(to: CGPoint(x: w * 0.00, y: h * (ty - 0.06)))
+                cg.addLine(to: CGPoint(x: w * 0.02, y: h * (ty + 0.06)))
+                cg.closePath(); cg.fillPath()
+            }
+            // Body
+            cg.fillEllipse(in: CGRect(x: w * 0.14, y: h * 0.26, width: w * 0.52, height: h * 0.52))
+            // Raised wing
+            cg.setFillColor(sheen.withAlphaComponent(0.9).cgColor)
+            let wing = CGMutablePath()
+            wing.move(to: CGPoint(x: w * 0.30, y: h * 0.40))
+            wing.addQuadCurve(to: CGPoint(x: w * 0.10, y: h * 0.06), control: CGPoint(x: w * 0.06, y: h * 0.28))
+            wing.addQuadCurve(to: CGPoint(x: w * 0.46, y: h * 0.32), control: CGPoint(x: w * 0.34, y: h * 0.10))
+            wing.closeSubpath()
+            cg.addPath(wing); cg.fillPath()
+            // Head
+            cg.setFillColor(feather.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.54, y: h * 0.10, width: w * 0.30, height: h * 0.34))
+            // Big open beak
+            cg.setFillColor(UIColor(red: 0.95, green: 0.70, blue: 0.15, alpha: 1).cgColor)
+            cg.move(to: CGPoint(x: w * 0.80, y: h * 0.22))
+            cg.addLine(to: CGPoint(x: w * 1.00, y: h * 0.26))
+            cg.addLine(to: CGPoint(x: w * 0.81, y: h * 0.32))
+            cg.closePath(); cg.fillPath()
+            cg.setFillColor(UIColor(red: 0.80, green: 0.55, blue: 0.10, alpha: 1).cgColor)
+            cg.move(to: CGPoint(x: w * 0.80, y: h * 0.34))
+            cg.addLine(to: CGPoint(x: w * 0.97, y: h * 0.38))
+            cg.addLine(to: CGPoint(x: w * 0.80, y: h * 0.42))
+            cg.closePath(); cg.fillPath()
+            // Angry red eye
+            drawAngryEye(cg, cx: w * 0.68, cy: h * 0.24, r: w * 0.030, color: UIColor(red: 0.95, green: 0.20, blue: 0.15, alpha: 1))
+            // Legs + talons
+            cg.setStrokeColor(UIColor(red: 0.35, green: 0.28, blue: 0.10, alpha: 1).cgColor)
+            cg.setLineWidth(max(2.0, w * 0.02)); cg.setLineCap(.round); cg.setLineJoin(.round)
+            let legXs: [CGFloat] = [0.36, 0.48]
+            for lx in legXs {
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.76))
+                cg.addLine(to: CGPoint(x: w * lx, y: h * 0.92))
+                cg.strokePath()
+                cg.move(to: CGPoint(x: w * (lx - 0.04), y: h * 0.98))
+                cg.addLine(to: CGPoint(x: w * lx, y: h * 0.92))
+                cg.addLine(to: CGPoint(x: w * (lx + 0.04), y: h * 0.98))
+                cg.strokePath()
+            }
+            // Feather sheen strokes on the body
+            cg.setStrokeColor(sheen.withAlphaComponent(0.5).cgColor)
+            cg.setLineWidth(max(1.5, w * 0.012))
+            let sheenXs: [CGFloat] = [0.28, 0.38, 0.48]
+            for sx in sheenXs {
+                cg.move(to: CGPoint(x: w * sx, y: h * 0.62))
+                cg.addQuadCurve(to: CGPoint(x: w * (sx + 0.08), y: h * 0.74), control: CGPoint(x: w * (sx + 0.08), y: h * 0.64))
+                cg.strokePath()
+            }
+        }
+        return SKTexture(image: image)
+    }
+
     // MARK: - Central registry: creature name -> styled texture
     // Single source of truth used by both GameScene spawns and the Bugopedia,
     // so the collection icons always match the in-game look.
