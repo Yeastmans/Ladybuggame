@@ -12,7 +12,9 @@ class BiomeSwooper: SKSpriteNode {
         zPosition = 12
 
         if textures.count >= 2 {
-            let flap = SKAction.animate(with: textures, timePerFrame: 0.10)
+            // Jellyfish pulse slowly; birds and wasps flap fast
+            let per: TimeInterval = biomeName == "Jellyfish" ? 0.38 : 0.10
+            let flap = SKAction.animate(with: textures, timePerFrame: per)
             run(SKAction.repeatForever(flap), withKey: "flap")
         }
     }

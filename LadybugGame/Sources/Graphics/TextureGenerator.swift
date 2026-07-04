@@ -3097,30 +3097,44 @@ enum TextureGenerator {
         return SKTexture(image: image)
     }
 
-    static func generateJellyfishTexture(size: CGSize) -> SKTexture {
+    static func generateJellyfishFrames(size: CGSize) -> [SKTexture] {
+        return [generateJellyfishTexture(size: size, contracted: false),
+                generateJellyfishTexture(size: size, contracted: true)]
+    }
+
+    static func generateJellyfishTexture(size: CGSize, contracted: Bool = false) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext; let w = size.width; let h = size.height
+            // When the bell contracts, the tentacles pull in toward the center
+            let squeeze: CGFloat = contracted ? 0.62 : 1.0
+            let tentTop: CGFloat = contracted ? 0.62 : 0.55
             // Tentacles (long, wavy, trailing)
             cg.setStrokeColor(UIColor(red: 0.90, green: 0.28, blue: 0.22, alpha: 0.55).cgColor)
             cg.setLineWidth(1.2); cg.setLineCap(.round)
             for tx in [CGFloat(0.20), 0.35, 0.50, 0.65, 0.80] {
-                cg.move(to: CGPoint(x: w * tx, y: h * 0.55))
-                cg.addCurve(to: CGPoint(x: w * (tx - 0.05), y: h * 0.95),
-                            control1: CGPoint(x: w * (tx + 0.08), y: h * 0.70),
-                            control2: CGPoint(x: w * (tx - 0.08), y: h * 0.82))
+                let cx = 0.5 + (tx - 0.5) * squeeze
+                cg.move(to: CGPoint(x: w * cx, y: h * tentTop))
+                cg.addCurve(to: CGPoint(x: w * (cx - 0.05), y: h * 0.95),
+                            control1: CGPoint(x: w * (cx + 0.08), y: h * 0.72),
+                            control2: CGPoint(x: w * (cx - 0.08), y: h * 0.84))
                 cg.strokePath()
             }
-            // Bell (dome, translucent)
+            // Bell (dome, translucent) — taller and narrower when contracted
             cg.setFillColor(UIColor(red: 0.92, green: 0.25, blue: 0.20, alpha: 0.60).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.05, width: w * 0.80, height: h * 0.55))
+            let bell = contracted
+                ? CGRect(x: w * 0.18, y: h * 0.02, width: w * 0.64, height: h * 0.62)
+                : CGRect(x: w * 0.10, y: h * 0.05, width: w * 0.80, height: h * 0.55)
+            cg.fillEllipse(in: bell)
             // Inner glow
             cg.setFillColor(UIColor(red: 1.00, green: 0.55, blue: 0.40, alpha: 0.30).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.22, y: h * 0.12, width: w * 0.50, height: h * 0.30))
+            cg.fillEllipse(in: CGRect(x: bell.minX + bell.width * 0.15, y: bell.minY + bell.height * 0.13,
+                                      width: bell.width * 0.62, height: bell.height * 0.55))
             // Oral arms (frilly edges under bell)
             cg.setFillColor(UIColor(red: 0.95, green: 0.38, blue: 0.28, alpha: 0.45).cgColor)
             for ox in stride(from: 0.18, to: 0.82, by: 0.12) {
-                cg.fillEllipse(in: CGRect(x: w * CGFloat(ox), y: h * 0.48, width: w * 0.10, height: h * 0.10))
+                let ax = 0.5 + (CGFloat(ox) - 0.5) * squeeze
+                cg.fillEllipse(in: CGRect(x: w * ax, y: h * (tentTop - 0.07), width: w * 0.10, height: h * 0.10))
             }
         }
         return SKTexture(image: image)

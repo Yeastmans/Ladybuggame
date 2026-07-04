@@ -605,7 +605,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         lastUpdateTime = currentTime
         guard dt > 0, dt < 0.5 else { return }
 
-        ladybug.targetY = isTouching ? touchY : nil
+        // During boss fights the ladybug floats above the finger so your thumb
+        // never hides it while steering in all four directions
+        if isTouching, let ty = touchY {
+            ladybug.targetY = isBossFight ? min(ty + 80, size.height - 30) : ty
+        } else {
+            ladybug.targetY = nil
+        }
 
         let localGY = effectiveGroundY(atScreenX: ladybug.position.x)
         let bugGroundY = localGY + ladybug.size.height / 2
@@ -1300,12 +1306,32 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnUnderwaterDecor(x: CGFloat) {
         let roll = Int.random(in: 0...4)
         switch roll {
-        case 0: // Seaweed
-            let h = CGFloat.random(in: 20...50)
-            let weed = SKShapeNode(rectOf: CGSize(width: 3, height: h))
-            weed.fillColor = SKColor(red: 0.15, green: CGFloat.random(in: 0.45...0.60), blue: 0.25, alpha: 0.7)
-            weed.zRotation = CGFloat.random(in: -0.15...0.15)
-            addDecor(weed, x: x, y: groundY + h / 2)
+        case 0: // Tall swaying seaweed (1-3 strands)
+            let strands = Int.random(in: 1...3)
+            for s in 0..<strands {
+                let wH = CGFloat.random(in: 45...120)
+                let bend = CGFloat.random(in: 6...14)
+                let path = UIBezierPath()
+                path.move(to: .zero)
+                path.addCurve(to: CGPoint(x: 0, y: wH),
+                              controlPoint1: CGPoint(x: bend, y: wH * 0.33),
+                              controlPoint2: CGPoint(x: -bend, y: wH * 0.66))
+                let weed = SKShapeNode(path: path.cgPath)
+                weed.strokeColor = SKColor(red: 0.12, green: CGFloat.random(in: 0.42...0.62), blue: 0.28, alpha: 0.75)
+                weed.lineWidth = CGFloat.random(in: 2.5...4.0)
+                weed.lineCap = .round
+                weed.fillColor = .clear
+                weed.position = CGPoint(x: x + CGFloat(s - 1) * 7, y: groundY)
+                weed.zPosition = 1
+                weed.name = "envDecor"
+                addChild(weed)
+                // Sway around the rooted base
+                let lean = SKAction.sequence([
+                    SKAction.rotate(toAngle: 0.10, duration: Double.random(in: 1.2...1.8)),
+                    SKAction.rotate(toAngle: -0.10, duration: Double.random(in: 1.2...1.8)),
+                ])
+                weed.run(SKAction.repeatForever(lean))
+            }
         case 1: // Coral
             let coral = SKShapeNode(circleOfRadius: CGFloat.random(in: 8...16))
             coral.fillColor = [SKColor.orange, SKColor.magenta, SKColor(red: 0.9, green: 0.4, blue: 0.5, alpha: 1)].randomElement()!.withAlphaComponent(0.7)
@@ -2639,7 +2665,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Frost Moth": frames = frostMothFrames
         case "Snow Owl": frames = owlFrames
         case "Toucan": frames = toucanFrames
-        case "Jellyfish": frames = [TextureGenerator.generateJellyfishTexture(size: CGSize(width: 40, height: 44))]
+        case "Jellyfish": frames = TextureGenerator.generateJellyfishFrames(size: CGSize(width: 40, height: 44))
         case "Angler Fish": frames = [TextureGenerator.generateAnglerFishTexture(size: CGSize(width: 48, height: 34))]
         case "Phoenix": frames = TextureGenerator.generatePhoenixFrames(size: CGSize(width: 56, height: 40))
         case "Storm Hawk": frames = hawkFrames
@@ -2680,14 +2706,31 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Toucan": SoundManager.shared.play("squawk")
         default: SoundManager.shared.play("caw")
         }
-        // Delayed whoosh as it dives
-        swooper.run(SKAction.sequence([SKAction.wait(forDuration: 0.5), SKAction.run {
-            SoundManager.shared.play("whoosh")
-        }]))
-        let targetY = ladybug.position.y
-        swooper.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                            targetY: targetY, groundY: groundY,
-                            duration: 2.4 + Double.random(in: 0...0.6))
+        if name == "Jellyfish" {
+            // Jellies don't dive — they pulse and drift across the water
+            swooper.position.y = groundY + CGFloat.random(in: 60...size.height * 0.55)
+            let up = SKAction.moveBy(x: 0, y: 22, duration: 0.42)
+            up.timingMode = .easeOut
+            let down = SKAction.moveBy(x: 0, y: -16, duration: 0.72)
+            down.timingMode = .easeIn
+            swooper.run(SKAction.repeatForever(SKAction.sequence([up, down])), withKey: "jellyBob")
+            let pulse = SKAction.sequence([
+                SKAction.scaleY(to: 1.10, duration: 0.42),
+                SKAction.scaleY(to: 0.94, duration: 0.72),
+            ])
+            swooper.run(SKAction.repeatForever(pulse), withKey: "jellyPulse")
+            let cross = SKAction.moveBy(x: -(size.width + 180), y: 0, duration: Double.random(in: 7.0...9.0))
+            swooper.run(SKAction.sequence([cross, SKAction.removeFromParent()]))
+        } else {
+            // Delayed whoosh as it dives
+            swooper.run(SKAction.sequence([SKAction.wait(forDuration: 0.5), SKAction.run {
+                SoundManager.shared.play("whoosh")
+            }]))
+            let targetY = ladybug.position.y
+            swooper.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
+                                targetY: targetY, groundY: groundY,
+                                duration: 2.4 + Double.random(in: 0...0.6))
+        }
     }
 
     private func spawnVulture() {
