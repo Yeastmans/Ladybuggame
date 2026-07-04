@@ -147,6 +147,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var arenaBugTimer: TimeInterval = 0
     private var isVacuumMode = false
     private var vacuumDuration: TimeInterval = 0
+    private var bearIdleFrames: [SKTexture] = []
+    private var bearThrowTexture: SKTexture?
+    private var bearRoarTexture: SKTexture?
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
@@ -167,6 +170,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         physicsWorld.gravity = .zero
         physicsWorld.contactDelegate = self
         groundY = size.height * 0.20
+        // Starting lives scale with difficulty
+        lives = switch MenuScene.difficulty { case .easy: 5; case .normal: 4; case .hard: 3 }
 
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
         vultureFrames = TextureGenerator.generateVultureFrames(size: CGSize(width: 56, height: 40))
@@ -3913,6 +3918,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             SKAction.scaleY(to: 0.97, duration: 0.8),
         ])
         bear.run(SKAction.repeatForever(breathe), withKey: "breathe")
+
+        // Bear gets a real animation set: idle loop + attack poses
+        if bossLevel == 1 {
+            let bearSize = CGSize(width: 200, height: 150)
+            bearIdleFrames = [
+                TextureGenerator.generateBearTexture(size: bearSize, pose: .idle1),
+                TextureGenerator.generateBearTexture(size: bearSize, pose: .idle2),
+            ]
+            bearThrowTexture = TextureGenerator.generateBearTexture(size: bearSize, pose: .throwRock)
+            bearRoarTexture = TextureGenerator.generateBearTexture(size: bearSize, pose: .roar)
+            startBearIdleFrames(on: bear)
+        }
         let sway = SKAction.sequence([
             SKAction.moveBy(x: 8, y: 0, duration: 1.2),
             SKAction.moveBy(x: -8, y: 0, duration: 1.2),
@@ -4034,8 +4051,31 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
 
+    private func startBearIdleFrames(on boss: SKSpriteNode) {
+        guard bearIdleFrames.count >= 2 else { return }
+        boss.run(SKAction.repeatForever(SKAction.animate(with: bearIdleFrames, timePerFrame: 0.45, resize: false, restore: false)), withKey: "idleFrames")
+    }
+
+    /// Swap to an attack pose, lean into it, then settle back into the idle loop
+    private func bearAttackAnimation(texture: SKTexture?, lean: CGFloat, hold: TimeInterval) {
+        guard bossLevel == 1, let boss = bossNode, let texture = texture else { return }
+        boss.removeAction(forKey: "idleFrames")
+        boss.removeAction(forKey: "attackAnim")
+        boss.texture = texture
+        boss.run(SKAction.sequence([
+            SKAction.rotate(toAngle: lean, duration: 0.10),
+            SKAction.wait(forDuration: hold),
+            SKAction.rotate(toAngle: 0, duration: 0.15),
+            SKAction.run { [weak self, weak boss] in
+                guard let self = self, let boss = boss else { return }
+                self.startBearIdleFrames(on: boss)
+            },
+        ]), withKey: "attackAnim")
+    }
+
     private func bossThrowRock() {
         guard let boss = bossNode else { return }
+        bearAttackAnimation(texture: bearThrowTexture, lean: 0.06, hold: 0.25)
         let rockSize = CGSize(width: CGFloat.random(in: 22...32), height: CGFloat.random(in: 20...28))
         let tex = TextureGenerator.generateFallingRockTexture(size: rockSize)
         let rock = SKSpriteNode(texture: tex, size: rockSize)
@@ -4059,6 +4099,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func bossCharge() {
         guard let boss = bossNode else { return }
         SoundManager.shared.play("roar")
+        bearAttackAnimation(texture: bearRoarTexture, lean: -0.08, hold: 1.6)
         let startX = boss.position.x
         let charge = SKAction.sequence([
             SKAction.moveTo(x: -60, duration: 0.8),
@@ -4072,6 +4113,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func bossGroundSlam() {
         guard let boss = bossNode else { return }
         SoundManager.shared.play("crunch")
+        bearAttackAnimation(texture: bearRoarTexture, lean: 0.05, hold: 0.30)
         // Visual shockwave along ground
         let wave = SKShapeNode(rectOf: CGSize(width: 30, height: 8), cornerRadius: 4)
         wave.fillColor = SKColor(red: 0.60, green: 0.45, blue: 0.30, alpha: 0.7)

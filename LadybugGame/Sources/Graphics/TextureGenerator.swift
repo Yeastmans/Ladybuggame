@@ -1866,13 +1866,18 @@ enum TextureGenerator {
 
     // MARK: - Bear Boss
 
-    static func generateBearTexture(size: CGSize) -> SKTexture {
+    enum BearPose { case idle1, idle2, throwRock, roar }
+
+    static func generateBearTexture(size: CGSize, pose: BearPose = .idle1) -> SKTexture {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { ctx in
             let cg = ctx.cgContext
             let w = size.width; let h = size.height
             let fur = UIColor(red: 0.45, green: 0.30, blue: 0.18, alpha: 1)
             let darkFur = UIColor(red: 0.32, green: 0.20, blue: 0.12, alpha: 1)
+            // Pose offsets: idle2 breathes down, roar rears the head up
+            let headDY: CGFloat = switch pose { case .idle2: 0.02; case .roar: -0.03; default: 0 }
+            let bodyDY: CGFloat = pose == .idle2 ? 0.015 : 0
             // Back leg
             cg.setFillColor(darkFur.cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.60, width: w * 0.22, height: h * 0.35))
@@ -1880,52 +1885,119 @@ enum TextureGenerator {
             cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.62, width: w * 0.20, height: h * 0.34))
             // Body (large, hulking)
             cg.setFillColor(fur.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.08, y: h * 0.20, width: w * 0.65, height: h * 0.52))
+            cg.fillEllipse(in: CGRect(x: w * 0.08, y: h * (0.20 + bodyDY), width: w * 0.65, height: h * (0.52 - bodyDY)))
             // Belly lighter
             cg.setFillColor(UIColor(red: 0.55, green: 0.40, blue: 0.25, alpha: 0.5).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.20, y: h * 0.38, width: w * 0.35, height: h * 0.28))
+            cg.fillEllipse(in: CGRect(x: w * 0.20, y: h * (0.38 + bodyDY), width: w * 0.35, height: h * 0.28))
             // Shoulder hump
             cg.setFillColor(fur.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * 0.12, width: w * 0.30, height: h * 0.25))
+            cg.fillEllipse(in: CGRect(x: w * 0.25, y: h * (0.12 + bodyDY), width: w * 0.30, height: h * 0.25))
+            // Front arm (pose-dependent)
+            cg.setStrokeColor(darkFur.cgColor)
+            cg.setLineWidth(w * 0.075)
+            cg.setLineCap(.round)
+            switch pose {
+            case .throwRock:
+                // Arm raised high, winding up to hurl a rock
+                cg.move(to: CGPoint(x: w * 0.58, y: h * 0.35))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.70, y: h * 0.05), control: CGPoint(x: w * 0.74, y: h * 0.18))
+                cg.strokePath()
+                cg.setFillColor(darkFur.cgColor)
+                cg.fillEllipse(in: CGRect(x: w * 0.64, y: h * 0.00, width: w * 0.12, height: h * 0.10))
+            case .roar:
+                // Both paws up and forward
+                cg.move(to: CGPoint(x: w * 0.55, y: h * 0.35))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.74, y: h * 0.13), control: CGPoint(x: w * 0.72, y: h * 0.28))
+                cg.strokePath()
+                cg.move(to: CGPoint(x: w * 0.45, y: h * 0.38))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.60, y: h * 0.17), control: CGPoint(x: w * 0.58, y: h * 0.30))
+                cg.strokePath()
+                cg.setFillColor(darkFur.cgColor)
+                cg.fillEllipse(in: CGRect(x: w * 0.69, y: h * 0.08, width: w * 0.11, height: h * 0.09))
+                cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.12, width: w * 0.10, height: h * 0.08))
+            case .idle1:
+                cg.move(to: CGPoint(x: w * 0.58, y: h * 0.38))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.64, y: h * 0.88), control: CGPoint(x: w * 0.68, y: h * 0.60))
+                cg.strokePath()
+            case .idle2:
+                cg.move(to: CGPoint(x: w * 0.58, y: h * 0.40))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.68, y: h * 0.88), control: CGPoint(x: w * 0.72, y: h * 0.62))
+                cg.strokePath()
+            }
             // Head
             cg.setFillColor(UIColor(red: 0.40, green: 0.26, blue: 0.15, alpha: 1).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.15, width: w * 0.30, height: h * 0.32))
+            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * (0.15 + headDY), width: w * 0.30, height: h * 0.32))
             // Ears
             cg.setFillColor(darkFur.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.65, y: h * 0.10, width: w * 0.10, height: h * 0.10))
-            cg.fillEllipse(in: CGRect(x: w * 0.82, y: h * 0.10, width: w * 0.10, height: h * 0.10))
+            cg.fillEllipse(in: CGRect(x: w * 0.65, y: h * (0.10 + headDY), width: w * 0.10, height: h * 0.10))
+            cg.fillEllipse(in: CGRect(x: w * 0.82, y: h * (0.10 + headDY), width: w * 0.10, height: h * 0.10))
             // Inner ear
             cg.setFillColor(UIColor(red: 0.55, green: 0.35, blue: 0.25, alpha: 0.6).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.67, y: h * 0.12, width: w * 0.06, height: h * 0.06))
-            cg.fillEllipse(in: CGRect(x: w * 0.84, y: h * 0.12, width: w * 0.06, height: h * 0.06))
+            cg.fillEllipse(in: CGRect(x: w * 0.67, y: h * (0.12 + headDY), width: w * 0.06, height: h * 0.06))
+            cg.fillEllipse(in: CGRect(x: w * 0.84, y: h * (0.12 + headDY), width: w * 0.06, height: h * 0.06))
             // Snout
             cg.setFillColor(UIColor(red: 0.50, green: 0.35, blue: 0.22, alpha: 1).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.80, y: h * 0.25, width: w * 0.16, height: h * 0.15))
+            cg.fillEllipse(in: CGRect(x: w * 0.80, y: h * (0.25 + headDY), width: w * 0.16, height: h * 0.15))
             // Nose
             cg.setFillColor(UIColor(red: 0.15, green: 0.10, blue: 0.08, alpha: 1).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.88, y: h * 0.27, width: w * 0.08, height: h * 0.06))
-            // Eyes (angry)
-            cg.setFillColor(UIColor.white.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.22, width: w * 0.08, height: h * 0.07))
-            cg.fillEllipse(in: CGRect(x: w * 0.82, y: h * 0.22, width: w * 0.08, height: h * 0.07))
-            cg.setFillColor(UIColor(red: 0.60, green: 0.15, blue: 0.10, alpha: 1).cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.74, y: h * 0.23, width: w * 0.05, height: h * 0.05))
-            cg.fillEllipse(in: CGRect(x: w * 0.84, y: h * 0.23, width: w * 0.05, height: h * 0.05))
-            // Angry brows
-            cg.setStrokeColor(darkFur.cgColor)
-            cg.setLineWidth(3)
-            cg.move(to: CGPoint(x: w * 0.70, y: h * 0.20))
-            cg.addLine(to: CGPoint(x: w * 0.78, y: h * 0.22))
-            cg.strokePath()
-            cg.move(to: CGPoint(x: w * 0.92, y: h * 0.20))
-            cg.addLine(to: CGPoint(x: w * 0.84, y: h * 0.22))
-            cg.strokePath()
-            // Mouth (growling)
-            cg.setStrokeColor(UIColor(red: 0.20, green: 0.10, blue: 0.05, alpha: 0.8).cgColor)
-            cg.setLineWidth(2)
-            cg.move(to: CGPoint(x: w * 0.84, y: h * 0.38))
-            cg.addLine(to: CGPoint(x: w * 0.95, y: h * 0.36))
-            cg.strokePath()
+            cg.fillEllipse(in: CGRect(x: w * 0.88, y: h * (0.27 + headDY), width: w * 0.08, height: h * 0.06))
+            // Eyes (angry; squeezed shut mid-roar)
+            if pose == .roar {
+                cg.setStrokeColor(darkFur.cgColor)
+                cg.setLineWidth(3); cg.setLineCap(.round)
+                cg.move(to: CGPoint(x: w * 0.72, y: h * (0.25 + headDY)))
+                cg.addLine(to: CGPoint(x: w * 0.79, y: h * (0.24 + headDY)))
+                cg.strokePath()
+                cg.move(to: CGPoint(x: w * 0.83, y: h * (0.24 + headDY)))
+                cg.addLine(to: CGPoint(x: w * 0.90, y: h * (0.25 + headDY)))
+                cg.strokePath()
+            } else {
+                cg.setFillColor(UIColor.white.cgColor)
+                cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * (0.22 + headDY), width: w * 0.08, height: h * 0.07))
+                cg.fillEllipse(in: CGRect(x: w * 0.82, y: h * (0.22 + headDY), width: w * 0.08, height: h * 0.07))
+                cg.setFillColor(UIColor(red: 0.60, green: 0.15, blue: 0.10, alpha: 1).cgColor)
+                cg.fillEllipse(in: CGRect(x: w * 0.74, y: h * (0.23 + headDY), width: w * 0.05, height: h * 0.05))
+                cg.fillEllipse(in: CGRect(x: w * 0.84, y: h * (0.23 + headDY), width: w * 0.05, height: h * 0.05))
+                // Angry brows
+                cg.setStrokeColor(darkFur.cgColor)
+                cg.setLineWidth(3)
+                cg.move(to: CGPoint(x: w * 0.70, y: h * (0.20 + headDY)))
+                cg.addLine(to: CGPoint(x: w * 0.78, y: h * (0.22 + headDY)))
+                cg.strokePath()
+                cg.move(to: CGPoint(x: w * 0.92, y: h * (0.20 + headDY)))
+                cg.addLine(to: CGPoint(x: w * 0.84, y: h * (0.22 + headDY)))
+                cg.strokePath()
+            }
+            // Mouth
+            switch pose {
+            case .roar:
+                // Wide open roaring jaw with teeth
+                cg.setFillColor(UIColor(red: 0.45, green: 0.10, blue: 0.08, alpha: 1).cgColor)
+                cg.move(to: CGPoint(x: w * 0.80, y: h * (0.34 + headDY)))
+                cg.addLine(to: CGPoint(x: w * 0.99, y: h * (0.32 + headDY)))
+                cg.addLine(to: CGPoint(x: w * 0.88, y: h * (0.50 + headDY)))
+                cg.closePath(); cg.fillPath()
+                cg.setFillColor(UIColor.white.cgColor)
+                cg.move(to: CGPoint(x: w * 0.83, y: h * (0.345 + headDY)))
+                cg.addLine(to: CGPoint(x: w * 0.85, y: h * (0.40 + headDY)))
+                cg.addLine(to: CGPoint(x: w * 0.87, y: h * (0.34 + headDY)))
+                cg.closePath(); cg.fillPath()
+                cg.move(to: CGPoint(x: w * 0.90, y: h * (0.335 + headDY)))
+                cg.addLine(to: CGPoint(x: w * 0.92, y: h * (0.395 + headDY)))
+                cg.addLine(to: CGPoint(x: w * 0.94, y: h * (0.33 + headDY)))
+                cg.closePath(); cg.fillPath()
+            case .throwRock:
+                // Gritted open mouth from the effort
+                cg.setFillColor(UIColor(red: 0.30, green: 0.12, blue: 0.08, alpha: 0.9).cgColor)
+                cg.fillEllipse(in: CGRect(x: w * 0.84, y: h * (0.37 + headDY), width: w * 0.10, height: h * 0.05))
+            default:
+                // Growl line
+                cg.setStrokeColor(UIColor(red: 0.20, green: 0.10, blue: 0.05, alpha: 0.8).cgColor)
+                cg.setLineWidth(2)
+                cg.move(to: CGPoint(x: w * 0.84, y: h * (0.38 + headDY)))
+                cg.addLine(to: CGPoint(x: w * 0.95, y: h * (0.36 + headDY)))
+                cg.strokePath()
+            }
             // Claws on front paw
             cg.setStrokeColor(UIColor(white: 0.85, alpha: 0.8).cgColor)
             cg.setLineWidth(1.5)
