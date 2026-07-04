@@ -2343,7 +2343,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             gnatTimer += fdt // Magma snails
             if gnatTimer >= 3.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Magma Snail", size: CGSize(width: 24, height: 20)), pts: 45, flying: false, name: "Magma Snail") }
             spiderTimer += edt // Fire ants
-            if spiderTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Fire Ant", size: CGSize(width: 30, height: 26)), name: "Fire Ant") }
+            if spiderTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Fire Ant", size: CGSize(width: 46, height: 40)), name: "Fire Ant") }
             birdTimer += edt // Phoenix (swooper)
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Phoenix") }
             dragonflyTimer += edt // Komodo dragon (ground stalker)

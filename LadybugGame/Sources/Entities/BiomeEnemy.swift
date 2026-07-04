@@ -55,8 +55,9 @@ class BiomeEnemy: SKSpriteNode {
         let dist = playerX - position.x
         let isSnake = biomeName == "Rattlesnake" || biomeName == "Garden Snake"
             || biomeName == "Swamp Snake" || biomeName == "Sand Viper"
-        let minDist: CGFloat = biomeName == "Guard Dog" ? -20 : -15
-        let maxDist: CGFloat = biomeName == "Guard Dog" ? 240 : 70
+        let isCharger = biomeName == "Guard Dog" || biomeName == "Komodo Dragon"
+        let minDist: CGFloat = isCharger ? -20 : -15
+        let maxDist: CGFloat = isCharger ? 240 : 70
         if dist > minDist && dist < maxDist {
             hasLunged = true
             baseY = position.y
@@ -81,8 +82,9 @@ class BiomeEnemy: SKSpriteNode {
                 ])
                 recover.timingMode = .easeOut
                 run(SKAction.sequence([rear, swipe, recover]))
-            } else if biomeName == "Guard Dog" {
-                // Full-speed charge across the ground
+            } else if isCharger {
+                // Full-speed charge across the ground (guard dog is quicker,
+                // the komodo dragon is a heavier runner)
                 let dir: CGFloat = dist >= 0 ? 1.0 : -1.0
                 xScale = dist >= 0 ? -abs(xScale) : abs(xScale)
                 removeAction(forKey: "patrol")
@@ -90,7 +92,8 @@ class BiomeEnemy: SKSpriteNode {
                     SKAction.scaleX(to: 1.15 * (dist >= 0 ? -1 : 1), duration: 0.12),
                     SKAction.scaleY(to: 0.88, duration: 0.12),
                 ])
-                let dash = SKAction.moveBy(x: (abs(dist) + 60) * dir, y: 0, duration: 0.38)
+                let dashDur = biomeName == "Guard Dog" ? 0.38 : 0.55
+                let dash = SKAction.moveBy(x: (abs(dist) + 60) * dir, y: 0, duration: dashDur)
                 dash.timingMode = .easeIn
                 let skid = SKAction.group([
                     SKAction.scaleX(to: 1.0 * (dist >= 0 ? -1 : 1), duration: 0.15),
