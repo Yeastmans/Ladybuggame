@@ -2260,11 +2260,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             aphidTimer += fdt // Clownfish (ground food, orange)
             if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateClownfishTexture(size: CGSize(width: 30, height: 22)), pts: 35, flying: false, name: "Clownfish") }
             flyTimer += fdt // Plankton (floating clouds)
-            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 20), bodyColor: UIColor(red: 0.30, green: 0.80, blue: 0.70, alpha: 1), eyeColor: .white), pts: 30, flying: true, name: "Plankton") }
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Plankton", size: CGSize(width: 20, height: 20)), pts: 30, flying: true, name: "Plankton") }
             gnatTimer += fdt // Shrimplets (darting)
-            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 26, height: 16), bodyColor: UIColor(red: 0.90, green: 0.55, blue: 0.45, alpha: 1), eyeColor: .black), pts: 40, flying: true, name: "Shrimplet") }
+            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Shrimplet", size: CGSize(width: 26, height: 16)), pts: 40, flying: true, name: "Shrimplet") }
             fireflyTimer += fdt // Sea snails (slow ground)
-            if fireflyTimer >= 2.5 { fireflyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 22), bodyColor: UIColor(red: 0.55, green: 0.45, blue: 0.60, alpha: 1), eyeColor: .white), pts: 20, flying: false, name: "Sea Snail") }
+            if fireflyTimer >= 2.5 { fireflyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Sea Snail", size: CGSize(width: 22, height: 22)), pts: 20, flying: false, name: "Sea Snail") }
             spiderTimer += edt // Sea urchins (ground, spiny)
             if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSeaUrchinTexture(size: CGSize(width: 38, height: 38)), name: "Sea Urchin") }
             birdTimer += edt // Jellyfish (swooper, translucent)
@@ -2280,129 +2280,129 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         case .volcano:
             aphidTimer += fdt // Ember beetles
-            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 26, height: 22), bodyColor: UIColor(red: 0.70, green: 0.30, blue: 0.10, alpha: 1), eyeColor: .orange), pts: 25, flying: false, name: "Ember Beetle") }
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Ember Beetle", size: CGSize(width: 26, height: 22)), pts: 25, flying: false, name: "Ember Beetle") }
             flyTimer += fdt // Ash moths
-            if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 20), bodyColor: UIColor(red: 0.50, green: 0.48, blue: 0.45, alpha: 1), eyeColor: .white), pts: 30, flying: true, name: "Ash Moth") }
+            if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Ash Moth", size: CGSize(width: 22, height: 20)), pts: 30, flying: true, name: "Ash Moth") }
             gnatTimer += fdt // Magma snails
-            if gnatTimer >= 3.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 20), bodyColor: UIColor(red: 0.85, green: 0.40, blue: 0.10, alpha: 1), eyeColor: .yellow), pts: 45, flying: false, name: "Magma Snail") }
+            if gnatTimer >= 3.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Magma Snail", size: CGSize(width: 24, height: 20)), pts: 45, flying: false, name: "Magma Snail") }
             spiderTimer += edt // Fire ants
-            if spiderTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 30, height: 26), bodyColor: UIColor(red: 0.75, green: 0.15, blue: 0.08, alpha: 1), eyeColor: .orange), name: "Fire Ant") }
+            if spiderTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Fire Ant", size: CGSize(width: 30, height: 26)), name: "Fire Ant") }
             birdTimer += edt // Phoenix (swooper)
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Phoenix") }
             dragonflyTimer += edt // Lava slime (ground)
             if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateLavaSlimeTexture(size: CGSize(width: 36, height: 30)), name: "Lava Slime") }
             waspTimer += edt // Obsidian golem (sky patrol)
-            if waspTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 48, height: 40), bodyColor: UIColor(red: 0.18, green: 0.15, blue: 0.20, alpha: 1), eyeColor: .red), name: "Obsidian Golem") }
+            if waspTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Obsidian Golem", size: CGSize(width: 48, height: 40)), name: "Obsidian Golem") }
 
         case .cloud:
             aphidTimer += fdt // Cloud mites
-            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 18), bodyColor: UIColor(red: 0.90, green: 0.92, blue: 0.98, alpha: 1), eyeColor: UIColor(red: 0.4, green: 0.6, blue: 0.9, alpha: 1)), pts: 20, flying: false, name: "Cloud Mite") }
+            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Cloud Mite", size: CGSize(width: 20, height: 18)), pts: 20, flying: false, name: "Cloud Mite") }
             flyTimer += fdt // Star bugs (flying)
-            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 22), bodyColor: UIColor(red: 0.95, green: 0.88, blue: 0.40, alpha: 1), eyeColor: .white), pts: 35, flying: true, name: "Star Bug") }
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Star Bug", size: CGSize(width: 22, height: 22)), pts: 35, flying: true, name: "Star Bug") }
             gnatTimer += fdt // Sky jellies
-            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 24), bodyColor: UIColor(red: 0.70, green: 0.80, blue: 0.95, alpha: 1), eyeColor: .white), pts: 40, flying: true, name: "Sky Jelly") }
+            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Sky Jelly", size: CGSize(width: 24, height: 24)), pts: 40, flying: true, name: "Sky Jelly") }
             spiderTimer += edt // Wind sprites (ground)
-            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 30, height: 28), bodyColor: UIColor(red: 0.80, green: 0.90, blue: 0.95, alpha: 1), eyeColor: .cyan), name: "Wind Sprite") }
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Wind Sprite", size: CGSize(width: 30, height: 28)), name: "Wind Sprite") }
             birdTimer += edt // Storm hawks (swooper)
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Storm Hawk") }
             waspTimer += edt // Thunder wasps (sky patrol)
             if waspTimer >= max(4.5, 8.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeSwooper(name: "Thunder Wasp") }
             dragonflyTimer += edt // Lightning bugs
-            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 28, height: 24), bodyColor: UIColor(red: 0.95, green: 0.90, blue: 0.30, alpha: 1), eyeColor: .blue), name: "Lightning Bug") }
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Lightning Bug", size: CGSize(width: 28, height: 24)), name: "Lightning Bug") }
 
         case .swamp:
             aphidTimer += fdt // Mud crickets
-            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 20), bodyColor: UIColor(red: 0.45, green: 0.38, blue: 0.25, alpha: 1), eyeColor: .white), pts: 20, flying: false, name: "Mud Cricket") }
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Mud Cricket", size: CGSize(width: 24, height: 20)), pts: 20, flying: false, name: "Mud Cricket") }
             flyTimer += fdt // Swamp flies
-            if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 18), bodyColor: UIColor(red: 0.35, green: 0.42, blue: 0.22, alpha: 1), eyeColor: .red), pts: 25, flying: true, name: "Swamp Fly") }
+            if flyTimer >= 1.6 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Swamp Fly", size: CGSize(width: 20, height: 18)), pts: 25, flying: true, name: "Swamp Fly") }
             gnatTimer += fdt // Leeches
-            if gnatTimer >= 2.5 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 16), bodyColor: UIColor(red: 0.30, green: 0.18, blue: 0.15, alpha: 1), eyeColor: .white), pts: 35, flying: false, name: "Leech") }
+            if gnatTimer >= 2.5 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Leech", size: CGSize(width: 22, height: 16)), pts: 35, flying: false, name: "Leech") }
             spiderTimer += edt // Bog spiders
-            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 40, height: 34), bodyColor: UIColor(red: 0.35, green: 0.30, blue: 0.22, alpha: 1), eyeColor: .red), name: "Bog Spider") }
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Bog Spider", size: CGSize(width: 40, height: 34)), name: "Bog Spider") }
             birdTimer += edt // Mosquito swarms (swooper)
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Mosquito Swarm") }
             dragonflyTimer += edt // Swamp snakes
-            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 52, height: 30), bodyColor: UIColor(red: 0.32, green: 0.35, blue: 0.20, alpha: 1), eyeColor: .yellow), name: "Swamp Snake") }
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Swamp Snake", size: CGSize(width: 52, height: 30)), name: "Swamp Snake") }
             frogTimer += edt // Alligators at ponds
             if frogTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnPondCreature() }
 
         case .city:
             aphidTimer += fdt // Garden ants
-            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 18), bodyColor: UIColor(red: 0.18, green: 0.15, blue: 0.12, alpha: 1), eyeColor: .white), pts: 15, flying: false, name: "Garden Ant") }
+            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Garden Ant", size: CGSize(width: 20, height: 18)), pts: 15, flying: false, name: "Garden Ant") }
             flyTimer += fdt // Honeybees (flying food)
-            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 20), bodyColor: UIColor(red: 0.92, green: 0.75, blue: 0.15, alpha: 1), eyeColor: .black), pts: 30, flying: true, name: "Honeybee") }
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Honeybee", size: CGSize(width: 24, height: 20)), pts: 30, flying: true, name: "Honeybee") }
             gnatTimer += fdt // Pill bugs
-            if gnatTimer >= 2.2 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 20), bodyColor: UIColor(red: 0.45, green: 0.45, blue: 0.48, alpha: 1), eyeColor: .white), pts: 25, flying: false, name: "Pill Bug") }
+            if gnatTimer >= 2.2 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Pill Bug", size: CGSize(width: 20, height: 20)), pts: 25, flying: false, name: "Pill Bug") }
             spiderTimer += edt // Garden spiders
-            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 40, height: 34), bodyColor: UIColor(red: 0.50, green: 0.42, blue: 0.25, alpha: 1), eyeColor: .red), name: "Garden Spider") }
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Garden Spider", size: CGSize(width: 40, height: 34)), name: "Garden Spider") }
             birdTimer += edt // Yellow jackets (swooper)
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Yellow Jacket") }
             dragonflyTimer += edt // Garden snakes
-            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 52, height: 28), bodyColor: UIColor(red: 0.30, green: 0.55, blue: 0.22, alpha: 1), eyeColor: .yellow), name: "Garden Snake") }
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Garden Snake", size: CGSize(width: 52, height: 28)), name: "Garden Snake") }
             waspTimer += edt // House cat (rare, big, charges)
-            if waspTimer >= max(8.0, 14.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 70, height: 50), bodyColor: UIColor(red: 0.75, green: 0.55, blue: 0.35, alpha: 1), eyeColor: .green), name: "House Cat") }
+            if waspTimer >= max(8.0, 14.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "House Cat", size: CGSize(width: 70, height: 50)), name: "House Cat") }
 
         case .ruins:
             aphidTimer += fdt
-            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 22), bodyColor: UIColor(red: 0.75, green: 0.62, blue: 0.20, alpha: 1), eyeColor: .black), pts: 35, flying: false, name: "Scarab") }
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Scarab", size: CGSize(width: 24, height: 22)), pts: 35, flying: false, name: "Scarab") }
             flyTimer += fdt
-            if flyTimer >= 1.8 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 18, height: 16), bodyColor: UIColor(red: 0.65, green: 0.58, blue: 0.45, alpha: 1), eyeColor: .white), pts: 25, flying: false, name: "Dust Mite") }
+            if flyTimer >= 1.8 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Dust Mite", size: CGSize(width: 18, height: 16)), pts: 25, flying: false, name: "Dust Mite") }
             gnatTimer += fdt
-            if gnatTimer >= 2.5 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 26, height: 18), bodyColor: UIColor(red: 0.55, green: 0.42, blue: 0.30, alpha: 1), eyeColor: .white), pts: 40, flying: false, name: "Temple Worm") }
+            if gnatTimer >= 2.5 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Temple Worm", size: CGSize(width: 26, height: 18)), pts: 40, flying: false, name: "Temple Worm") }
             spiderTimer += edt
-            if spiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 50, height: 42), bodyColor: UIColor(red: 0.48, green: 0.45, blue: 0.40, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.6, blue: 0.1, alpha: 1)), name: "Stone Guardian") }
+            if spiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Stone Guardian", size: CGSize(width: 50, height: 42)), name: "Stone Guardian") }
             birdTimer += edt
             if birdTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Curse Wraith") }
             dragonflyTimer += edt
-            if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 42, height: 34), bodyColor: UIColor(red: 0.35, green: 0.28, blue: 0.22, alpha: 1), eyeColor: UIColor(red: 0.6, green: 0.9, blue: 0.3, alpha: 1)), name: "Tomb Spider") }
+            if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Tomb Spider", size: CGSize(width: 42, height: 34)), name: "Tomb Spider") }
             waspTimer += edt
-            if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 48, height: 28), bodyColor: UIColor(red: 0.70, green: 0.58, blue: 0.35, alpha: 1), eyeColor: .yellow), name: "Sand Viper") }
+            if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Sand Viper", size: CGSize(width: 48, height: 28)), name: "Sand Viper") }
 
         case .mushroom:
             aphidTimer += fdt
-            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 20), bodyColor: UIColor(red: 0.55, green: 0.40, blue: 0.55, alpha: 1), eyeColor: .white), pts: 30, flying: false, name: "Spore Bug") }
+            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Spore Bug", size: CGSize(width: 22, height: 20)), pts: 30, flying: false, name: "Spore Bug") }
             flyTimer += fdt
-            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 22), bodyColor: UIColor(red: 0.40, green: 0.70, blue: 0.45, alpha: 1), eyeColor: UIColor(red: 0.8, green: 1.0, blue: 0.5, alpha: 1)), pts: 40, flying: true, name: "Glow Shroom") }
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Glow Shroom", size: CGSize(width: 24, height: 22)), pts: 40, flying: true, name: "Glow Shroom") }
             gnatTimer += fdt
-            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 18, height: 16), bodyColor: UIColor(red: 0.45, green: 0.35, blue: 0.30, alpha: 1), eyeColor: .white), pts: 25, flying: true, name: "Fungus Gnat") }
+            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Fungus Gnat", size: CGSize(width: 18, height: 16)), pts: 25, flying: true, name: "Fungus Gnat") }
             spiderTimer += edt
-            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 46, height: 38), bodyColor: UIColor(red: 0.50, green: 0.35, blue: 0.28, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.9, blue: 0.4, alpha: 1)), name: "Shroom Golem") }
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Shroom Golem", size: CGSize(width: 46, height: 38)), name: "Shroom Golem") }
             birdTimer += edt
             if birdTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Toxic Spore") }
             dragonflyTimer += edt
-            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 40, height: 30), bodyColor: UIColor(red: 0.60, green: 0.50, blue: 0.42, alpha: 1), eyeColor: .white), name: "Mycelium Crawler") }
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Mycelium Crawler", size: CGSize(width: 40, height: 30)), name: "Mycelium Crawler") }
             waspTimer += edt
-            if waspTimer >= max(4.5, 8.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 34, height: 34), bodyColor: UIColor(red: 0.80, green: 0.25, blue: 0.20, alpha: 1), eyeColor: .white), name: "Cap Bouncer") }
+            if waspTimer >= max(4.5, 8.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Cap Bouncer", size: CGSize(width: 34, height: 34)), name: "Cap Bouncer") }
 
         case .crystal:
             aphidTimer += fdt
-            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 22, height: 20), bodyColor: UIColor(red: 0.50, green: 0.35, blue: 0.75, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.9, blue: 1.0, alpha: 1)), pts: 45, flying: false, name: "Gem Larva") }
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Gem Larva", size: CGSize(width: 22, height: 20)), pts: 45, flying: false, name: "Gem Larva") }
             flyTimer += fdt
-            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 22), bodyColor: UIColor(red: 0.70, green: 0.55, blue: 0.90, alpha: 1), eyeColor: .white), pts: 50, flying: true, name: "Prism Fly") }
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Prism Fly", size: CGSize(width: 24, height: 22)), pts: 50, flying: true, name: "Prism Fly") }
             gnatTimer += fdt
-            if gnatTimer >= 2.2 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 18), bodyColor: UIColor(red: 0.55, green: 0.65, blue: 0.85, alpha: 1), eyeColor: UIColor(red: 0.9, green: 0.9, blue: 1.0, alpha: 1)), pts: 35, flying: false, name: "Crystal Mite") }
+            if gnatTimer >= 2.2 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Crystal Mite", size: CGSize(width: 20, height: 18)), pts: 35, flying: false, name: "Crystal Mite") }
             spiderTimer += edt
-            if spiderTimer >= max(4.5, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 44, height: 38), bodyColor: UIColor(red: 0.35, green: 0.25, blue: 0.55, alpha: 1), eyeColor: UIColor(red: 0.9, green: 0.4, blue: 0.9, alpha: 1)), name: "Shard Sentinel") }
+            if spiderTimer >= max(4.5, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Shard Sentinel", size: CGSize(width: 44, height: 38)), name: "Shard Sentinel") }
             birdTimer += edt
             if birdTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Refractor") }
             dragonflyTimer += edt
-            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 50, height: 30), bodyColor: UIColor(red: 0.45, green: 0.30, blue: 0.65, alpha: 1), eyeColor: UIColor(red: 0.6, green: 0.8, blue: 1.0, alpha: 1)), name: "Crystal Wyrm") }
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Crystal Wyrm", size: CGSize(width: 50, height: 30)), name: "Crystal Wyrm") }
             waspTimer += edt
-            if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 36, height: 36), bodyColor: UIColor(red: 0.40, green: 0.35, blue: 0.50, alpha: 1), eyeColor: UIColor(red: 0.7, green: 0.5, blue: 0.9, alpha: 1)), name: "Geode Roller") }
+            if waspTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Geode Roller", size: CGSize(width: 36, height: 36)), name: "Geode Roller") }
 
         case .space:
             aphidTimer += fdt
-            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 20, height: 18), bodyColor: UIColor(red: 0.60, green: 0.55, blue: 0.80, alpha: 1), eyeColor: .white), pts: 40, flying: true, name: "Cosmic Dust") }
+            if aphidTimer >= 1.2 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Cosmic Dust", size: CGSize(width: 20, height: 18)), pts: 40, flying: true, name: "Cosmic Dust") }
             flyTimer += fdt
-            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 24, height: 22), bodyColor: UIColor(red: 0.95, green: 0.85, blue: 0.35, alpha: 1), eyeColor: UIColor(red: 1.0, green: 0.9, blue: 0.5, alpha: 1)), pts: 55, flying: true, name: "Star Larva") }
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Star Larva", size: CGSize(width: 24, height: 22)), pts: 55, flying: true, name: "Star Larva") }
             gnatTimer += fdt
-            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 26, height: 24), bodyColor: UIColor(red: 0.60, green: 0.30, blue: 0.80, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.5, blue: 1.0, alpha: 1)), pts: 50, flying: true, name: "Nebula Jelly") }
+            if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Nebula Jelly", size: CGSize(width: 26, height: 24)), pts: 50, flying: true, name: "Nebula Jelly") }
             spiderTimer += edt
-            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 40, height: 34), bodyColor: UIColor(red: 0.40, green: 0.38, blue: 0.35, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.4, blue: 0.2, alpha: 1)), name: "Asteroid Beetle") }
+            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Asteroid Beetle", size: CGSize(width: 40, height: 34)), name: "Asteroid Beetle") }
             birdTimer += edt
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Void Moth") }
             dragonflyTimer += edt
-            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateSimpleCreature(size: CGSize(width: 54, height: 28), bodyColor: UIColor(red: 0.25, green: 0.20, blue: 0.45, alpha: 1), eyeColor: UIColor(red: 0.5, green: 0.8, blue: 1.0, alpha: 1)), name: "Cosmic Serpent") }
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Cosmic Serpent", size: CGSize(width: 54, height: 28)), name: "Cosmic Serpent") }
             waspTimer += edt
             if waspTimer >= max(4.5, 8.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeSwooper(name: "Alien Drone") }
         }
@@ -2521,11 +2521,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Phoenix": frames = TextureGenerator.generatePhoenixFrames(size: CGSize(width: 56, height: 40))
         case "Storm Hawk": frames = hawkFrames
         case "Thunder Wasp": frames = waspFrames
-        case "Mosquito Swarm": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 30, height: 30), bodyColor: UIColor(red: 0.35, green: 0.30, blue: 0.28, alpha: 1), eyeColor: .red)]
+        case "Mosquito Swarm": frames = [TextureGenerator.biomeCreatureTexture(named: "Mosquito Swarm", size: CGSize(width: 30, height: 30))]
         case "Yellow Jacket": frames = waspFrames
-        case "Curse Wraith": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 40, height: 34), bodyColor: UIColor(red: 0.40, green: 0.35, blue: 0.50, alpha: 1), eyeColor: UIColor(red: 0.8, green: 0.2, blue: 0.8, alpha: 1))]
-        case "Toxic Spore": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 30, height: 30), bodyColor: UIColor(red: 0.50, green: 0.65, blue: 0.15, alpha: 1), eyeColor: .yellow)]
-        case "Refractor": frames = [TextureGenerator.generateSimpleCreature(size: CGSize(width: 36, height: 32), bodyColor: UIColor(red: 0.75, green: 0.80, blue: 0.95, alpha: 1), eyeColor: UIColor(red: 0.9, green: 0.5, blue: 0.9, alpha: 1))]
+        case "Curse Wraith": frames = [TextureGenerator.biomeCreatureTexture(named: "Curse Wraith", size: CGSize(width: 40, height: 34))]
+        case "Toxic Spore": frames = [TextureGenerator.biomeCreatureTexture(named: "Toxic Spore", size: CGSize(width: 30, height: 30))]
+        case "Refractor": frames = [TextureGenerator.biomeCreatureTexture(named: "Refractor", size: CGSize(width: 36, height: 32))]
         case "Void Moth": frames = TextureGenerator.generateVoidMothFrames(size: CGSize(width: 44, height: 36))
         case "Alien Drone": frames = [TextureGenerator.generateAlienDroneTexture(size: CGSize(width: 36, height: 28))]
         default: frames = birdTextures
