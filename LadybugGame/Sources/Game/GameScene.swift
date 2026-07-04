@@ -3868,8 +3868,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         isBossFight = true
         bossLevel = level
         bossMaxHP = switch MenuScene.difficulty { case .easy: 25; case .normal: 40; case .hard: 60 }
-        if level == 2 { bossMaxHP = bossMaxHP * 3 / 2 } // Crow is tougher than the bear
-        if level == 3 { bossMaxHP = bossMaxHP * 2 }     // UFO is the toughest
+        if level == 2 { bossMaxHP = bossMaxHP * 2 }     // Crow is tougher than the bear
+        if level == 3 { bossMaxHP = bossMaxHP * 5 / 2 } // UFO is the toughest
         bossHP = bossMaxHP
         bossAttackTimer = 0
         bossAttackPhase = 0
