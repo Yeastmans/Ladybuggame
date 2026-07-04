@@ -550,30 +550,34 @@ extension TextureGenerator {
                 drawAngryEye(cg, cx: w * 0.56, cy: h * 0.32, r: w * 0.058, color: eye)
 
             case .swarm:
-                // Cluster of small bugs
-                let dotXs: [CGFloat] = [0.20, 0.38, 0.28, 0.55, 0.46, 0.70, 0.62, 0.80]
-                let dotYs: [CGFloat] = [0.30, 0.18, 0.55, 0.30, 0.68, 0.58, 0.12, 0.36]
+                // Cluster of bugs — pale wings behind each one so the swarm
+                // reads clearly against dark swamp skies
+                let dotXs: [CGFloat] = [0.18, 0.38, 0.26, 0.55, 0.44, 0.70, 0.60, 0.80]
+                let dotYs: [CGFloat] = [0.30, 0.16, 0.55, 0.28, 0.66, 0.55, 0.10, 0.34]
                 for i in 0..<8 {
-                    let r = w * ((i % 3 == 0) ? 0.055 : 0.04)
+                    let r = w * ((i % 3 == 0) ? 0.075 : 0.055)
+                    cg.setFillColor(UIColor(white: 0.95, alpha: 0.55).cgColor)
+                    cg.fillEllipse(in: CGRect(x: w * dotXs[i] - r * 1.5, y: h * dotYs[i] - r * 1.6, width: r * 1.6, height: r * 0.9))
+                    cg.fillEllipse(in: CGRect(x: w * dotXs[i] - r * 0.1, y: h * dotYs[i] - r * 1.6, width: r * 1.6, height: r * 0.9))
                     cg.setFillColor(body.cgColor)
                     cg.fillEllipse(in: CGRect(x: w * dotXs[i] - r, y: h * dotYs[i] - r, width: r * 2, height: r * 2))
-                    // Wing dash
-                    cg.setStrokeColor(accent.withAlphaComponent(0.5).cgColor)
-                    cg.setLineWidth(max(0.8, w * 0.015))
-                    cg.move(to: CGPoint(x: w * dotXs[i] - r, y: h * dotYs[i] - r * 1.4))
-                    cg.addLine(to: CGPoint(x: w * dotXs[i] + r, y: h * dotYs[i] - r * 1.8))
-                    cg.strokePath()
+                    // Glowing red eye on every bug
+                    cg.setFillColor(eye.withAlphaComponent(0.9).cgColor)
+                    cg.fillEllipse(in: CGRect(x: w * dotXs[i] + r * 0.2, y: h * dotYs[i] - r * 0.4, width: r * 0.7, height: r * 0.7))
                 }
-                // Lead bug, bigger, angry
+                // Lead bug, bigger, angry, with pale wings
+                cg.setFillColor(UIColor(white: 0.95, alpha: 0.60).cgColor)
+                cg.fillEllipse(in: CGRect(x: w * 0.50, y: h * 0.60, width: w * 0.16, height: h * 0.10))
+                cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.58, width: w * 0.16, height: h * 0.10))
                 cg.setFillColor(body.cgColor)
-                cg.fillEllipse(in: CGRect(x: w * 0.48, y: h * 0.66, width: w * 0.30, height: h * 0.24))
+                cg.fillEllipse(in: CGRect(x: w * 0.46, y: h * 0.66, width: w * 0.34, height: h * 0.26))
                 // Proboscis needle
                 cg.setStrokeColor(dark.cgColor)
-                cg.setLineWidth(max(1.0, w * 0.02)); cg.setLineCap(.round)
-                cg.move(to: CGPoint(x: w * 0.78, y: h * 0.78))
-                cg.addLine(to: CGPoint(x: w * 0.92, y: h * 0.82))
+                cg.setLineWidth(max(1.0, w * 0.025)); cg.setLineCap(.round)
+                cg.move(to: CGPoint(x: w * 0.80, y: h * 0.78))
+                cg.addLine(to: CGPoint(x: w * 0.95, y: h * 0.82))
                 cg.strokePath()
-                drawAngryEye(cg, cx: w * 0.70, cy: h * 0.74, r: w * 0.045, color: eye)
+                drawAngryEye(cg, cx: w * 0.72, cy: h * 0.75, r: w * 0.05, color: eye)
 
             case .spikeball:
                 let scx = w * 0.50; let scy = h * 0.52
@@ -1010,6 +1014,74 @@ extension TextureGenerator {
                 cg.move(to: CGPoint(x: w * sx, y: h * 0.62))
                 cg.addQuadCurve(to: CGPoint(x: w * (sx + 0.08), y: h * 0.74), control: CGPoint(x: w * (sx + 0.08), y: h * 0.64))
                 cg.strokePath()
+            }
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateVacuumTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            // Vortex body
+            cg.setFillColor(UIColor(red: 0.30, green: 0.75, blue: 0.95, alpha: 0.85).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.05, y: h * 0.05, width: w * 0.90, height: h * 0.90))
+            // Spiral arms
+            cg.setStrokeColor(UIColor(white: 1.0, alpha: 0.9).cgColor)
+            cg.setLineWidth(max(1.5, w * 0.06)); cg.setLineCap(.round)
+            let cx = w * 0.5; let cy = h * 0.5
+            cg.addArc(center: CGPoint(x: cx, y: cy), radius: w * 0.34, startAngle: 0, endAngle: CGFloat.pi * 1.2, clockwise: false)
+            cg.strokePath()
+            cg.addArc(center: CGPoint(x: cx + w * 0.04, y: cy - h * 0.02), radius: w * 0.20, startAngle: CGFloat.pi * 1.2, endAngle: CGFloat.pi * 2.4, clockwise: false)
+            cg.strokePath()
+            // Center dot
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.fillEllipse(in: CGRect(x: cx - w * 0.05, y: cy - h * 0.05, width: w * 0.10, height: h * 0.10))
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateUFOBossTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            // Tractor beam glow underneath
+            cg.setFillColor(UIColor(red: 0.45, green: 1.00, blue: 0.55, alpha: 0.18).cgColor)
+            cg.move(to: CGPoint(x: w * 0.38, y: h * 0.55))
+            cg.addLine(to: CGPoint(x: w * 0.62, y: h * 0.55))
+            cg.addLine(to: CGPoint(x: w * 0.78, y: h * 1.00))
+            cg.addLine(to: CGPoint(x: w * 0.22, y: h * 1.00))
+            cg.closePath(); cg.fillPath()
+            // Glass dome
+            cg.setFillColor(UIColor(red: 0.55, green: 0.85, blue: 1.00, alpha: 0.45).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.32, y: h * 0.06, width: w * 0.36, height: h * 0.40))
+            // Alien pilot: green head with big black eyes
+            cg.setFillColor(UIColor(red: 0.45, green: 0.85, blue: 0.35, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.43, y: h * 0.16, width: w * 0.14, height: h * 0.20))
+            cg.setFillColor(UIColor.black.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.455, y: h * 0.21, width: w * 0.035, height: h * 0.07))
+            cg.fillEllipse(in: CGRect(x: w * 0.51, y: h * 0.21, width: w * 0.035, height: h * 0.07))
+            // Saucer hull
+            cg.setFillColor(UIColor(red: 0.55, green: 0.58, blue: 0.68, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.06, y: h * 0.30, width: w * 0.88, height: h * 0.34))
+            // Hull underside shading
+            cg.setFillColor(UIColor(red: 0.40, green: 0.42, blue: 0.52, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.06, y: h * 0.44, width: w * 0.88, height: h * 0.18))
+            // Running lights
+            let lightXs: [CGFloat] = [0.16, 0.32, 0.50, 0.68, 0.84]
+            let lightColors: [UIColor] = [
+                UIColor(red: 1.00, green: 0.35, blue: 0.35, alpha: 1),
+                UIColor(red: 1.00, green: 0.85, blue: 0.25, alpha: 1),
+                UIColor(red: 0.35, green: 1.00, blue: 0.45, alpha: 1),
+                UIColor(red: 0.35, green: 0.65, blue: 1.00, alpha: 1),
+                UIColor(red: 0.90, green: 0.45, blue: 1.00, alpha: 1),
+            ]
+            for i in 0..<5 {
+                cg.setFillColor(lightColors[i].cgColor)
+                let r = w * 0.022
+                cg.fillEllipse(in: CGRect(x: w * lightXs[i] - r, y: h * 0.47 - r, width: r * 2, height: r * 2))
             }
         }
         return SKTexture(image: image)

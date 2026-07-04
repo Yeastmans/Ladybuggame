@@ -32,6 +32,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             scoreLabel.text = "\(score)"
             if score >= 6000 && !isBossFight && !hasBeatenBoss && currentBiome == .cave { startBossFight(level: 1) }
             if score >= 11600 && !isBossFight && !hasBeatenBoss2 && currentBiome == .city { startBossFight(level: 2) }
+            if score >= 17000 && !isBossFight && !hasBeatenBoss3 && currentBiome == .space { startBossFight(level: 3) }
             if score >= 500 && !hasShownRainbow {
                 hasShownRainbow = true
                 showRainbow()
@@ -138,8 +139,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var bossBerryTimer: TimeInterval = 0
     private var hasBeatenBoss = false
     private var hasBeatenBoss2 = false
+    private var hasBeatenBoss3 = false
     private var bossLevel = 1
     private var bubblePowerupTimer: TimeInterval = 0
+    private var isMagnetMode = false
+    private var magnetDuration: TimeInterval = 0
+    private var arenaBugTimer: TimeInterval = 0
+    private var isVacuumMode = false
+    private var vacuumDuration: TimeInterval = 0
     private var aphidFrames: [TextureGenerator.AphidColor: [SKTexture]] = [:]
     private var logTexture: SKTexture!
     private var frogTexture: SKTexture!
@@ -610,6 +617,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         checkSpiderJumps()
         checkCaveEntities()
         updateBubblePowerup(dt: dt)
+        updateVacuumMode(dt: dt)
 
         // Scrolling (stops during boss fight)
         if !isBossFight {
@@ -802,7 +810,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func scrollWorldObjects(delta: CGFloat) {
         for child in children {
-            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood || child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider || child is FallingRock || child is Bubble {
+            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood || child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider || child is FallingRock || child is Bubble || child is Vacuum {
                 child.position.x -= delta
                 // Cave ground tracking: snap ground entities to terrain
                 if isCaveBiome, let terrain = caveTerrain {
@@ -1880,6 +1888,19 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 collectBubbleBerry()
                 return
             }
+            // Bug magnet / vacuum (crow and UFO fight power-up)
+            if contact.bodyA.node?.name == "magnetPickup" || contact.bodyB.node?.name == "magnetPickup" {
+                let pickup = contact.bodyA.node?.name == "magnetPickup" ? contact.bodyA.node : contact.bodyB.node
+                pickup?.removeFromParent()
+                collectMagnet()
+                return
+            }
+            // Vacuum power-up (world drop after the second boss)
+            if let vac = (contact.bodyA.node as? Vacuum) ?? (contact.bodyB.node as? Vacuum) {
+                vac.removeFromParent()
+                startVacuumMode(duration: 8.0)
+                return
+            }
             // Gnat swarm
             if let gs = (contact.bodyA.node as? GnatSwarm) ?? (contact.bodyB.node as? GnatSwarm) {
                 score += 30
@@ -2618,7 +2639,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Phoenix": frames = TextureGenerator.generatePhoenixFrames(size: CGSize(width: 56, height: 40))
         case "Storm Hawk": frames = hawkFrames
         case "Thunder Wasp": frames = waspFrames
-        case "Mosquito Swarm": frames = [TextureGenerator.biomeCreatureTexture(named: "Mosquito Swarm", size: CGSize(width: 30, height: 30))]
+        case "Mosquito Swarm": frames = [TextureGenerator.biomeCreatureTexture(named: "Mosquito Swarm", size: CGSize(width: 46, height: 40))]
         case "Yellow Jacket": frames = waspFrames
         case "Curse Wraith": frames = [TextureGenerator.biomeCreatureTexture(named: "Curse Wraith", size: CGSize(width: 40, height: 34))]
         case "Toxic Spore": frames = [TextureGenerator.biomeCreatureTexture(named: "Toxic Spore", size: CGSize(width: 30, height: 30))]
@@ -3192,7 +3213,71 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         if bubblePowerupTimer >= 45.0 {
             bubblePowerupTimer = 0
             // Very rare: coin flip on each 45s window, one on screen at most
-            if Bool.random() { spawnBubblePowerup() }
+            guard Bool.random() else { return }
+            // After the second boss the vacuum can drop instead of the bubble
+            let vacuumUnlocked = hasBeatenBoss2 || score >= 12000
+            if vacuumUnlocked && Bool.random() {
+                spawnVacuumPowerup()
+            } else {
+                spawnBubblePowerup()
+            }
+        }
+    }
+
+    private func spawnVacuumPowerup() {
+        guard !children.contains(where: { $0 is Vacuum }) else { return }
+        let vac = Vacuum()
+        vac.position = CGPoint(x: CGFloat.random(in: size.width * 0.45...size.width * 0.90), y: size.height + 25)
+        vac.setupPhysics()
+        vac.startDrifting(floorY: groundY)
+        addChild(vac)
+    }
+
+    /// Vacuum mode: every snack on screen gets pulled toward the ladybug
+    private func startVacuumMode(duration: TimeInterval) {
+        isVacuumMode = true
+        vacuumDuration = duration
+        SoundManager.shared.play("powerup")
+        ladybug.pulse()
+        ladybug.childNode(withName: "vacuumRing")?.removeFromParent()
+        let ring = SKShapeNode(circleOfRadius: 28)
+        ring.name = "vacuumRing"
+        ring.strokeColor = SKColor(red: 0.30, green: 0.80, blue: 1.0, alpha: 0.8)
+        ring.fillColor = SKColor(red: 0.30, green: 0.80, blue: 1.0, alpha: 0.08)
+        ring.lineWidth = 2
+        ring.zPosition = -1
+        ladybug.addChild(ring)
+        ring.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.scale(to: 0.75, duration: 0.4),
+            SKAction.scale(to: 1.1, duration: 0.4),
+        ])))
+        let txt = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        txt.text = "VACUUM!"
+        txt.fontSize = 18
+        txt.fontColor = SKColor(red: 0.3, green: 0.8, blue: 1.0, alpha: 1)
+        txt.position = CGPoint(x: size.width / 2, y: size.height / 2 + 30)
+        txt.zPosition = 130
+        addChild(txt)
+        txt.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), SKAction.fadeOut(withDuration: 0.3), SKAction.removeFromParent()]))
+    }
+
+    private func updateVacuumMode(dt: TimeInterval) {
+        guard isVacuumMode else { return }
+        vacuumDuration -= dt
+        if vacuumDuration <= 0 || isGameOver {
+            isVacuumMode = false
+            ladybug.childNode(withName: "vacuumRing")?.removeFromParent()
+            return
+        }
+        let pull: CGFloat = 320 * CGFloat(dt)
+        for child in children {
+            guard child is BiomeFood || child is Aphid || child is FruitFly || child is GnatSwarm else { continue }
+            let dx = ladybug.position.x - child.position.x
+            let dy = ladybug.position.y - child.position.y
+            let dist = max(1, hypot(dx, dy))
+            guard dist < 340 else { continue }
+            child.position.x += dx / dist * pull
+            child.position.y += dy / dist * pull
         }
     }
 
@@ -3736,6 +3821,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         bossLevel = level
         bossMaxHP = switch MenuScene.difficulty { case .easy: 25; case .normal: 40; case .hard: 60 }
         if level == 2 { bossMaxHP = bossMaxHP * 3 / 2 } // Crow is tougher than the bear
+        if level == 3 { bossMaxHP = bossMaxHP * 2 }     // UFO is the toughest
         bossHP = bossMaxHP
         bossAttackTimer = 0
         bossAttackPhase = 0
@@ -3748,8 +3834,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Save checkpoint
         GameScene.hasNightCheckpoint = true
-        GameScene.checkpointScore = level == 2 ? 11600 : 6000
-        GameScene.unlockBiome(level == 2 ? .city : .cave)
+        let checkpointBiome: Biome = switch level { case 3: .space; case 2: .city; default: .cave }
+        GameScene.checkpointScore = switch level { case 3: 17000; case 2: 11600; default: 6000 }
+        GameScene.unlockBiome(checkpointBiome)
 
         // Clear all existing entities from screen
         for child in children {
@@ -3757,7 +3844,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                child is Frog || child is Dragonfly || child is Firefly || child is HeartBug ||
                child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood ||
                child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider ||
-               child is FallingRock || child is Bubble || child.name == "monkey" || child.name == "envDecor" ||
+               child is FallingRock || child is Bubble || child is Vacuum || child.name == "monkey" || child.name == "envDecor" ||
                child.name == "pond" || child.name == "rockShadow" ||
                child.name == "slothRig" || child.name == "lavaPool" {
                 child.removeFromParent()
@@ -3798,11 +3885,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func spawnBear() {
-        let bearTex = bossLevel == 2
-            ? TextureGenerator.generateCrowBossTexture(size: CGSize(width: 200, height: 150))
-            : TextureGenerator.generateBearTexture(size: CGSize(width: 200, height: 150))
+        let bearTex: SKTexture = switch bossLevel {
+        case 3: TextureGenerator.generateUFOBossTexture(size: CGSize(width: 200, height: 150))
+        case 2: TextureGenerator.generateCrowBossTexture(size: CGSize(width: 200, height: 150))
+        default: TextureGenerator.generateBearTexture(size: CGSize(width: 200, height: 150))
+        }
         let bear = SKSpriteNode(texture: bearTex, size: CGSize(width: 200, height: 150))
-        bear.position = CGPoint(x: size.width + 120, y: groundY + 75)
+        // The UFO hovers high; the bear and crow stay near the ground
+        bear.position = CGPoint(x: size.width + 120, y: bossLevel == 3 ? size.height * 0.68 : groundY + 75)
         bear.xScale = -1
         bear.zPosition = 8
         bear.name = "boss"
@@ -3884,19 +3974,41 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             let phase = bossAttackPhase % 4
             bossAttackPhase += 1
 
-            switch phase {
-            case 0: bossThrowRock()
-            case 1: bossThrowRock(); bossThrowRock() // Double rocks
-            case 2: bossCharge()
-            default: bossGroundSlam()
+            if bossLevel == 3 {
+                // The UFO attacks from above
+                switch phase {
+                case 0: ufoLaser()
+                case 1: ufoDropRock(); ufoDropRock()
+                case 2: ufoSweep()
+                default: ufoLaser(); ufoDropRock()
+                }
+            } else if bossLevel == 2 {
+                // The crow fights from the air
+                switch phase {
+                case 0: crowFeatherVolley()
+                case 1: crowSwoop()
+                case 2: crowFeatherVolley(count: 4)
+                default: crowGust()
+                }
+            } else {
+                switch phase {
+                case 0: bossThrowRock()
+                case 1: bossThrowRock(); bossThrowRock() // Double rocks
+                case 2: bossCharge()
+                default: bossGroundSlam()
+                }
             }
         }
 
-        // Bubble berry every 10s
+        // Power-up pickup every 10s: bubble berry vs the bear,
+        // bug magnet vs the crow, vacuum vs the UFO
         if bossBerryTimer >= 10.0 {
             bossBerryTimer = 0
-            spawnBubbleBerry()
+            if bossLevel >= 2 { spawnMagnetPickup() } else { spawnBubbleBerry() }
         }
+
+        // Crow/UFO fights: arena snack bugs + magnet/vacuum + seekers
+        if bossLevel >= 2 { updateCrowFightExtras(dt: dt) }
 
         // Bubble shooting mode
         if isBubbleMode {
@@ -3984,6 +4096,276 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ]))
     }
 
+    // MARK: - Crow attacks (boss 2)
+
+    private func crowSwoop() {
+        guard let boss = bossNode, boss.action(forKey: "swoop") == nil else { return }
+        SoundManager.shared.play("whoosh")
+        let start = boss.position
+        let targetY = max(groundY + 30, min(ladybug.position.y, size.height * 0.7))
+        let rise = SKAction.move(to: CGPoint(x: start.x, y: size.height * 0.85), duration: 0.5)
+        rise.timingMode = .easeOut
+        let dive = SKAction.move(to: CGPoint(x: -80, y: targetY), duration: 0.7)
+        dive.timingMode = .easeIn
+        let reset = SKAction.move(to: CGPoint(x: size.width + 80, y: start.y), duration: 0.0)
+        let back = SKAction.move(to: start, duration: 0.8)
+        back.timingMode = .easeOut
+        boss.run(SKAction.sequence([rise, dive, reset, back]), withKey: "swoop")
+    }
+
+    private func crowFeatherVolley(count: Int = 3) {
+        guard let boss = bossNode else { return }
+        SoundManager.shared.play("whoosh")
+        for i in 0..<count {
+            let feather = SKShapeNode(ellipseOf: CGSize(width: 18, height: 5))
+            feather.fillColor = SKColor(red: 0.15, green: 0.15, blue: 0.20, alpha: 1)
+            feather.strokeColor = SKColor(red: 0.45, green: 0.42, blue: 0.62, alpha: 0.9)
+            feather.lineWidth = 1
+            feather.position = CGPoint(x: boss.position.x - 30, y: boss.position.y + CGFloat(i - 1) * 14)
+            feather.zPosition = 7
+            feather.name = "bossRock"
+            let body = SKPhysicsBody(rectangleOf: CGSize(width: 16, height: 5))
+            body.isDynamic = false
+            body.categoryBitMask = GameScene.PhysicsCategory.bird
+            body.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+            feather.physicsBody = body
+            addChild(feather)
+            let targetY = max(groundY + 10, ladybug.position.y + CGFloat(i - 1) * 50)
+            feather.zRotation = atan2(targetY - feather.position.y, -40 - feather.position.x)
+            let fly = SKAction.move(to: CGPoint(x: -40, y: targetY), duration: 0.9)
+            fly.timingMode = .easeIn
+            feather.run(SKAction.sequence([fly, SKAction.removeFromParent()]))
+        }
+    }
+
+    private func crowGust() {
+        guard let boss = bossNode else { return }
+        SoundManager.shared.play("whoosh")
+        let gustYs: [CGFloat] = [groundY + 30, groundY + 110]
+        for gy in gustYs {
+            let gust = SKShapeNode(rectOf: CGSize(width: 36, height: 6), cornerRadius: 3)
+            gust.fillColor = SKColor(white: 0.95, alpha: 0.5)
+            gust.strokeColor = .clear
+            gust.position = CGPoint(x: boss.position.x - 60, y: gy + CGFloat.random(in: -15...15))
+            gust.zPosition = 7
+            gust.name = "shockwave"
+            let body = SKPhysicsBody(rectangleOf: CGSize(width: 34, height: 6))
+            body.isDynamic = false
+            body.categoryBitMask = GameScene.PhysicsCategory.bird
+            body.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+            gust.physicsBody = body
+            addChild(gust)
+            gust.run(SKAction.sequence([
+                SKAction.moveBy(x: -(size.width + 120), y: 0, duration: 0.7),
+                SKAction.removeFromParent(),
+            ]))
+        }
+        // Wing flap
+        boss.run(SKAction.sequence([
+            SKAction.scaleY(to: 1.12, duration: 0.10),
+            SKAction.scaleY(to: 1.0, duration: 0.12),
+        ]))
+    }
+
+    // MARK: - UFO attacks (boss 3)
+
+    private func ufoLaser() {
+        guard bossNode != nil else { return }
+        let beamX = ladybug.position.x
+        // Telegraph: blinking warning column, then the beam fires
+        let warn = SKShapeNode(rectOf: CGSize(width: 4, height: size.height))
+        warn.fillColor = SKColor(red: 0.4, green: 1.0, blue: 0.5, alpha: 0.25)
+        warn.strokeColor = .clear
+        warn.position = CGPoint(x: beamX, y: size.height / 2)
+        warn.zPosition = 6
+        warn.name = "shockwave"
+        addChild(warn)
+        SoundManager.shared.play("hiss")
+        warn.run(SKAction.sequence([
+            SKAction.repeat(SKAction.sequence([
+                SKAction.fadeAlpha(to: 0.1, duration: 0.12),
+                SKAction.fadeAlpha(to: 0.4, duration: 0.12),
+            ]), count: 2),
+            SKAction.run { [weak self] in
+                guard let self = self else { return }
+                let beam = SKShapeNode(rectOf: CGSize(width: 18, height: self.size.height))
+                beam.fillColor = SKColor(red: 0.45, green: 1.0, blue: 0.55, alpha: 0.75)
+                beam.strokeColor = SKColor(white: 1.0, alpha: 0.9)
+                beam.lineWidth = 1.5
+                beam.position = CGPoint(x: beamX, y: self.size.height / 2)
+                beam.zPosition = 8
+                beam.name = "shockwave"
+                let body = SKPhysicsBody(rectangleOf: CGSize(width: 14, height: self.size.height))
+                body.isDynamic = false
+                body.categoryBitMask = GameScene.PhysicsCategory.bird
+                body.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+                beam.physicsBody = body
+                self.addChild(beam)
+                SoundManager.shared.play("whoosh")
+                beam.run(SKAction.sequence([
+                    SKAction.wait(forDuration: 0.35),
+                    SKAction.fadeOut(withDuration: 0.15),
+                    SKAction.removeFromParent(),
+                ]))
+            },
+            SKAction.removeFromParent(),
+        ]))
+    }
+
+    private func ufoDropRock() {
+        guard let boss = bossNode else { return }
+        let rockSize = CGSize(width: CGFloat.random(in: 22...32), height: CGFloat.random(in: 20...28))
+        let tex = TextureGenerator.generateFallingRockTexture(size: rockSize)
+        let rock = SKSpriteNode(texture: tex, size: rockSize)
+        rock.position = CGPoint(x: CGFloat.random(in: size.width * 0.10...size.width * 0.60), y: boss.position.y - 30)
+        rock.zPosition = 7
+        rock.name = "bossRock"
+        let body = SKPhysicsBody(circleOfRadius: rockSize.width / 2 * 0.6)
+        body.isDynamic = false
+        body.categoryBitMask = GameScene.PhysicsCategory.bird
+        body.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+        rock.physicsBody = body
+        addChild(rock)
+        SoundManager.shared.play("whoosh")
+        let fall = SKAction.moveTo(y: groundY - 30, duration: 1.0)
+        fall.timingMode = .easeIn
+        rock.run(SKAction.sequence([fall, SKAction.removeFromParent()]))
+    }
+
+    private func ufoSweep() {
+        guard let boss = bossNode, boss.action(forKey: "sweep") == nil else { return }
+        SoundManager.shared.play("whoosh")
+        let start = boss.position
+        let sweep = SKAction.sequence([
+            SKAction.move(to: CGPoint(x: size.width * 0.15, y: start.y), duration: 1.0),
+            SKAction.run { [weak self] in self?.ufoDropRock(); self?.ufoDropRock() },
+            SKAction.move(to: start, duration: 1.0),
+        ])
+        boss.run(sweep, withKey: "sweep")
+    }
+
+    // MARK: - Bug magnet / vacuum (the way to beat bosses 2 and 3)
+
+    private func spawnMagnetPickup() {
+        let pickup = SKLabelNode(text: bossLevel == 3 ? "🌀" : "🧲")
+        pickup.fontSize = 26
+        pickup.verticalAlignmentMode = .center
+        pickup.horizontalAlignmentMode = .center
+        pickup.position = CGPoint(x: CGFloat.random(in: size.width * 0.15...size.width * 0.50),
+                                  y: CGFloat.random(in: groundY + 40...size.height * 0.65))
+        pickup.zPosition = 9
+        pickup.name = "magnetPickup"
+        let body = SKPhysicsBody(circleOfRadius: 14)
+        body.isDynamic = false
+        body.categoryBitMask = GameScene.PhysicsCategory.fruitfly
+        body.contactTestBitMask = GameScene.PhysicsCategory.ladybug
+        pickup.physicsBody = body
+        addChild(pickup)
+        let pulse = SKAction.sequence([SKAction.fadeAlpha(to: 0.5, duration: 0.4), SKAction.fadeAlpha(to: 1.0, duration: 0.4)])
+        pickup.run(SKAction.repeatForever(pulse))
+        pickup.run(SKAction.sequence([SKAction.wait(forDuration: 7), SKAction.fadeOut(withDuration: 0.5), SKAction.removeFromParent()]))
+    }
+
+    private func collectMagnet() {
+        isMagnetMode = true
+        magnetDuration = 6.0
+        SoundManager.shared.play("powerup")
+        ladybug.childNode(withName: "magnetRing")?.removeFromParent()
+        let ring = SKShapeNode(circleOfRadius: 26)
+        ring.name = "magnetRing"
+        ring.strokeColor = SKColor(red: 1.0, green: 0.30, blue: 0.55, alpha: 0.8)
+        ring.fillColor = SKColor(red: 1.0, green: 0.30, blue: 0.55, alpha: 0.10)
+        ring.lineWidth = 2
+        ring.zPosition = -1
+        ladybug.addChild(ring)
+        ring.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.scale(to: 1.25, duration: 0.35),
+            SKAction.scale(to: 1.0, duration: 0.35),
+        ])))
+        let txt = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        txt.text = bossLevel == 3 ? "VACUUM!" : "BUG MAGNET!"
+        txt.fontSize = 18
+        txt.fontColor = SKColor(red: 1.0, green: 0.35, blue: 0.60, alpha: 1)
+        txt.position = CGPoint(x: size.width / 2, y: size.height / 2 + 30)
+        txt.zPosition = 130
+        addChild(txt)
+        txt.run(SKAction.sequence([SKAction.wait(forDuration: 1.0), SKAction.fadeOut(withDuration: 0.3), SKAction.removeFromParent()]))
+    }
+
+    private func spawnArenaBug() {
+        var count = 0
+        enumerateChildNodes(withName: "arenaBug") { _, _ in count += 1 }
+        guard count < 8 else { return }
+        let tex = bossLevel == 3
+            ? TextureGenerator.biomeCreatureTexture(named: "Star Bug", size: CGSize(width: 18, height: 18))
+            : TextureGenerator.generateFruitFlyFrames(size: CGSize(width: 18, height: 18), color: .brown).first!
+        let bug = SKSpriteNode(texture: tex, size: tex.size())
+        bug.name = "arenaBug"
+        bug.zPosition = 6
+        bug.position = CGPoint(x: CGFloat.random(in: size.width * 0.10...size.width * 0.55),
+                               y: CGFloat.random(in: groundY + 30...size.height * 0.75))
+        addChild(bug)
+        let wander = SKAction.sequence([
+            SKAction.moveBy(x: CGFloat.random(in: -20...20), y: CGFloat.random(in: -15...15), duration: 0.5),
+            SKAction.moveBy(x: CGFloat.random(in: -20...20), y: CGFloat.random(in: -15...15), duration: 0.5),
+        ])
+        bug.run(SKAction.repeatForever(wander), withKey: "wander")
+    }
+
+    /// Snack bugs flutter around the arena. With the magnet/vacuum active they
+    /// get pulled onto the ladybug, turn angry, and dive-bomb the boss — the
+    /// only way to damage the crow and the UFO.
+    private func updateCrowFightExtras(dt: TimeInterval) {
+        arenaBugTimer += dt
+        if arenaBugTimer >= 1.2 {
+            arenaBugTimer = 0
+            spawnArenaBug()
+        }
+
+        if isMagnetMode {
+            magnetDuration -= dt
+            if magnetDuration <= 0 {
+                isMagnetMode = false
+                ladybug.childNode(withName: "magnetRing")?.removeFromParent()
+            } else {
+                let pull: CGFloat = 340 * CGFloat(dt)
+                enumerateChildNodes(withName: "arenaBug") { [weak self] node, _ in
+                    guard let self = self else { return }
+                    let dx = self.ladybug.position.x - node.position.x
+                    let dy = self.ladybug.position.y - node.position.y
+                    let dist = max(1, hypot(dx, dy))
+                    node.position.x += dx / dist * pull
+                    node.position.y += dy / dist * pull
+                    if dist < 28 {
+                        // Captured! The bug turns angry and hunts the boss
+                        node.name = "seekerBug"
+                        node.removeAllActions()
+                        if let s = node as? SKSpriteNode {
+                            s.color = SKColor(red: 1.0, green: 0.30, blue: 0.55, alpha: 1.0)
+                            s.colorBlendFactor = 0.7
+                        }
+                        SoundManager.shared.play("pop")
+                    }
+                }
+            }
+        }
+
+        // Seeker bugs home in on the boss
+        let speed: CGFloat = 420 * CGFloat(dt)
+        for child in children where child.name == "seekerBug" {
+            guard let boss = bossNode else { child.removeFromParent(); continue }
+            let dx = boss.position.x - child.position.x
+            let dy = (boss.position.y + 10) - child.position.y
+            let dist = max(1, hypot(dx, dy))
+            child.position.x += dx / dist * speed
+            child.position.y += dy / dist * speed
+            if boss.frame.contains(child.position) {
+                child.removeFromParent()
+                damageBoss(4)
+            }
+        }
+    }
+
     private func spawnBubbleBerry() {
         let berry = SKShapeNode(circleOfRadius: 10)
         berry.fillColor = SKColor(red: 0.30, green: 0.70, blue: 1.0, alpha: 0.8)
@@ -4037,8 +4419,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         SoundManager.shared.play("pop")
     }
 
-    private func damageBoss() {
-        bossHP -= 1
+    private func damageBoss(_ amount: Int = 1) {
+        bossHP -= amount
         updateBossHP()
         SoundManager.shared.play("bossHit")
         bossNode?.run(SKAction.sequence([
@@ -4049,7 +4431,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func bossDefeated() {
-        if bossLevel == 2 { hasBeatenBoss2 = true } else { hasBeatenBoss = true }
+        switch bossLevel {
+        case 3: hasBeatenBoss3 = true
+        case 2: hasBeatenBoss2 = true
+        default: hasBeatenBoss = true
+        }
         SoundManager.shared.play("powerup")
         // Bear runs away
         bossNode?.run(SKAction.sequence([
@@ -4062,6 +4448,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         enumerateChildNodes(withName: "shockwave") { n, _ in n.removeFromParent() }
         enumerateChildNodes(withName: "bubbleBerry") { n, _ in n.removeFromParent() }
         enumerateChildNodes(withName: "bubble") { n, _ in n.removeFromParent() }
+        enumerateChildNodes(withName: "arenaBug") { n, _ in n.removeFromParent() }
+        enumerateChildNodes(withName: "seekerBug") { n, _ in n.removeFromParent() }
+        enumerateChildNodes(withName: "magnetPickup") { n, _ in n.removeFromParent() }
+        isMagnetMode = false
+        ladybug.childNode(withName: "magnetRing")?.removeFromParent()
 
         // Award gems
         let baseBonus = startFromCheckpoint ? 10 : 50
@@ -4072,7 +4463,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Victory banner (brief, then resume)
         let victory = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        victory.text = bossLevel == 2 ? "CROW DEFEATED! +\(bonusGems) 💎" : "BEAR DEFEATED! +\(bonusGems) 💎"
+        let bossName = switch bossLevel { case 3: "UFO"; case 2: "CROW"; default: "BEAR" }
+        victory.text = "\(bossName) DEFEATED! +\(bonusGems) 💎"
         victory.fontSize = 28
         victory.fontColor = SKColor(red: 1, green: 0.85, blue: 0.0, alpha: 1)
         victory.position = CGPoint(x: size.width / 2, y: size.height / 2 + 20)
@@ -4096,8 +4488,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             SKAction.run { [weak self] in
                 guard let self = self else { return }
                 // Score jumps to next biome threshold to trigger transition
-                let nextThreshold = self.bossLevel == 2 ? 12000 : 7000
-                if self.score < nextThreshold { self.score = nextThreshold }
+                // (space is the last biome — the UFO fight just resumes the run)
+                if self.bossLevel < 3 {
+                    let nextThreshold = self.bossLevel == 2 ? 12000 : 7000
+                    if self.score < nextThreshold { self.score = nextThreshold }
+                }
             }
         ]))
     }
@@ -4109,6 +4504,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         SoundManager.shared.play("gameOver")
         if score > MenuScene.highScore { MenuScene.highScore = score }
         ladybug.exitBubble()
+        isVacuumMode = false
+        ladybug.childNode(withName: "vacuumRing")?.removeFromParent()
+        ladybug.childNode(withName: "magnetRing")?.removeFromParent()
 
         // Death animation — flip over with X eyes, fall to ground
         let bugGroundY = groundY + ladybug.size.height / 2
