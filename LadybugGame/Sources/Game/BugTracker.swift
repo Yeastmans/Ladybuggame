@@ -65,8 +65,9 @@ final class BugTracker: @unchecked Sendable {
         // Underwater food
         case clownfish = "Clownfish"
         case seaSnail = "Sea Snail"
-        case plankton = "Plankton"
+        case starfish = "Starfish"
         case shrimplet = "Shrimplet"
+        case seahorse = "Seahorse"
         // Underwater enemies
         case jellyfish = "Jellyfish"
         case anglerFish = "Angler Fish"
@@ -83,6 +84,8 @@ final class BugTracker: @unchecked Sendable {
         case fireAnt = "Fire Ant"
         case phoenixBird = "Phoenix"
         case obsidianGolem = "Obsidian Golem"
+        case komodoDragon = "Komodo Dragon"
+        case sloth = "Sloth"
         // Cloud food
         case cloudMite = "Cloud Mite"
         case starBug = "Star Bug"
@@ -110,6 +113,7 @@ final class BugTracker: @unchecked Sendable {
         case gardenSnake = "Garden Snake"
         case yellowJacket = "Yellow Jacket"
         case gardenSpider = "Garden Spider"
+        case guardDog = "Guard Dog"
         // Ruins food
         case scarab = "Scarab"
         case dustMite = "Dust Mite"
@@ -153,7 +157,7 @@ final class BugTracker: @unchecked Sendable {
                  .firefly, .heartBug, .gnatSwarm, .desertBeetle, .sandFly, .desertCricket,
                  .snowFlea, .iceMoth, .jungleBeetle, .butterfly,
                  .caveCricket, .glowworm, .crystalBeetle,
-                 .clownfish, .seaSnail, .plankton, .shrimplet,
+                 .clownfish, .seaSnail, .starfish, .shrimplet, .seahorse,
                  .emberBeetle, .ashMoth, .magmaSnail,
                  .cloudMite, .starBug, .skyJelly,
                  .mudCricket, .swampFly, .leech,
@@ -168,10 +172,10 @@ final class BugTracker: @unchecked Sendable {
                  .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee,
                  .caveSpider, .vampireBat, .rockWorm, .caveFish,
                  .jellyfish, .anglerFish, .seaUrchin, .electricEel, .stingray, .pufferfish,
-                 .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem,
+                 .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem, .komodoDragon, .sloth,
                  .stormHawk, .windSprite, .thunderWasp, .lightningBug,
                  .mosquitoSwarm, .alligator, .swampSnake, .bogSpider,
-                 .houseCat, .gardenSnake, .yellowJacket, .gardenSpider,
+                 .houseCat, .gardenSnake, .yellowJacket, .gardenSpider, .guardDog,
                  .stoneGuardian, .tombSpider, .curseWraith, .sandViper,
                  .toxicSpore, .shroomGolem, .myceliumCrawler, .capBouncer,
                  .shardSentinel, .crystalWyrm, .refractor, .geodeRoller,
@@ -226,10 +230,11 @@ final class BugTracker: @unchecked Sendable {
             case .rockWorm: return "Armored tunnel worm. Patrols the cave floor."
             case .caveFish: return "Blind pale fish. Leaps from underground pools!"
             // Underwater
-            case .clownfish: return "Friendly orange fish hiding in anemones. Just keep swimming!"
+            case .clownfish: return "Friendly orange fish. Just keep swimming!"
             case .seaSnail: return "Slow spiral shell. Slides along the sea floor."
-            case .plankton: return "Glowing plankton cloud. Floats in the current."
+            case .starfish: return "Orange star of the sea. Strolls along the sandy floor."
             case .shrimplet: return "Tiny pink shrimp. Darts through the water!"
+            case .seahorse: return "Rare golden seahorse. Shy — darts away when you get close!"
             case .jellyfish: return "Translucent and deadly. Long tentacles sting on contact!"
             case .anglerFish: return "Deep sea hunter with a glowing lure. Massive jaws!"
             case .seaUrchin: return "Spiny purple ball on the ocean floor. Don't touch the spines!"
@@ -244,6 +249,8 @@ final class BugTracker: @unchecked Sendable {
             case .fireAnt: return "Red-hot ant. Patrols volcanic rock!"
             case .phoenixBird: return "Blazing bird reborn from flames. Dives with fire!"
             case .obsidianGolem: return "Slow stone creature. Throws rocks when near!"
+            case .komodoDragon: return "Giant lizard prowling the volcanic rock. Huge bite!"
+            case .sloth: return "Hangs from a vine and swipes with long claws. Slow but deadly!"
             // Cloud
             case .cloudMite: return "Tiny fluffy mite bouncing on clouds."
             case .starBug: return "Sparkling bug made of starlight."
@@ -264,7 +271,8 @@ final class BugTracker: @unchecked Sendable {
             case .gardenAnt: return "Tiny ant carrying a crumb. Easy snack."
             case .honeybee: return "Friendly bee. Sweet and nutritious!"
             case .pillBug: return "Rolls into a ball when scared. Crunchy!"
-            case .houseCat: return "Giant fluffy predator. Pounces from above!"
+            case .houseCat: return "Giant fluffy predator. Swipes with lightning-fast paws!"
+            case .guardDog: return "Guards the garden. Charges the moment it spots you!"
             case .gardenSnake: return "Small green snake in the flower bed."
             case .yellowJacket: return "Aggressive wasp. Patrols the garden aggressively!"
             case .gardenSpider: return "Orb weaver in the bushes. Web traps you!"
@@ -322,8 +330,9 @@ final class BugTracker: @unchecked Sendable {
             case .crystalBeetle: return "50 pts"
             case .clownfish: return "35 pts"
             case .seaSnail: return "20 pts"
-            case .plankton: return "30 pts"
+            case .starfish: return "30 pts"
             case .shrimplet: return "40 pts"
+            case .seahorse: return "200 pts!"
             case .emberBeetle: return "25 pts"
             case .ashMoth: return "30 pts"
             case .magmaSnail: return "45 pts"
@@ -357,10 +366,10 @@ final class BugTracker: @unchecked Sendable {
                  .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee,
                  .caveSpider, .vampireBat, .rockWorm, .caveFish,
                  .jellyfish, .anglerFish, .seaUrchin, .electricEel, .stingray, .pufferfish,
-                 .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem,
+                 .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem, .komodoDragon, .sloth,
                  .stormHawk, .windSprite, .thunderWasp, .lightningBug,
                  .mosquitoSwarm, .alligator, .swampSnake, .bogSpider,
-                 .houseCat, .gardenSnake, .yellowJacket, .gardenSpider,
+                 .houseCat, .gardenSnake, .yellowJacket, .gardenSpider, .guardDog,
                  .stoneGuardian, .tombSpider, .curseWraith, .sandViper,
                  .toxicSpore, .shroomGolem, .myceliumCrawler, .capBouncer,
                  .shardSentinel, .crystalWyrm, .refractor, .geodeRoller,
@@ -443,7 +452,11 @@ final class BugTracker: @unchecked Sendable {
         // Underwater
         case .clownfish: return TextureGenerator.generateClownfishTexture(size: size)
         case .seaSnail: return TextureGenerator.biomeCreatureTexture(named: "Sea Snail", size: size)
-        case .plankton: return TextureGenerator.biomeCreatureTexture(named: "Plankton", size: size)
+        case .starfish: return TextureGenerator.biomeCreatureTexture(named: "Starfish", size: size)
+        case .seahorse: return TextureGenerator.biomeCreatureTexture(named: "Seahorse", size: size)
+        case .komodoDragon: return TextureGenerator.biomeCreatureTexture(named: "Komodo Dragon", size: size)
+        case .sloth: return TextureGenerator.biomeCreatureTexture(named: "Sloth", size: size)
+        case .guardDog: return TextureGenerator.biomeCreatureTexture(named: "Guard Dog", size: size)
         case .shrimplet: return TextureGenerator.biomeCreatureTexture(named: "Shrimplet", size: size)
         case .jellyfish: return TextureGenerator.generateJellyfishTexture(size: size)
         case .anglerFish: return TextureGenerator.generateAnglerFishTexture(size: size)

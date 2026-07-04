@@ -694,6 +694,233 @@ extension TextureGenerator {
         return SKTexture(image: image)
     }
 
+    // MARK: - Bespoke creatures
+
+    static func generateSeahorseTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            let body = UIColor(red: 1.00, green: 0.72, blue: 0.35, alpha: 1)
+            let fin = UIColor(red: 0.95, green: 0.50, blue: 0.45, alpha: 1)
+            // Curled tail (spiral at bottom)
+            cg.setStrokeColor(body.cgColor)
+            cg.setLineWidth(w * 0.14); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.46, y: h * 0.66))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.30, y: h * 0.88), control: CGPoint(x: w * 0.28, y: h * 0.70))
+            cg.strokePath()
+            cg.setLineWidth(w * 0.10)
+            cg.move(to: CGPoint(x: w * 0.30, y: h * 0.88))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.52, y: h * 0.90), control: CGPoint(x: w * 0.44, y: h * 0.98))
+            cg.strokePath()
+            // Dorsal fin (back, left side)
+            cg.setFillColor(fin.withAlphaComponent(0.85).cgColor)
+            let fp = CGMutablePath()
+            fp.move(to: CGPoint(x: w * 0.34, y: h * 0.34))
+            fp.addQuadCurve(to: CGPoint(x: w * 0.30, y: h * 0.62), control: CGPoint(x: w * 0.06, y: h * 0.48))
+            fp.addLine(to: CGPoint(x: w * 0.42, y: h * 0.56))
+            fp.closeSubpath()
+            cg.addPath(fp); cg.fillPath()
+            // Body (upright, belly out)
+            cg.setFillColor(body.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.30, y: h * 0.26, width: w * 0.40, height: h * 0.44))
+            // Head
+            cg.fillEllipse(in: CGRect(x: w * 0.36, y: h * 0.08, width: w * 0.36, height: h * 0.22))
+            // Snout tube
+            cg.fill(CGRect(x: w * 0.66, y: h * 0.14, width: w * 0.30, height: h * 0.07))
+            // Coronet (little crown)
+            cg.setFillColor(fin.cgColor)
+            cg.move(to: CGPoint(x: w * 0.42, y: h * 0.09))
+            cg.addLine(to: CGPoint(x: w * 0.48, y: h * 0.00))
+            cg.addLine(to: CGPoint(x: w * 0.56, y: h * 0.08))
+            cg.closePath(); cg.fillPath()
+            // Belly ridges
+            cg.setStrokeColor(shade(body, 0.75).cgColor)
+            cg.setLineWidth(max(1.0, w * 0.03))
+            let ridgeYs: [CGFloat] = [0.38, 0.48, 0.58]
+            for ry in ridgeYs {
+                cg.move(to: CGPoint(x: w * 0.52, y: h * ry))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.68, y: h * ry), control: CGPoint(x: w * 0.62, y: h * (ry + 0.04)))
+                cg.strokePath()
+            }
+            drawCuteEye(cg, cx: w * 0.56, cy: h * 0.17, r: w * 0.09)
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateKomodoTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            let body = UIColor(red: 0.42, green: 0.40, blue: 0.28, alpha: 1)
+            let dark = shade(body, 0.6)
+            // Long tapering tail (left)
+            cg.setFillColor(body.cgColor)
+            cg.move(to: CGPoint(x: w * 0.00, y: h * 0.58))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.34, y: h * 0.42), control: CGPoint(x: w * 0.14, y: h * 0.40))
+            cg.addLine(to: CGPoint(x: w * 0.34, y: h * 0.68))
+            cg.closePath(); cg.fillPath()
+            // Stubby bent legs
+            cg.setStrokeColor(dark.cgColor)
+            cg.setLineWidth(max(1.6, w * 0.035)); cg.setLineCap(.round); cg.setLineJoin(.round)
+            let legXs: [CGFloat] = [0.36, 0.48, 0.62, 0.72]
+            for lx in legXs {
+                cg.move(to: CGPoint(x: w * lx, y: h * 0.68))
+                cg.addLine(to: CGPoint(x: w * (lx - 0.05), y: h * 0.82))
+                cg.addLine(to: CGPoint(x: w * (lx - 0.02), y: h * 0.96))
+                cg.strokePath()
+            }
+            // Low-slung body
+            cg.setFillColor(body.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.26, y: h * 0.36, width: w * 0.52, height: h * 0.40))
+            // Head with heavy jaw
+            cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.30, width: w * 0.24, height: h * 0.34))
+            cg.setFillColor(dark.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.80, y: h * 0.46, width: w * 0.17, height: h * 0.14))
+            // Forked tongue
+            cg.setStrokeColor(UIColor(red: 0.90, green: 0.25, blue: 0.30, alpha: 1).cgColor)
+            cg.setLineWidth(max(1.0, w * 0.014))
+            cg.move(to: CGPoint(x: w * 0.96, y: h * 0.48))
+            cg.addLine(to: CGPoint(x: w * 1.00, y: h * 0.42))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.96, y: h * 0.48))
+            cg.addLine(to: CGPoint(x: w * 1.00, y: h * 0.52))
+            cg.strokePath()
+            // Scale dots along the back
+            cg.setFillColor(dark.withAlphaComponent(0.8).cgColor)
+            let scaleXs: [CGFloat] = [0.34, 0.44, 0.54, 0.64]
+            for sx in scaleXs {
+                let r = w * 0.018
+                cg.fillEllipse(in: CGRect(x: w * sx - r, y: h * 0.40 - r, width: r * 2, height: r * 2))
+            }
+            drawAngryEye(cg, cx: w * 0.84, cy: h * 0.40, r: w * 0.035, color: UIColor(red: 0.95, green: 0.75, blue: 0.20, alpha: 1))
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateSlothTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            let body = UIColor(red: 0.48, green: 0.42, blue: 0.34, alpha: 1)
+            let dark = shade(body, 0.6)
+            // Arms reaching up to grip the vine
+            cg.setStrokeColor(body.cgColor)
+            cg.setLineWidth(w * 0.11); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.38, y: h * 0.34))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.30, y: h * 0.03), control: CGPoint(x: w * 0.24, y: h * 0.16))
+            cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.60, y: h * 0.34))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.68, y: h * 0.03), control: CGPoint(x: w * 0.74, y: h * 0.16))
+            cg.strokePath()
+            // Gripping claws at the top
+            cg.setStrokeColor(dark.cgColor)
+            cg.setLineWidth(max(1.2, w * 0.03))
+            cg.move(to: CGPoint(x: w * 0.26, y: h * 0.04)); cg.addLine(to: CGPoint(x: w * 0.36, y: h * 0.02)); cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.64, y: h * 0.02)); cg.addLine(to: CGPoint(x: w * 0.73, y: h * 0.05)); cg.strokePath()
+            // Shaggy body hanging below
+            cg.setFillColor(body.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.18, y: h * 0.30, width: w * 0.64, height: h * 0.52))
+            // Fur fringe
+            cg.setStrokeColor(body.withAlphaComponent(0.8).cgColor)
+            cg.setLineWidth(max(1.0, w * 0.025))
+            let furXs: [CGFloat] = [0.26, 0.38, 0.50, 0.62, 0.72]
+            for fx in furXs {
+                cg.move(to: CGPoint(x: w * fx, y: h * 0.78))
+                cg.addLine(to: CGPoint(x: w * (fx - 0.03), y: h * 0.88))
+                cg.strokePath()
+            }
+            // Head (pale face)
+            cg.setFillColor(UIColor(red: 0.78, green: 0.70, blue: 0.58, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.30, y: h * 0.32, width: w * 0.40, height: h * 0.30))
+            // Dark eye stripes
+            cg.setStrokeColor(dark.cgColor)
+            cg.setLineWidth(w * 0.055); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.38, y: h * 0.40)); cg.addLine(to: CGPoint(x: w * 0.30, y: h * 0.48)); cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.62, y: h * 0.40)); cg.addLine(to: CGPoint(x: w * 0.70, y: h * 0.48)); cg.strokePath()
+            // Nose + mouth
+            cg.setFillColor(dark.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.46, y: h * 0.48, width: w * 0.08, height: h * 0.05))
+            // Long swiping claws (free paw at the side)
+            cg.setStrokeColor(UIColor(white: 0.92, alpha: 1).cgColor)
+            cg.setLineWidth(max(1.2, w * 0.028))
+            let clawYs: [CGFloat] = [0.62, 0.67, 0.72]
+            for cy in clawYs {
+                cg.move(to: CGPoint(x: w * 0.80, y: h * cy))
+                cg.addQuadCurve(to: CGPoint(x: w * 0.97, y: h * (cy + 0.04)), control: CGPoint(x: w * 0.92, y: h * cy))
+                cg.strokePath()
+            }
+            drawAngryEye(cg, cx: w * 0.40, cy: h * 0.42, r: w * 0.045, color: UIColor(red: 0.30, green: 0.22, blue: 0.15, alpha: 1))
+            drawAngryEye(cg, cx: w * 0.60, cy: h * 0.42, r: w * 0.045, color: UIColor(red: 0.30, green: 0.22, blue: 0.15, alpha: 1))
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateGuardDogTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            let body = UIColor(red: 0.55, green: 0.38, blue: 0.22, alpha: 1)
+            let dark = shade(body, 0.55)
+            // Tail up
+            cg.setStrokeColor(body.cgColor)
+            cg.setLineWidth(h * 0.10); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.10, y: h * 0.42))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.02, y: h * 0.12), control: CGPoint(x: w * 0.00, y: h * 0.34))
+            cg.strokePath()
+            // Legs
+            cg.setFillColor(body.cgColor)
+            cg.fill(CGRect(x: w * 0.14, y: h * 0.66, width: w * 0.08, height: h * 0.30))
+            cg.fill(CGRect(x: w * 0.30, y: h * 0.68, width: w * 0.08, height: h * 0.28))
+            cg.fill(CGRect(x: w * 0.48, y: h * 0.66, width: w * 0.08, height: h * 0.30))
+            // Body (leaning forward)
+            cg.fillEllipse(in: CGRect(x: w * 0.06, y: h * 0.30, width: w * 0.58, height: h * 0.46))
+            // Chest patch
+            cg.setFillColor(shade(body, 1.25).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.42, y: h * 0.48, width: w * 0.20, height: h * 0.24))
+            // Head
+            cg.setFillColor(body.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.56, y: h * 0.10, width: w * 0.34, height: h * 0.42))
+            // Pointed ears
+            cg.move(to: CGPoint(x: w * 0.60, y: h * 0.20))
+            cg.addLine(to: CGPoint(x: w * 0.58, y: h * 0.00))
+            cg.addLine(to: CGPoint(x: w * 0.70, y: h * 0.12))
+            cg.closePath(); cg.fillPath()
+            cg.move(to: CGPoint(x: w * 0.78, y: h * 0.10))
+            cg.addLine(to: CGPoint(x: w * 0.86, y: h * 0.00))
+            cg.addLine(to: CGPoint(x: w * 0.88, y: h * 0.16))
+            cg.closePath(); cg.fillPath()
+            // Snout with open jaw
+            cg.fill(CGRect(x: w * 0.84, y: h * 0.26, width: w * 0.14, height: h * 0.13))
+            cg.setFillColor(dark.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.94, y: h * 0.25, width: w * 0.05, height: h * 0.07))
+            // Open mouth + teeth
+            cg.setFillColor(UIColor(red: 0.45, green: 0.12, blue: 0.12, alpha: 1).cgColor)
+            cg.move(to: CGPoint(x: w * 0.84, y: h * 0.42))
+            cg.addLine(to: CGPoint(x: w * 0.98, y: h * 0.44))
+            cg.addLine(to: CGPoint(x: w * 0.86, y: h * 0.54))
+            cg.closePath(); cg.fillPath()
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.move(to: CGPoint(x: w * 0.87, y: h * 0.43))
+            cg.addLine(to: CGPoint(x: w * 0.89, y: h * 0.49))
+            cg.addLine(to: CGPoint(x: w * 0.91, y: h * 0.43))
+            cg.closePath(); cg.fillPath()
+            // Red collar with tag
+            cg.setStrokeColor(UIColor(red: 0.85, green: 0.15, blue: 0.15, alpha: 1).cgColor)
+            cg.setLineWidth(h * 0.07)
+            cg.move(to: CGPoint(x: w * 0.56, y: h * 0.46))
+            cg.addQuadCurve(to: CGPoint(x: w * 0.74, y: h * 0.52), control: CGPoint(x: w * 0.64, y: h * 0.54))
+            cg.strokePath()
+            cg.setFillColor(UIColor(red: 0.95, green: 0.80, blue: 0.20, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.52, width: w * 0.06, height: h * 0.09))
+            drawAngryEye(cg, cx: w * 0.74, cy: h * 0.26, r: w * 0.045, color: UIColor(red: 0.90, green: 0.55, blue: 0.15, alpha: 1))
+        }
+        return SKTexture(image: image)
+    }
+
     // MARK: - Central registry: creature name -> styled texture
     // Single source of truth used by both GameScene spawns and the Bugopedia,
     // so the collection icons always match the in-game look.
@@ -701,8 +928,16 @@ extension TextureGenerator {
     static func biomeCreatureTexture(named name: String, size: CGSize) -> SKTexture {
         switch name {
         // Underwater
-        case "Plankton":
-            return generateFoodCreature(size: size, style: .star, body: UIColor(red: 0.30, green: 0.80, blue: 0.70, alpha: 1), accent: UIColor(red: 0.65, green: 0.95, blue: 0.88, alpha: 1))
+        case "Starfish":
+            return generateFoodCreature(size: size, style: .star, body: UIColor(red: 1.00, green: 0.55, blue: 0.38, alpha: 1), accent: UIColor(red: 1.00, green: 0.78, blue: 0.58, alpha: 1))
+        case "Seahorse":
+            return generateSeahorseTexture(size: size)
+        case "Komodo Dragon":
+            return generateKomodoTexture(size: size)
+        case "Sloth":
+            return generateSlothTexture(size: size)
+        case "Guard Dog":
+            return generateGuardDogTexture(size: size)
         case "Shrimplet":
             return generateFoodCreature(size: size, style: .shrimp, body: UIColor(red: 0.90, green: 0.55, blue: 0.45, alpha: 1), accent: UIColor(red: 0.98, green: 0.72, blue: 0.60, alpha: 1))
         case "Sea Snail":

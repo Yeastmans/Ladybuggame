@@ -3030,7 +3030,7 @@ enum TextureGenerator {
         let image = renderer.image { ctx in
             let cg = ctx.cgContext; let w = size.width; let h = size.height
             // Tentacles (long, wavy, trailing)
-            cg.setStrokeColor(UIColor(red: 0.65, green: 0.45, blue: 0.80, alpha: 0.5).cgColor)
+            cg.setStrokeColor(UIColor(red: 0.90, green: 0.28, blue: 0.22, alpha: 0.55).cgColor)
             cg.setLineWidth(1.2); cg.setLineCap(.round)
             for tx in [CGFloat(0.20), 0.35, 0.50, 0.65, 0.80] {
                 cg.move(to: CGPoint(x: w * tx, y: h * 0.55))
@@ -3040,13 +3040,13 @@ enum TextureGenerator {
                 cg.strokePath()
             }
             // Bell (dome, translucent)
-            cg.setFillColor(UIColor(red: 0.70, green: 0.50, blue: 0.85, alpha: 0.55).cgColor)
+            cg.setFillColor(UIColor(red: 0.92, green: 0.25, blue: 0.20, alpha: 0.60).cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.05, width: w * 0.80, height: h * 0.55))
             // Inner glow
-            cg.setFillColor(UIColor(red: 0.80, green: 0.60, blue: 0.95, alpha: 0.25).cgColor)
+            cg.setFillColor(UIColor(red: 1.00, green: 0.55, blue: 0.40, alpha: 0.30).cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.22, y: h * 0.12, width: w * 0.50, height: h * 0.30))
             // Oral arms (frilly edges under bell)
-            cg.setFillColor(UIColor(red: 0.75, green: 0.55, blue: 0.88, alpha: 0.4).cgColor)
+            cg.setFillColor(UIColor(red: 0.95, green: 0.38, blue: 0.28, alpha: 0.45).cgColor)
             for ox in stride(from: 0.18, to: 0.82, by: 0.12) {
                 cg.fillEllipse(in: CGRect(x: w * CGFloat(ox), y: h * 0.48, width: w * 0.10, height: h * 0.10))
             }

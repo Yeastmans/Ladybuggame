@@ -48,16 +48,58 @@ class BiomeEnemy: SKSpriteNode {
         run(SKAction.repeatForever(breathe), withKey: "breathe")
     }
 
-    /// Lunge toward player when close.  Rattlesnake strikes horizontally; others jump.
+    /// Lunge toward player when close.  Snakes strike horizontally, the house cat
+    /// swipes its paw, the guard dog charges from far away; others jump.
     func lungeIfNear(playerX: CGFloat) {
         guard !hasLunged else { return }
         let dist = playerX - position.x
-        if dist > -15 && dist < 70 {
+        let isSnake = biomeName == "Rattlesnake" || biomeName == "Garden Snake"
+            || biomeName == "Swamp Snake" || biomeName == "Sand Viper"
+        let minDist: CGFloat = biomeName == "Guard Dog" ? -20 : -15
+        let maxDist: CGFloat = biomeName == "Guard Dog" ? 240 : 70
+        if dist > minDist && dist < maxDist {
             hasLunged = true
             baseY = position.y
             SoundManager.shared.play("hiss")
 
-            if biomeName == "Rattlesnake" {
+            if biomeName == "House Cat" {
+                // Quick paw swipe: rear back, then slash forward — no jump
+                let dir: CGFloat = dist >= 0 ? 1.0 : -1.0
+                xScale = dist >= 0 ? -abs(xScale) : abs(xScale)
+                let rear = SKAction.group([
+                    SKAction.moveBy(x: -12 * dir, y: 0, duration: 0.10),
+                    SKAction.rotate(toAngle: 0.10 * dir, duration: 0.10),
+                ])
+                let swipe = SKAction.group([
+                    SKAction.moveBy(x: 55 * dir, y: 6, duration: 0.09),
+                    SKAction.rotate(toAngle: -0.18 * dir, duration: 0.09),
+                ])
+                swipe.timingMode = .easeIn
+                let recover = SKAction.group([
+                    SKAction.moveBy(x: -43 * dir, y: -6, duration: 0.22),
+                    SKAction.rotate(toAngle: 0, duration: 0.22),
+                ])
+                recover.timingMode = .easeOut
+                run(SKAction.sequence([rear, swipe, recover]))
+            } else if biomeName == "Guard Dog" {
+                // Full-speed charge across the ground
+                let dir: CGFloat = dist >= 0 ? 1.0 : -1.0
+                xScale = dist >= 0 ? -abs(xScale) : abs(xScale)
+                removeAction(forKey: "patrol")
+                let crouch = SKAction.group([
+                    SKAction.scaleX(to: 1.15 * (dist >= 0 ? -1 : 1), duration: 0.12),
+                    SKAction.scaleY(to: 0.88, duration: 0.12),
+                ])
+                let dash = SKAction.moveBy(x: (abs(dist) + 60) * dir, y: 0, duration: 0.38)
+                dash.timingMode = .easeIn
+                let skid = SKAction.group([
+                    SKAction.scaleX(to: 1.0 * (dist >= 0 ? -1 : 1), duration: 0.15),
+                    SKAction.scaleY(to: 1.0, duration: 0.15),
+                    SKAction.moveBy(x: 14 * dir, y: 0, duration: 0.15),
+                ])
+                skid.timingMode = .easeOut
+                run(SKAction.sequence([crouch, dash, skid]))
+            } else if isSnake {
                 // Horizontal strike toward player direction
                 let dir: CGFloat = dist >= 0 ? 1.0 : -1.0
                 // Face the player

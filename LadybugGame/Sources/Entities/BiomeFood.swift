@@ -61,11 +61,11 @@ class BiomeFood: SKSpriteNode {
                 guard let self = self else { return }
                 var dy = CGFloat.random(in: 8...22) * (Bool.random() ? 1.0 : -1.0)
                 var dx = CGFloat.random(in: 3...10) * (Bool.random() ? 1.0 : -1.0)
-                // Butterfly evasion: flee if player is close
-                if (self.biomeName == "Butterfly" || self.biomeName == "Glowworm"), let player = self.playerRef {
+                // Butterfly/glowworm/seahorse evasion: flee if player is close
+                if (self.biomeName == "Butterfly" || self.biomeName == "Glowworm" || self.biomeName == "Seahorse"), let player = self.playerRef {
                     let dist = hypot(player.position.x - self.position.x, player.position.y - self.position.y)
-                    let fleeRange: CGFloat = self.biomeName == "Butterfly" ? 120 : 80
-                    let fleeFactor: CGFloat = self.biomeName == "Butterfly" ? 0.40 : 0.30
+                    let fleeRange: CGFloat = self.biomeName == "Butterfly" ? 120 : (self.biomeName == "Seahorse" ? 150 : 80)
+                    let fleeFactor: CGFloat = self.biomeName == "Butterfly" ? 0.40 : (self.biomeName == "Seahorse" ? 0.55 : 0.30)
                     if dist < fleeRange {
                         dx = (self.position.x - player.position.x) * fleeFactor
                         dy = (self.position.y - player.position.y) * fleeFactor

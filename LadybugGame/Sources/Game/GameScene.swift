@@ -118,6 +118,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var isCaveBiome: Bool { currentBiome == .cave }
     private var caveSpiderTimer: TimeInterval = 0
     private var fallingRockTimer: TimeInterval = 0
+    private var seahorseTimer: TimeInterval = 0
+    private var slothTimer: TimeInterval = 0
+    private var lavaPoolTimer: TimeInterval = 0
+    private var dogTimer: TimeInterval = 0
 
     // Boss fight
     private var isBossFight = false
@@ -598,6 +602,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         pushEntitiesFromLogs()
         checkPondSplash()
+        checkLavaContact()
         checkSpiderJumps()
         checkCaveEntities()
 
@@ -779,6 +784,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         enumerateChildNodes(withName: "monkey") { node, _ in
             node.position.x -= delta
             if node.position.x < -60 { node.removeFromParent() }
+        }
+        enumerateChildNodes(withName: "slothRig") { node, _ in
+            node.position.x -= delta
+            if node.position.x < -80 { node.removeFromParent() }
+        }
+        enumerateChildNodes(withName: "lavaPool") { node, _ in
+            node.position.x -= delta
+            if node.position.x < -100 { node.removeFromParent() }
         }
     }
 
@@ -1406,13 +1419,19 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             let puff = SKShapeNode(circleOfRadius: CGFloat.random(in: 12...22))
             puff.fillColor = SKColor(white: 1.0, alpha: CGFloat.random(in: 0.3...0.5))
             addDecor(puff, x: x, y: groundY + CGFloat.random(in: 5...15))
-        case 1: // Rainbow fragment
+        case 1: // Rainbow ribbon drifting through the sky
             let colors: [SKColor] = [.red, .orange, .yellow, .green, .blue, .purple]
+            let baseY = CGFloat.random(in: (groundY + 60)...max(groundY + 80, size.height * 0.72))
             for (i, c) in colors.enumerated() {
-                let arc = SKShapeNode(rectOf: CGSize(width: 2, height: 4))
-                arc.fillColor = c.withAlphaComponent(0.4)
+                let arc = SKShapeNode(rectOf: CGSize(width: 3, height: 5))
+                arc.fillColor = c.withAlphaComponent(0.55)
                 arc.strokeColor = .clear
-                addDecor(arc, x: x + CGFloat(i) * 3 - 8, y: groundY + 20 + CGFloat(i) * 2)
+                addDecor(arc, x: x + CGFloat(i) * 3 - 8, y: baseY + CGFloat(i) * 2)
+                let float = SKAction.sequence([
+                    SKAction.moveBy(x: 0, y: 8, duration: Double.random(in: 0.8...1.4)),
+                    SKAction.moveBy(x: 0, y: -8, duration: Double.random(in: 0.8...1.4)),
+                ])
+                arc.run(SKAction.repeatForever(float))
             }
         case 2: // Star
             let star = SKShapeNode(circleOfRadius: CGFloat.random(in: 2...4))
@@ -1579,8 +1598,35 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func spawnCityDecor(x: CGFloat) {
-        let roll = Int.random(in: 0...4)
+        let roll = Int.random(in: 0...6)
         switch roll {
+        case 5: // Garden gnome
+            let gnomeBody = SKShapeNode(ellipseOf: CGSize(width: 12, height: 14))
+            gnomeBody.fillColor = SKColor(red: 0.25, green: 0.40, blue: 0.75, alpha: 0.9)
+            addDecor(gnomeBody, x: x, y: groundY + 8)
+            let beard = SKShapeNode(circleOfRadius: 4)
+            beard.fillColor = SKColor(white: 0.95, alpha: 0.9)
+            addDecor(beard, x: x, y: groundY + 13)
+            let hatPath = CGMutablePath()
+            hatPath.move(to: CGPoint(x: -6, y: 0))
+            hatPath.addLine(to: CGPoint(x: 6, y: 0))
+            hatPath.addLine(to: CGPoint(x: 0, y: 14))
+            hatPath.closeSubpath()
+            let hat = SKShapeNode(path: hatPath)
+            hat.fillColor = SKColor(red: 0.85, green: 0.15, blue: 0.15, alpha: 0.95)
+            hat.strokeColor = .clear
+            addDecor(hat, x: x, y: groundY + 16)
+        case 6: // Tall sunflower
+            let stemH = CGFloat.random(in: 30...50)
+            let stem = SKShapeNode(rectOf: CGSize(width: 3, height: stemH))
+            stem.fillColor = SKColor(red: 0.30, green: 0.55, blue: 0.20, alpha: 0.85)
+            addDecor(stem, x: x, y: groundY + stemH / 2)
+            let head = SKShapeNode(circleOfRadius: 9)
+            head.fillColor = SKColor(red: 0.95, green: 0.80, blue: 0.15, alpha: 0.95)
+            addDecor(head, x: x, y: groundY + stemH + 6)
+            let seedCenter = SKShapeNode(circleOfRadius: 4.5)
+            seedCenter.fillColor = SKColor(red: 0.45, green: 0.30, blue: 0.10, alpha: 1.0)
+            addDecor(seedCenter, x: x, y: groundY + stemH + 6)
         case 0: // Flower pot
             let pot = SKShapeNode(rectOf: CGSize(width: 14, height: 10), cornerRadius: 2)
             pot.fillColor = SKColor(red: 0.65, green: 0.35, blue: 0.18, alpha: 0.8)
@@ -1773,8 +1819,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 case "Crystal Beetle":  unlockBug(.crystalBeetle);  SoundManager.shared.play("skitter")
                 case "Sea Snail":      unlockBug(.seaSnail);      SoundManager.shared.play("skitter")
                 case "Clownfish":      unlockBug(.clownfish);      SoundManager.shared.play("pop")
-                case "Plankton":       unlockBug(.plankton);       SoundManager.shared.play("pop")
+                case "Starfish":       unlockBug(.starfish);       SoundManager.shared.play("pop")
                 case "Shrimplet":      unlockBug(.shrimplet);      SoundManager.shared.play("pop")
+                case "Seahorse":       unlockBug(.seahorse);       SoundManager.shared.play("powerup")
                 case "Ember Beetle":   unlockBug(.emberBeetle);    SoundManager.shared.play("skitter")
                 case "Ash Moth":       unlockBug(.ashMoth);        SoundManager.shared.play("flutter")
                 case "Magma Snail":    unlockBug(.magmaSnail);     SoundManager.shared.play("skitter")
@@ -1915,6 +1962,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     takeDamage()
                     return
                 }
+                // Sloth stays on its vine — just damage, don't remove
+                if enemyNode?.name == "sloth" {
+                    unlockBug(.sloth)
+                    takeDamage()
+                    return
+                }
                 if enemyNode is Bird { unlockBug(.bird) }
                 else if let df = enemyNode as? Dragonfly {
                     if df.name == "vulture" { unlockBug(.vulture) }
@@ -1971,6 +2024,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Lava Slime": unlockBug(.lavaSlime)
                     case "Fire Ant": unlockBug(.fireAnt)
                     case "Obsidian Golem": unlockBug(.obsidianGolem)
+                    case "Komodo Dragon": unlockBug(.komodoDragon)
                     case "Wind Sprite": unlockBug(.windSprite)
                     case "Lightning Bug": unlockBug(.lightningBug)
                     case "Bog Spider": unlockBug(.bogSpider)
@@ -1978,6 +2032,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Garden Spider": unlockBug(.gardenSpider)
                     case "Garden Snake": unlockBug(.gardenSnake)
                     case "House Cat": unlockBug(.houseCat)
+                    case "Guard Dog": unlockBug(.guardDog)
                     case "Stone Guardian": unlockBug(.stoneGuardian)
                     case "Tomb Spider": unlockBug(.tombSpider)
                     case "Sand Viper": unlockBug(.sandViper)
@@ -2257,10 +2312,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if frogTimer >= max(5.0, 10.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnCavePool() }
 
         case .underwater:
-            aphidTimer += fdt // Clownfish (ground food, orange)
-            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateClownfishTexture(size: CGSize(width: 30, height: 22)), pts: 35, flying: false, name: "Clownfish") }
-            flyTimer += fdt // Plankton (floating clouds)
-            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Plankton", size: CGSize(width: 20, height: 20)), pts: 30, flying: true, name: "Plankton") }
+            aphidTimer += fdt // Clownfish (swims through the water)
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.generateClownfishTexture(size: CGSize(width: 30, height: 22)), pts: 35, flying: true, name: "Clownfish") }
+            flyTimer += fdt // Starfish (strolls the sea floor)
+            if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Starfish", size: CGSize(width: 24, height: 22)), pts: 30, flying: false, name: "Starfish") }
             gnatTimer += fdt // Shrimplets (darting)
             if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Shrimplet", size: CGSize(width: 26, height: 16)), pts: 40, flying: true, name: "Shrimplet") }
             fireflyTimer += fdt // Sea snails (slow ground)
@@ -2277,6 +2332,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if frogTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateStingrayTexture(size: CGSize(width: 54, height: 32)), name: "Stingray") }
             caveSpiderTimer += edt // Pufferfish (ground, inflates)
             if caveSpiderTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { caveSpiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generatePufferfishTexture(size: CGSize(width: 36, height: 36)), name: "Pufferfish") }
+            seahorseTimer += fdt // Rare seahorse — 200 pts, flees from the player
+            if seahorseTimer >= 20.0 { seahorseTimer = 0; spawnSeahorse() }
 
         case .volcano:
             aphidTimer += fdt // Ember beetles
@@ -2289,10 +2346,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if spiderTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Fire Ant", size: CGSize(width: 30, height: 26)), name: "Fire Ant") }
             birdTimer += edt // Phoenix (swooper)
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Phoenix") }
-            dragonflyTimer += edt // Lava slime (ground)
-            if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.generateLavaSlimeTexture(size: CGSize(width: 36, height: 30)), name: "Lava Slime") }
+            dragonflyTimer += edt // Komodo dragon (ground stalker)
+            if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Komodo Dragon", size: CGSize(width: 64, height: 30)), name: "Komodo Dragon") }
             waspTimer += edt // Obsidian golem (sky patrol)
             if waspTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Obsidian Golem", size: CGSize(width: 48, height: 40)), name: "Obsidian Golem") }
+            slothTimer += edt // Sloth hanging from a vine
+            if slothTimer >= max(8.0, 13.0 - Double(distanceTraveled) * 0.0003) { slothTimer = 0; spawnSloth() }
+            lavaPoolTimer += edt // Lava pools with rocky edges
+            if lavaPoolTimer >= 6.5 { lavaPoolTimer = 0; spawnLavaPool() }
 
         case .cloud:
             aphidTimer += fdt // Cloud mites
@@ -2333,14 +2394,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Honeybee", size: CGSize(width: 24, height: 20)), pts: 30, flying: true, name: "Honeybee") }
             gnatTimer += fdt // Pill bugs
             if gnatTimer >= 2.2 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Pill Bug", size: CGSize(width: 20, height: 20)), pts: 25, flying: false, name: "Pill Bug") }
-            spiderTimer += edt // Garden spiders
-            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Garden Spider", size: CGSize(width: 40, height: 34)), name: "Garden Spider") }
+            spiderTimer += edt // Garden spiders (fewer — they jump)
+            if spiderTimer >= max(5.5, 9.5 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Garden Spider", size: CGSize(width: 40, height: 34)), name: "Garden Spider") }
             birdTimer += edt // Yellow jackets (swooper)
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Yellow Jacket") }
-            dragonflyTimer += edt // Garden snakes
+            dragonflyTimer += edt // Garden snakes (strike low, no jump)
             if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Garden Snake", size: CGSize(width: 52, height: 28)), name: "Garden Snake") }
-            waspTimer += edt // House cat (rare, big, charges)
+            waspTimer += edt // House cat (big, swipes its paw)
             if waspTimer >= max(8.0, 14.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "House Cat", size: CGSize(width: 70, height: 50)), name: "House Cat") }
+            dogTimer += edt // Guard dog — charges from a distance
+            if dogTimer >= max(7.0, 12.0 - Double(distanceTraveled) * 0.0003) { dogTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Guard Dog", size: CGSize(width: 64, height: 44)), name: "Guard Dog") }
 
         case .ruins:
             aphidTimer += fdt
@@ -2946,6 +3009,163 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         monkey.run(SKAction.repeatForever(SKAction.sequence([up, pause, down, pause])), withKey: "climb")
     }
 
+    /// Rare underwater treat: 200 points, darts away when the player gets close
+    private func spawnSeahorse() {
+        let spawnX = size.width + 40
+        let tex = TextureGenerator.biomeCreatureTexture(named: "Seahorse", size: CGSize(width: 26, height: 34))
+        let seahorse = BiomeFood(texture: tex, points: 200, biomeName: "Seahorse", isFlying: true)
+        seahorse.position = CGPoint(x: spawnX, y: groundY + CGFloat.random(in: 80...size.height * 0.55))
+        seahorse.minY = groundY
+        seahorse.playerRef = ladybug
+        seahorse.setupPhysics()
+        seahorse.startMoving()
+        // Golden glow so the rare catch stands out
+        let glow = SKShapeNode(circleOfRadius: seahorse.size.width * 0.7)
+        glow.fillColor = SKColor(red: 1.0, green: 0.85, blue: 0.30, alpha: 0.20)
+        glow.strokeColor = SKColor(red: 1.0, green: 0.85, blue: 0.35, alpha: 0.35)
+        glow.lineWidth = 1.5
+        glow.zPosition = -1
+        seahorse.addChild(glow)
+        glow.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.5, duration: 0.4),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.4),
+        ])))
+        addChild(seahorse)
+    }
+
+    /// Volcano sloth: hangs from a vine and swipes when the ladybug flies past
+    private func spawnSloth() {
+        let spawnX = size.width + 60
+        for child in children where child.name == "slothRig" {
+            if abs(child.position.x - spawnX) < 250 { return }
+        }
+        let vineLen = CGFloat.random(in: 120...180)
+        let rig = SKNode()
+        rig.position = CGPoint(x: spawnX, y: size.height)
+        rig.zPosition = 6
+        rig.name = "slothRig"
+
+        let vine = SKShapeNode(rectOf: CGSize(width: 4, height: vineLen), cornerRadius: 2)
+        vine.fillColor = SKColor(red: 0.30, green: 0.42, blue: 0.16, alpha: 0.9)
+        vine.strokeColor = .clear
+        vine.position = CGPoint(x: 0, y: -vineLen / 2)
+        rig.addChild(vine)
+        for i in 0..<2 {
+            let leaf = SKShapeNode(ellipseOf: CGSize(width: 10, height: 5))
+            leaf.fillColor = SKColor(red: 0.30, green: 0.48, blue: 0.18, alpha: 0.85)
+            leaf.strokeColor = .clear
+            leaf.position = CGPoint(x: (i == 0 ? 6 : -6), y: -vineLen * (i == 0 ? 0.35 : 0.65))
+            leaf.zRotation = i == 0 ? 0.5 : -0.5
+            rig.addChild(leaf)
+        }
+
+        let tex = TextureGenerator.biomeCreatureTexture(named: "Sloth", size: CGSize(width: 46, height: 54))
+        let sloth = SKSpriteNode(texture: tex, color: .clear, size: tex.size())
+        sloth.name = "sloth"
+        sloth.position = CGPoint(x: 0, y: -vineLen - sloth.size.height / 2 + 6)
+        let body = SKPhysicsBody(rectangleOf: CGSize(width: sloth.size.width * 0.6, height: sloth.size.height * 0.6))
+        body.isDynamic = false
+        body.categoryBitMask = PhysicsCategory.bird
+        body.contactTestBitMask = PhysicsCategory.ladybug
+        sloth.physicsBody = body
+        rig.addChild(sloth)
+        addChild(rig)
+        unlockBug(.sloth)
+
+        // Gentle vine sway
+        let sway = SKAction.sequence([
+            SKAction.rotate(toAngle: 0.06, duration: 1.6),
+            SKAction.rotate(toAngle: -0.06, duration: 1.6),
+        ])
+        rig.run(SKAction.repeatForever(sway), withKey: "sway")
+
+        // Swipe with claws when the player comes close
+        let checkSwipe = SKAction.run { [weak self, weak sloth, weak rig] in
+            guard let self = self, let sloth = sloth, let rig = rig else { return }
+            guard sloth.action(forKey: "swipe") == nil else { return }
+            let slothScenePos = rig.convert(sloth.position, to: self)
+            let dx = self.ladybug.position.x - slothScenePos.x
+            let dy = self.ladybug.position.y - slothScenePos.y
+            if abs(dx) < 90 && dy < 40 && dy > -140 {
+                SoundManager.shared.play("hiss")
+                sloth.xScale = dx >= 0 ? abs(sloth.xScale) : -abs(sloth.xScale)
+                let dir: CGFloat = dx >= 0 ? 1.0 : -1.0
+                let windUp = SKAction.rotate(toAngle: -0.25 * dir, duration: 0.15)
+                let slash = SKAction.group([
+                    SKAction.rotate(toAngle: 0.45 * dir, duration: 0.10),
+                    SKAction.moveBy(x: 26 * dir, y: -18, duration: 0.10),
+                ])
+                slash.timingMode = .easeIn
+                let back = SKAction.group([
+                    SKAction.rotate(toAngle: 0, duration: 0.35),
+                    SKAction.moveBy(x: -26 * dir, y: 18, duration: 0.35),
+                ])
+                back.timingMode = .easeOut
+                sloth.run(SKAction.sequence([windUp, slash, back]), withKey: "swipe")
+            }
+        }
+        rig.run(SKAction.repeatForever(SKAction.sequence([SKAction.wait(forDuration: 0.3), checkSwipe])), withKey: "checkSwipe")
+    }
+
+    /// Bubbling lava pool with rocky edges — burns the ladybug on contact
+    private func spawnLavaPool() {
+        let spawnX = size.width + 80
+        if isNearGroundObject(x: spawnX, range: 130) { return }
+
+        let poolW = CGFloat.random(in: 90...150)
+        let pool = SKShapeNode(ellipseOf: CGSize(width: poolW, height: 16))
+        pool.fillColor = SKColor(red: 1.00, green: 0.42, blue: 0.08, alpha: 0.90)
+        pool.strokeColor = SKColor(red: 0.55, green: 0.15, blue: 0.05, alpha: 0.8)
+        pool.lineWidth = 2
+        pool.position = CGPoint(x: spawnX, y: groundY + 2)
+        pool.zPosition = 2
+        pool.name = "lavaPool"
+        addChild(pool)
+        // Molten glow that pulses
+        let glow = SKShapeNode(ellipseOf: CGSize(width: poolW * 0.6, height: 8))
+        glow.fillColor = SKColor(red: 1.00, green: 0.80, blue: 0.25, alpha: 0.55)
+        glow.strokeColor = .clear
+        glow.position = CGPoint(x: 0, y: 2)
+        glow.zPosition = 0.5
+        pool.addChild(glow)
+        glow.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.35, duration: 0.5),
+            SKAction.fadeAlpha(to: 0.8, duration: 0.5),
+        ])))
+        // Rocky edges on both sides
+        let sides: [CGFloat] = [-1, 1]
+        for side in sides {
+            let rock = SKShapeNode(circleOfRadius: CGFloat.random(in: 7...11))
+            rock.fillColor = SKColor(red: 0.22, green: 0.14, blue: 0.12, alpha: 1.0)
+            rock.strokeColor = .clear
+            rock.position = CGPoint(x: side * poolW / 2, y: 4)
+            rock.zPosition = 1
+            pool.addChild(rock)
+            let rock2 = SKShapeNode(circleOfRadius: CGFloat.random(in: 4...6))
+            rock2.fillColor = SKColor(red: 0.30, green: 0.20, blue: 0.16, alpha: 1.0)
+            rock2.strokeColor = .clear
+            rock2.position = CGPoint(x: side * (poolW / 2 - 10), y: 1)
+            rock2.zPosition = 1
+            pool.addChild(rock2)
+        }
+    }
+
+    private var lastLavaTime: TimeInterval = 0
+    private func checkLavaContact() {
+        guard currentBiome == .volcano, ladybug.isOnGround else { return }
+        enumerateChildNodes(withName: "lavaPool") { [weak self] node, stop in
+            guard let self = self else { return }
+            let halfW = node.frame.width / 2 - 8
+            if abs(node.position.x - self.ladybug.position.x) < halfW {
+                if self.lastUpdateTime - self.lastLavaTime > 0.9 {
+                    self.lastLavaTime = self.lastUpdateTime
+                    self.takeDamage()
+                }
+                stop.pointee = true
+            }
+        }
+    }
+
     // MARK: - Biome Transitions
 
     private func transitionToBiome(_ biome: Biome) {
@@ -3463,7 +3683,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood ||
                child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider ||
                child is FallingRock || child.name == "monkey" || child.name == "envDecor" ||
-               child.name == "pond" || child.name == "rockShadow" {
+               child.name == "pond" || child.name == "rockShadow" ||
+               child.name == "slothRig" || child.name == "lavaPool" {
                 child.removeFromParent()
             }
         }
