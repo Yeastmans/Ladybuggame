@@ -3112,7 +3112,7 @@ enum TextureGenerator {
             let squeeze: CGFloat = contracted ? 0.62 : 1.0
             let tentTop: CGFloat = contracted ? 0.62 : 0.55
             // Tentacles (long, wavy, trailing)
-            cg.setStrokeColor(UIColor(red: 0.90, green: 0.28, blue: 0.22, alpha: 0.55).cgColor)
+            cg.setStrokeColor(UIColor(red: 0.48, green: 0.22, blue: 0.62, alpha: 0.60).cgColor)
             cg.setLineWidth(1.2); cg.setLineCap(.round)
             for tx in [CGFloat(0.20), 0.35, 0.50, 0.65, 0.80] {
                 let cx = 0.5 + (tx - 0.5) * squeeze
@@ -3123,17 +3123,17 @@ enum TextureGenerator {
                 cg.strokePath()
             }
             // Bell (dome, translucent) — taller and narrower when contracted
-            cg.setFillColor(UIColor(red: 0.92, green: 0.25, blue: 0.20, alpha: 0.60).cgColor)
+            cg.setFillColor(UIColor(red: 0.38, green: 0.14, blue: 0.52, alpha: 0.68).cgColor)
             let bell = contracted
                 ? CGRect(x: w * 0.18, y: h * 0.02, width: w * 0.64, height: h * 0.62)
                 : CGRect(x: w * 0.10, y: h * 0.05, width: w * 0.80, height: h * 0.55)
             cg.fillEllipse(in: bell)
             // Inner glow
-            cg.setFillColor(UIColor(red: 1.00, green: 0.55, blue: 0.40, alpha: 0.30).cgColor)
+            cg.setFillColor(UIColor(red: 0.72, green: 0.45, blue: 0.90, alpha: 0.32).cgColor)
             cg.fillEllipse(in: CGRect(x: bell.minX + bell.width * 0.15, y: bell.minY + bell.height * 0.13,
                                       width: bell.width * 0.62, height: bell.height * 0.55))
             // Oral arms (frilly edges under bell)
-            cg.setFillColor(UIColor(red: 0.95, green: 0.38, blue: 0.28, alpha: 0.45).cgColor)
+            cg.setFillColor(UIColor(red: 0.55, green: 0.28, blue: 0.70, alpha: 0.48).cgColor)
             for ox in stride(from: 0.18, to: 0.82, by: 0.12) {
                 let ax = 0.5 + (CGFloat(ox) - 0.5) * squeeze
                 cg.fillEllipse(in: CGRect(x: w * ax, y: h * (tentTop - 0.07), width: w * 0.10, height: h * 0.10))

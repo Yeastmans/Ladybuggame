@@ -1308,22 +1308,30 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func spawnUnderwaterDecor(x: CGFloat) {
         let roll = Int.random(in: 0...4)
         switch roll {
-        case 0: // Tall swaying seaweed (1-3 strands)
-            let strands = Int.random(in: 1...3)
+        case 0: // Tall swaying seaweed (1-4 strands, mixed kelp colors)
+            let weedColors: [SKColor] = [
+                SKColor(red: 0.12, green: 0.55, blue: 0.28, alpha: 0.75), // green
+                SKColor(red: 0.10, green: 0.62, blue: 0.45, alpha: 0.75), // teal
+                SKColor(red: 0.35, green: 0.50, blue: 0.15, alpha: 0.75), // olive
+                SKColor(red: 0.48, green: 0.20, blue: 0.40, alpha: 0.75), // purple dulse
+                SKColor(red: 0.55, green: 0.38, blue: 0.12, alpha: 0.75), // golden kelp
+                SKColor(red: 0.65, green: 0.25, blue: 0.20, alpha: 0.70), // red algae
+            ]
+            let strands = Int.random(in: 1...4)
             for s in 0..<strands {
-                let wH = CGFloat.random(in: 45...120)
-                let bend = CGFloat.random(in: 6...14)
+                let wH = CGFloat.random(in: 60...170)
+                let bend = CGFloat.random(in: 7...18)
                 let path = UIBezierPath()
                 path.move(to: .zero)
                 path.addCurve(to: CGPoint(x: 0, y: wH),
                               controlPoint1: CGPoint(x: bend, y: wH * 0.33),
                               controlPoint2: CGPoint(x: -bend, y: wH * 0.66))
                 let weed = SKShapeNode(path: path.cgPath)
-                weed.strokeColor = SKColor(red: 0.12, green: CGFloat.random(in: 0.42...0.62), blue: 0.28, alpha: 0.75)
-                weed.lineWidth = CGFloat.random(in: 2.5...4.0)
+                weed.strokeColor = weedColors.randomElement()!
+                weed.lineWidth = CGFloat.random(in: 2.5...4.5)
                 weed.lineCap = .round
                 weed.fillColor = .clear
-                weed.position = CGPoint(x: x + CGFloat(s - 1) * 7, y: groundY)
+                weed.position = CGPoint(x: x + CGFloat(s - 1) * 8, y: groundY)
                 weed.zPosition = 1
                 weed.name = "envDecor"
                 addChild(weed)
