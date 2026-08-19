@@ -20,6 +20,14 @@ class MenuScene: SKScene {
     }
 
     override func didMove(to view: SKView) {
+        let progress = CampaignProgressStore.shared
+        progress.migrateLegacyProgress(
+            unlockedBiomeIDs: GameScene.unlockedBiomes,
+            checkpointScore: GameScene.checkpointScore,
+            highScore: MenuScene.highScore
+        )
+        let continueStage = CampaignStage.stage(id: progress.continueStageID) ?? CampaignStage.all[0]
+
         backgroundColor = SKColor(red: 0.35, green: 0.62, blue: 0.85, alpha: 1.0)
 
         let ground = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height * 0.35))
@@ -92,38 +100,39 @@ class MenuScene: SKScene {
         title.zPosition = 20
         addChild(title)
 
-        // High score under title
+        // Adventure progress and Endless score are deliberately separate.
         let hsLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        hsLabel.text = "Best: \(MenuScene.highScore)"
-        hsLabel.fontSize = 16
-        hsLabel.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 0.8)
+        hsLabel.text = "Adventure \(progress.completedCount)/\(CampaignStage.all.count)  •  \(progress.totalStars)/45 ★  •  Endless \(MenuScene.highScore)"
+        hsLabel.fontSize = 14
+        hsLabel.fontColor = SKColor(red: 1.0, green: 0.88, blue: 0.35, alpha: 0.9)
         hsLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.68)
         hsLabel.zPosition = 20
         addChild(hsLabel)
 
-        // Row 1: Start Game (wide, centered)
-        addButton("Start Game", name: "startButton",
+        let continueText = progress.isAdventureComplete
+            ? "Replay Final Stage"
+            : "Continue: \(continueStage.number)  \(continueStage.biome.name)"
+        addButton(continueText, name: "startButton",
                   color: SKColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0),
-                  x: size.width / 2, y: size.height * 0.56, w: 220)
+                  x: size.width / 2, y: size.height * 0.56, w: 250)
 
-        // Row 2: Checkpoints + Difficulty (side by side)
-        let unlocked = GameScene.unlockedBiomes.compactMap { Biome(rawValue: $0) }.sorted { $0.rawValue < $1.rawValue }
-        if !unlocked.isEmpty {
-            addButton("Checkpoints", name: "checkpointsMenu",
-                      color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
-                      x: size.width / 2 - 58, y: size.height * 0.44, w: 108)
-        }
+        // Modes are explicit: finite Adventure progression or the original run.
+        addButton("Stages", name: "stageMenu",
+                  color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
+                  x: size.width / 2 - 62, y: size.height * 0.44, w: 116)
+        addButton("Endless", name: "endlessButton",
+                  color: SKColor(red: 0.18, green: 0.42, blue: 0.62, alpha: 1.0),
+                  x: size.width / 2 + 62, y: size.height * 0.44, w: 116)
+
         addButton("Difficulty", name: "difficultyBtn",
                   color: SKColor(red: 0.45, green: 0.40, blue: 0.55, alpha: 1),
-                  x: size.width / 2 + 58, y: size.height * 0.44, w: 108)
-
-        // Row 3: Shop + Bugopedia (side by side)
+                  x: size.width / 2 - 108, y: size.height * 0.32, w: 100)
         addButton("Shop", name: "shopButton",
                   color: SKColor(red: 0.82, green: 0.65, blue: 0.12, alpha: 1.0),
-                  x: size.width / 2 - 58, y: size.height * 0.32, w: 108)
-        addButton("Bugopedia", name: "bugTracker",
+                  x: size.width / 2, y: size.height * 0.32, w: 100)
+        addButton("Collection", name: "bugTracker",
                   color: SKColor(red: 0.55, green: 0.35, blue: 0.70, alpha: 1.0),
-                  x: size.width / 2 + 58, y: size.height * 0.32, w: 108)
+                  x: size.width / 2 + 108, y: size.height * 0.32, w: 100)
     }
 
     private func addButton(_ text: String, name: String, color: SKColor, y: CGFloat) {
@@ -149,6 +158,14 @@ class MenuScene: SKScene {
         bg.addChild(label)
     }
 
+    private func startAdventureStage(_ stageID: Int) {
+        guard CampaignProgressStore.shared.isUnlocked(stageID) else { return }
+        let game = GameScene(size: size)
+        game.scaleMode = scaleMode
+        game.campaignStageID = stageID
+        view?.presentScene(game, transition: .fade(withDuration: 0.4))
+    }
+
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let nodes = self.nodes(at: touch.location(in: self))
@@ -161,6 +178,10 @@ class MenuScene: SKScene {
 
         for node in nodes {
             if node.name == "startButton" {
+                startAdventureStage(CampaignProgressStore.shared.continueStageID)
+                return
+            }
+            if node.name == "endlessButton" {
                 let game = GameScene(size: size)
                 game.scaleMode = scaleMode
                 view?.presentScene(game, transition: .fade(withDuration: 0.4))
@@ -186,14 +207,10 @@ class MenuScene: SKScene {
                 view?.presentScene(bugopedia, transition: .fade(withDuration: 0.3))
                 return
             }
-            if node.name == "checkpointsMenu" { showCheckpoints(); return }
-            if let name = node.name, name.hasPrefix("cp_") {
-                let biomeRaw = Int(name.replacingOccurrences(of: "cp_", with: "")) ?? 0
-                let game = GameScene(size: size)
-                game.scaleMode = scaleMode
-                game.startFromCheckpoint = true
-                GameScene.checkpointScore = Biome(rawValue: biomeRaw)?.scoreThreshold ?? 0
-                view?.presentScene(game, transition: .fade(withDuration: 0.4))
+            if node.name == "stageMenu" { showStageSelect(); return }
+            if let name = node.name, name.hasPrefix("stage_") {
+                let stageID = Int(name.replacingOccurrences(of: "stage_", with: "")) ?? 0
+                startAdventureStage(stageID)
                 return
             }
 
@@ -296,65 +313,83 @@ class MenuScene: SKScene {
         addTapToClose(overlay)
     }
 
-    private func showCheckpoints() {
+    private func showStageSelect() {
         childNode(withName: "overlay")?.removeFromParent()
-        let overlay = makeOverlay()
+        let overlay = makeOverlay(widthRatio: 0.90, heightRatio: 0.84)
+        let progress = CampaignProgressStore.shared
 
         let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        title.text = "Checkpoints"
+        title.text = "Adventure"
         title.fontSize = 24
         title.fontColor = .white
-        title.position = CGPoint(x: 0, y: size.height * 0.22)
+        title.position = CGPoint(x: 0, y: size.height * 0.33)
         overlay.addChild(title)
 
         let subtitle = SKLabelNode(fontNamed: "AvenirNext-Regular")
-        subtitle.text = "Resume from a biome you've reached"
+        subtitle.text = "Finish stages to unlock the path  •  \(progress.completedCount)/15 clear  •  \(progress.totalStars)/45 ★"
         subtitle.fontSize = 11
-        subtitle.fontColor = SKColor(white: 0.7, alpha: 1)
-        subtitle.position = CGPoint(x: 0, y: size.height * 0.15)
+        subtitle.fontColor = SKColor(white: 0.75, alpha: 1)
+        subtitle.position = CGPoint(x: 0, y: size.height * 0.265)
         overlay.addChild(subtitle)
 
-        let biomes = GameScene.unlockedBiomes.compactMap { Biome(rawValue: $0) }.sorted { $0.rawValue < $1.rawValue }
-        let cols = 3
-        let btnW: CGFloat = 110
-        let btnH: CGFloat = 34
-        let spacingX: CGFloat = 120
-        let spacingY: CGFloat = 44
-        let gridW = CGFloat(min(cols, biomes.count)) * spacingX
-        let startX = -gridW / 2 + spacingX / 2
-        let startY = size.height * 0.08
+        let cols = 5
+        let spacingX = size.width * 0.165
+        let spacingY = size.height * 0.145
+        let buttonWidth = min(132, spacingX - 8)
+        let startX = -spacingX * CGFloat(cols - 1) / 2
+        let startY = size.height * 0.11
 
-        for (i, biome) in biomes.enumerated() {
-            let col = i % cols
-            let row = i / cols
+        for (index, stage) in CampaignStage.all.enumerated() {
+            let col = index % cols
+            let row = index / cols
             let x = startX + CGFloat(col) * spacingX
             let y = startY - CGFloat(row) * spacingY
+            let record = progress.record(for: stage.id)
+            let unlocked = progress.isUnlocked(stage.id)
+            let nodeName = unlocked ? "stage_\(stage.id)" : "lockedStage"
 
-            let btn = SKShapeNode(rectOf: CGSize(width: btnW, height: btnH), cornerRadius: 8)
-            btn.fillColor = biome.skyColor.withAlphaComponent(0.8)
-            btn.strokeColor = SKColor(white: 1.0, alpha: 0.3)
-            btn.lineWidth = 1
-            btn.position = CGPoint(x: x, y: y)
-            btn.name = "cp_\(biome.rawValue)"
-            overlay.addChild(btn)
+            let button = SKShapeNode(rectOf: CGSize(width: buttonWidth, height: 48), cornerRadius: 9)
+            if !unlocked {
+                button.fillColor = SKColor(white: 0.12, alpha: 0.9)
+            } else if record.completed {
+                button.fillColor = stage.biome.skyColor.withAlphaComponent(0.82)
+            } else {
+                button.fillColor = stage.biome.skyColor.withAlphaComponent(0.48)
+            }
+            let isNext = stage.id == progress.continueStageID && !progress.isAdventureComplete
+            button.strokeColor = isNext
+                ? SKColor(red: 1.0, green: 0.86, blue: 0.25, alpha: 1)
+                : SKColor(white: 1.0, alpha: unlocked ? 0.34 : 0.12)
+            button.lineWidth = isNext ? 2.2 : 1
+            button.position = CGPoint(x: x, y: y)
+            button.name = nodeName
+            overlay.addChild(button)
 
-            let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            label.text = biome.name
-            label.fontSize = 13
-            label.fontColor = .white
-            label.verticalAlignmentMode = .center
-            label.position = CGPoint(x: 0, y: 2)
-            label.name = "cp_\(biome.rawValue)"
-            btn.addChild(label)
+            let name = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            name.text = unlocked ? "\(stage.number) · \(stage.biome.name)" : "\(stage.number) · LOCKED"
+            name.fontSize = buttonWidth < 100 ? 8 : 10
+            name.fontColor = unlocked ? .white : SKColor(white: 0.45, alpha: 1)
+            name.verticalAlignmentMode = .center
+            name.position = CGPoint(x: 0, y: 8)
+            name.name = nodeName
+            button.addChild(name)
 
-            let scoreHint = SKLabelNode(fontNamed: "AvenirNext-Regular")
-            scoreHint.text = "\(biome.scoreThreshold)"
-            scoreHint.fontSize = 9
-            scoreHint.fontColor = SKColor(white: 1.0, alpha: 0.5)
-            scoreHint.verticalAlignmentMode = .center
-            scoreHint.position = CGPoint(x: 0, y: -10)
-            scoreHint.name = "cp_\(biome.rawValue)"
-            btn.addChild(scoreHint)
+            let status = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            if !unlocked {
+                status.text = "—"
+            } else if record.completed {
+                status.text = String(repeating: "★", count: record.bestStars) + String(repeating: "☆", count: 3 - record.bestStars)
+            } else {
+                status.text = stage.isBossStage ? "BOSS GATE" : "READY"
+            }
+            status.fontSize = 10
+            status.fontColor = record.completed
+                ? SKColor(red: 1.0, green: 0.86, blue: 0.25, alpha: 1)
+                : SKColor(white: 0.78, alpha: 1)
+            status.verticalAlignmentMode = .center
+            status.position = CGPoint(x: 0, y: -11)
+            status.name = nodeName
+            button.addChild(status)
         }
 
         addTapToClose(overlay)
@@ -514,8 +549,8 @@ class MenuScene: SKScene {
         detail.addChild(close)
     }
 
-    private func makeOverlay() -> SKShapeNode {
-        let overlay = SKShapeNode(rectOf: CGSize(width: size.width * 0.65, height: size.height * 0.75), cornerRadius: 16)
+    private func makeOverlay(widthRatio: CGFloat = 0.65, heightRatio: CGFloat = 0.75) -> SKShapeNode {
+        let overlay = SKShapeNode(rectOf: CGSize(width: size.width * widthRatio, height: size.height * heightRatio), cornerRadius: 16)
         overlay.fillColor = SKColor(white: 0.0, alpha: 0.88)
         overlay.strokeColor = SKColor(white: 1.0, alpha: 0.25)
         overlay.lineWidth = 2

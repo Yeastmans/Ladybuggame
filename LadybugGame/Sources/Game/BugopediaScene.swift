@@ -36,7 +36,7 @@ class BugopediaScene: SKScene {
 
         // Title
         let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        title.text = "Bugopedia"
+        title.text = "Creature Collection"
         title.fontSize = 24
         title.fontColor = .white
         title.position = CGPoint(x: size.width / 2, y: size.height - 28)
@@ -66,7 +66,17 @@ class BugopediaScene: SKScene {
         countL.zPosition = 10
         addChild(countL)
 
-        // Biome tabs (scrollable row)
+        let totalTrack = SKSpriteNode(color: SKColor(white: 1.0, alpha: 0.13), size: CGSize(width: 96, height: 5))
+        totalTrack.position = CGPoint(x: size.width - 63, y: size.height - 43)
+        totalTrack.zPosition = 10
+        addChild(totalTrack)
+        let totalFill = SKSpriteNode(color: SKColor(red: 0.48, green: 0.90, blue: 0.48, alpha: 1), size: CGSize(width: max(1, 96 * CGFloat(found) / CGFloat(max(1, all.count))), height: 5))
+        totalFill.anchorPoint = CGPoint(x: 0, y: 0.5)
+        totalFill.position = CGPoint(x: size.width - 111, y: size.height - 43)
+        totalFill.zPosition = 11
+        addChild(totalFill)
+
+        // Biome tabs
         let biomes: [(Biome, String)] = [
             (.meadowDay, "Meadow"), (.meadowNight, "Night"), (.desert, "Desert"),
             (.snow, "Tundra"), (.jungle, "Jungle"), (.cave, "Cave"),
@@ -111,9 +121,23 @@ class BugopediaScene: SKScene {
             let x = startX + CGFloat(col) * cellW
             let y = startY - CGFloat(row) * cellH
 
+            let foundBug = tracker.isUnlocked(bug)
+            let roleColor = bug.category == .food
+                ? SKColor(red: 0.28, green: 0.82, blue: 0.48, alpha: 1)
+                : SKColor(red: 0.96, green: 0.24, blue: 0.28, alpha: 1)
+            let card = SKShapeNode(rectOf: CGSize(width: 52, height: 56), cornerRadius: 8)
+            card.fillColor = foundBug ? roleColor.withAlphaComponent(0.10) : SKColor(white: 0.12, alpha: 0.82)
+            card.strokeColor = foundBug ? roleColor.withAlphaComponent(0.62) : SKColor(white: 1.0, alpha: 0.10)
+            card.lineWidth = 1.2
+            card.position = CGPoint(x: x, y: y - 7)
+            card.zPosition = 1
+            card.name = "bug_\(bug.rawValue)"
+            addChild(card)
+
             let tex = tracker.texture(for: bug, size: CGSize(width: 32, height: 32))
             let sprite = SKSpriteNode(texture: tex, size: CGSize(width: 32, height: 32))
             sprite.position = CGPoint(x: x, y: y)
+            sprite.zPosition = 2
             sprite.name = "bug_\(bug.rawValue)"
             addChild(sprite)
 
@@ -122,15 +146,25 @@ class BugopediaScene: SKScene {
             label.fontSize = 7
             label.fontColor = tracker.isUnlocked(bug) ? .white : SKColor(white: 0.4, alpha: 1)
             label.position = CGPoint(x: x, y: y - 22)
+            label.zPosition = 3
             label.name = "bug_\(bug.rawValue)"
             addChild(label)
 
-            // Food/enemy indicator
-            let dot = SKShapeNode(circleOfRadius: 2.5)
-            dot.fillColor = bug.category == .food ? SKColor(red: 0.3, green: 0.7, blue: 0.3, alpha: 0.7) : SKColor(red: 0.7, green: 0.2, blue: 0.2, alpha: 0.7)
-            dot.strokeColor = .clear
-            dot.position = CGPoint(x: x + 14, y: y + 14)
-            addChild(dot)
+            let roleBadge = SKShapeNode(circleOfRadius: 6)
+            roleBadge.fillColor = roleColor
+            roleBadge.strokeColor = SKColor(white: 1.0, alpha: 0.55)
+            roleBadge.lineWidth = 0.8
+            roleBadge.position = CGPoint(x: x + 19, y: y + 18)
+            roleBadge.zPosition = 4
+            roleBadge.name = "bug_\(bug.rawValue)"
+            addChild(roleBadge)
+            let roleMark = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            roleMark.text = bug.category == .food ? "+" : "!"
+            roleMark.fontSize = 9
+            roleMark.fontColor = .white
+            roleMark.verticalAlignmentMode = .center
+            roleMark.name = "bug_\(bug.rawValue)"
+            roleBadge.addChild(roleMark)
         }
 
         // Biome count
@@ -170,12 +204,14 @@ class BugopediaScene: SKScene {
         bg.addChild(nameL)
 
         if isFound {
-            let pts = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            pts.text = bug.points
-            pts.fontSize = 15
-            pts.fontColor = SKColor(red: 1, green: 0.85, blue: 0, alpha: 1)
-            pts.position = CGPoint(x: 0, y: -size.height * 0.03)
-            bg.addChild(pts)
+            let role = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            role.text = "\(bug.category.rawValue.uppercased())  •  \(bug.points)"
+            role.fontSize = 14
+            role.fontColor = bug.category == .food
+                ? SKColor(red: 0.35, green: 0.92, blue: 0.55, alpha: 1)
+                : SKColor(red: 1.0, green: 0.32, blue: 0.30, alpha: 1)
+            role.position = CGPoint(x: 0, y: -size.height * 0.03)
+            bg.addChild(role)
 
             let desc = SKLabelNode(fontNamed: "AvenirNext-Regular")
             desc.text = bug.description

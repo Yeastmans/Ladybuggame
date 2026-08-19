@@ -6,6 +6,8 @@ enum GameAnalyticsEvent: Sendable {
     case appLaunched
     case runStarted(difficulty: String, checkpoint: String?)
     case runEnded(score: Int, biome: String, durationSeconds: Int)
+    case stageStarted(number: Int, name: String)
+    case stageCompleted(number: Int, name: String, stars: Int, score: Int)
     case biomeReached(name: String, score: Int)
     case bossStarted(level: Int)
     case bossDefeated(level: Int)
@@ -16,6 +18,8 @@ enum GameAnalyticsEvent: Sendable {
         case .appLaunched: return "app_launched"
         case .runStarted: return "run_started"
         case .runEnded: return "run_ended"
+        case .stageStarted: return "stage_started"
+        case .stageCompleted: return "stage_completed"
         case .biomeReached: return "biome_reached"
         case .bossStarted: return "boss_started"
         case .bossDefeated: return "boss_defeated"
@@ -31,6 +35,10 @@ enum GameAnalyticsEvent: Sendable {
             return ["difficulty": difficulty, "checkpoint": checkpoint ?? "new_run"]
         case let .runEnded(score, biome, durationSeconds):
             return ["score": String(score), "biome": biome, "duration_seconds": String(durationSeconds)]
+        case let .stageStarted(number, name):
+            return ["stage_number": String(number), "stage_name": name]
+        case let .stageCompleted(number, name, stars, score):
+            return ["stage_number": String(number), "stage_name": name, "stars": String(stars), "score": String(score)]
         case let .biomeReached(name, score):
             return ["biome": name, "score": String(score)]
         case let .bossStarted(level), let .bossDefeated(level):

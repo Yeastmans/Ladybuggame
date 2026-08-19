@@ -29,20 +29,24 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var currentBiome: Biome = .meadowDay
     private var score: Int = 0 {
         didSet {
-            scoreLabel.text = "\(score)"
-            if score >= 6000 && !isBossFight && !hasBeatenBoss && currentBiome == .cave { startBossFight(level: 1) }
-            if score >= 11600 && !isBossFight && !hasBeatenBoss2 && currentBiome == .city { startBossFight(level: 2) }
-            if score >= 17000 && !isBossFight && !hasBeatenBoss3 && currentBiome == .space { startBossFight(level: 3) }
+            scoreLabel?.text = "\(score)"
             if score >= 500 && !hasShownRainbow {
                 hasShownRainbow = true
                 showRainbow()
             }
-            // Biome transitions + checkpoint save
+
+            // Adventure owns its biome and boss gate. Score measures mastery only.
+            guard campaignStageID == nil else { return }
+
+            if score >= 6000 && !isBossFight && !hasBeatenBoss && currentBiome == .cave { startBossFight(level: 1) }
+            if score >= 11600 && !isBossFight && !hasBeatenBoss2 && currentBiome == .city { startBossFight(level: 2) }
+            if score >= 17000 && !isBossFight && !hasBeatenBoss3 && currentBiome == .space { startBossFight(level: 3) }
+
+            // Endless mode keeps the original score-driven biome journey.
             let newBiome = Biome.biome(for: score)
             if newBiome != currentBiome {
                 transitionToBiome(newBiome)
                 currentBiome = newBiome
-                // Save checkpoint at every biome transition
                 GameScene.hasNightCheckpoint = true
                 GameScene.checkpointScore = newBiome.scoreThreshold
                 GameScene.unlockBiome(newBiome)
@@ -76,6 +80,20 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
     var startFromCheckpoint = false
+
+    /// Non-nil selects a finite Adventure stage. Nil is the original Endless run.
+    var campaignStageID: Int?
+    private var activeCampaignStage: CampaignStage? {
+        guard let campaignStageID else { return nil }
+        return CampaignStage.stage(id: campaignStageID)
+    }
+    private var isCampaignStageComplete = false
+    private var campaignBossTriggered = false
+    private var hitsTaken = 0
+    private var stageProgressFill: SKSpriteNode?
+    private var stageProgressLabel: SKLabelNode?
+    private let stageProgressWidth: CGFloat = 190
+    private var roleCueTimer: TimeInterval = 0
 
     private var isGameOver = false
     private var isPaused_ = false
@@ -134,6 +152,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var bossHPLabel: SKLabelNode?
     private var bossAttackTimer: TimeInterval = 0
     private var bossAttackPhase = 0
+    private var bossCombatPhase = 1
+    private var bossAttackQueued = false
+    private var bossTitleLabel: SKLabelNode?
     private var isBubbleMode = false
     private var bubbleTimer: TimeInterval = 0
     private var bubbleDuration: TimeInterval = 0
@@ -176,9 +197,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Starting lives scale with difficulty
         lives = switch MenuScene.difficulty { case .easy: 5; case .normal: 4; case .hard: 3 }
         runStartedAt = Date()
-        let checkpointName = startFromCheckpoint ? Biome.biome(for: GameScene.checkpointScore).name : nil
+        let runName: String?
+        if let stage = activeCampaignStage {
+            runName = "Adventure \(stage.number): \(stage.biome.name)"
+        } else if startFromCheckpoint {
+            runName = Biome.biome(for: GameScene.checkpointScore).name
+        } else {
+            runName = nil
+        }
         AppServices.shared.analytics.track(
-            .runStarted(difficulty: MenuScene.difficulty.name, checkpoint: checkpointName)
+            .runStarted(difficulty: MenuScene.difficulty.name, checkpoint: runName)
         )
 
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
@@ -222,32 +250,37 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         _ = SoundManager.shared
         SoundManager.shared.startMusic()
 
-        if startFromCheckpoint {
+        if let stage = activeCampaignStage {
+            CampaignProgressStore.shared.beginStage(stage.id)
+            AppServices.shared.analytics.track(.stageStarted(number: stage.number, name: stage.biome.name))
+            currentBiome = stage.biome
+            hasShownRainbow = stage.biome != .meadowDay
+            hasTransitionedToNight = stage.biome == .meadowNight
+            if stage.biome == .meadowNight { isNight = true }
+
+            setupSky()
+            setupGround()
+            setupHUD()
+            spawnLadybug()
+            if stage.biome != .meadowDay {
+                transitionToBiome(stage.biome)
+            }
+            showCampaignStageIntro(stage)
+        } else if startFromCheckpoint {
             let cpScore = GameScene.checkpointScore
             let biome = Biome.biome(for: cpScore)
             hasShownRainbow = true
             hasTransitionedToNight = true
             currentBiome = biome
-
-            // Set sky directly to biome color — skip meadow sky setup
             backgroundColor = biome.skyColor
 
             setupGround()
-            // Immediately colorize ground tiles to biome color
-            for tile in groundTiles {
-                tile.color = biome.groundColor
-            }
+            for tile in groundTiles { tile.color = biome.groundColor }
             setupHUD()
             spawnLadybug()
             score = biome.scoreThreshold
-
-            // Night needs isNight flag
             if biome == .meadowNight { isNight = true }
-
-            // Trigger biome-specific effects (snow, cave tiles, etc.)
-            if biome != .meadowDay {
-                transitionToBiome(biome)
-            }
+            if biome != .meadowDay { transitionToBiome(biome) }
         } else {
             setupSky()
             setupGround()
@@ -417,6 +450,30 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         gemLabel.zPosition = 100
         addChild(gemLabel)
 
+        if let stage = activeCampaignStage {
+            let stageLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            stageLabel.text = "STAGE \(stage.number)  •  \(stage.biome.name.uppercased())"
+            stageLabel.fontSize = 12
+            stageLabel.fontColor = .white
+            stageLabel.position = CGPoint(x: size.width / 2, y: size.height - 20)
+            stageLabel.zPosition = 100
+            addChild(stageLabel)
+            stageProgressLabel = stageLabel
+
+            let track = SKSpriteNode(color: SKColor(white: 0.05, alpha: 0.58), size: CGSize(width: stageProgressWidth, height: 8))
+            track.position = CGPoint(x: size.width / 2, y: size.height - 41)
+            track.zPosition = 100
+            addChild(track)
+
+            let fill = SKSpriteNode(color: SKColor(red: 1.0, green: 0.80, blue: 0.18, alpha: 1), size: CGSize(width: 1, height: 6))
+            fill.anchorPoint = CGPoint(x: 0, y: 0.5)
+            fill.position = CGPoint(x: size.width / 2 - stageProgressWidth / 2, y: size.height - 41)
+            fill.zPosition = 101
+            addChild(fill)
+            stageProgressFill = fill
+            updateCampaignProgressHUD()
+        }
+
         // Pause button
         let pauseBtn = SKLabelNode(fontNamed: "AvenirNext-Bold")
         pauseBtn.text = "❚❚"
@@ -424,7 +481,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         pauseBtn.fontColor = SKColor(white: 1.0, alpha: 0.7)
         pauseBtn.horizontalAlignmentMode = .center
         pauseBtn.verticalAlignmentMode = .center
-        pauseBtn.position = CGPoint(x: size.width / 2, y: size.height - 28)
+        let pauseX = activeCampaignStage == nil ? size.width / 2 : size.width / 2 + stageProgressWidth / 2 + 28
+        pauseBtn.position = CGPoint(x: pauseX, y: size.height - 28)
         pauseBtn.zPosition = 100
         pauseBtn.name = "pauseButton"
         addChild(pauseBtn)
@@ -434,6 +492,50 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         var h = ""
         for i in 0..<lives { if i > 0 { h += " " }; h += "♥" }
         livesLabel.text = h
+    }
+
+    private func showCampaignStageIntro(_ stage: CampaignStage) {
+        let card = SKShapeNode(rectOf: CGSize(width: min(410, size.width * 0.56), height: 72), cornerRadius: 14)
+        card.fillColor = SKColor(white: 0.02, alpha: 0.78)
+        card.strokeColor = stage.biome.skyColor.withAlphaComponent(0.9)
+        card.lineWidth = 2
+        card.position = CGPoint(x: size.width / 2, y: size.height * 0.60)
+        card.zPosition = 115
+        addChild(card)
+
+        let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        title.text = "STAGE \(stage.number)  •  \(stage.biome.name.uppercased())"
+        title.fontSize = 19
+        title.fontColor = .white
+        title.position = CGPoint(x: 0, y: 10)
+        card.addChild(title)
+
+        let objective = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        objective.text = stage.objective
+        objective.fontSize = 11
+        objective.fontColor = SKColor(white: 0.82, alpha: 1)
+        objective.position = CGPoint(x: 0, y: -16)
+        card.addChild(objective)
+
+        card.alpha = 0
+        card.run(SKAction.sequence([
+            SKAction.fadeIn(withDuration: 0.25),
+            SKAction.wait(forDuration: 2.2),
+            SKAction.fadeOut(withDuration: 0.45),
+            SKAction.removeFromParent(),
+        ]))
+    }
+
+    private func updateCampaignProgressHUD() {
+        guard let stage = activeCampaignStage else { return }
+        let progress = min(1, max(0, distanceTraveled / stage.targetDistance))
+        stageProgressFill?.size.width = max(1, stageProgressWidth * progress)
+        if isBossFight {
+            stageProgressLabel?.text = "STAGE \(stage.number)  •  BOSS"
+        } else {
+            let percent = Int(progress * 100)
+            stageProgressLabel?.text = "STAGE \(stage.number)  •  \(stage.biome.name.uppercased())  •  \(percent)%"
+        }
     }
 
     private func spawnLadybug() {
@@ -553,27 +655,55 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Touch
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if isGameOver {
-            let menu = MenuScene(size: size)
-            menu.scaleMode = scaleMode
-            view?.presentScene(menu, transition: .fade(withDuration: 0.4))
-            return
-        }
         guard let touch = touches.first else { return }
         let loc = touch.location(in: self)
-
-        // Check pause button tap
         let tappedNodes = nodes(at: loc)
+
+        if isGameOver {
+            for node in tappedNodes {
+                if node.name == "gameOverRetry" {
+                    presentRun(stageID: campaignStageID)
+                    return
+                }
+                if node.name == "gameOverMenu" {
+                    returnToMenu()
+                    return
+                }
+            }
+            return
+        }
+
+        if isCampaignStageComplete {
+            for node in tappedNodes {
+                if node.name == "campaignReplay" {
+                    presentRun(stageID: campaignStageID)
+                    return
+                }
+                if node.name == "campaignNext" {
+                    if let current = campaignStageID,
+                       CampaignStage.stage(id: current + 1) != nil,
+                       CampaignProgressStore.shared.isUnlocked(current + 1) {
+                        presentRun(stageID: current + 1)
+                    } else {
+                        returnToMenu()
+                    }
+                    return
+                }
+                if node.name == "campaignMenu" {
+                    returnToMenu()
+                    return
+                }
+            }
+            return
+        }
+
         for node in tappedNodes {
             if node.name == "pauseButton" || node.name == "pauseOverlay" || node.name == "resumeLabel" {
                 togglePause()
                 return
             }
             if node.name == "pauseMenuBtn" {
-                SoundManager.shared.stopMusic()
-                let menu = MenuScene(size: size)
-                menu.scaleMode = scaleMode
-                view?.presentScene(menu, transition: .fade(withDuration: 0.4))
+                returnToMenu()
                 return
             }
         }
@@ -582,6 +712,21 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         isTouching = true
         touchY = loc.y
         touchX = loc.x
+    }
+
+    private func presentRun(stageID: Int?) {
+        SoundManager.shared.stopMusic()
+        let game = GameScene(size: size)
+        game.scaleMode = scaleMode
+        game.campaignStageID = stageID
+        view?.presentScene(game, transition: .fade(withDuration: 0.35))
+    }
+
+    private func returnToMenu() {
+        SoundManager.shared.stopMusic()
+        let menu = MenuScene(size: size)
+        menu.scaleMode = scaleMode
+        view?.presentScene(menu, transition: .fade(withDuration: 0.35))
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -607,7 +752,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Update
 
     override func update(_ currentTime: TimeInterval) {
-        guard !isGameOver, !isPaused_ else { return }
+        guard !isGameOver, !isPaused_, !isCampaignStageComplete else { return }
         if lastUpdateTime == 0 { lastUpdateTime = currentTime; return }
         let dt = currentTime - lastUpdateTime
         lastUpdateTime = currentTime
@@ -638,10 +783,18 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         updateBubblePowerup(dt: dt)
         updateVacuumMode(dt: dt)
 
-        // Scrolling (stops during boss fight)
+        roleCueTimer += dt
+        if roleCueTimer >= 0.25 {
+            roleCueTimer = 0
+            applyCreatureReadabilityCues()
+        }
+
+        // Scrolling (stops during boss fights and after a stage clear)
         if !isBossFight {
             distanceTraveled += scrollSpeed * CGFloat(dt)
             scrollSpeed = min(300, 160 + distanceTraveled * 0.002)
+            updateCampaignStageProgress()
+            if isCampaignStageComplete { return }
         }
         let sd = isBossFight ? 0 : scrollSpeed * CGFloat(dt)
 
@@ -669,6 +822,30 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             spawnForBiome(dt: dt)
         }
         processDiscoveryQueue()
+    }
+
+    private func applyCreatureReadabilityCues() {
+        for child in children {
+            guard let category = child.physicsBody?.categoryBitMask else { continue }
+            CreatureReadability.applyCue(to: child, category: category)
+        }
+    }
+
+    private func updateCampaignStageProgress() {
+        guard let stage = activeCampaignStage, !campaignBossTriggered else {
+            updateCampaignProgressHUD()
+            return
+        }
+        updateCampaignProgressHUD()
+        guard distanceTraveled >= stage.targetDistance else { return }
+
+        if let bossLevel = stage.bossLevel {
+            campaignBossTriggered = true
+            startBossFight(level: bossLevel)
+            updateCampaignProgressHUD()
+        } else {
+            finishCampaignStage()
+        }
     }
 
     // MARK: - Log Tube Mechanic
@@ -2276,6 +2453,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func takeDamage() {
         guard !ladybug.isInvincible else { return }
+        hitsTaken += 1
         lives -= 1
         updateLivesDisplay()
         ladybug.flash()
@@ -3277,14 +3455,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Bubble power-up (unlocked after the first boss)
 
     private func updateBubblePowerup(dt: TimeInterval) {
-        guard !isBossFight, !isGameOver, hasBeatenBoss || score >= 7000 else { return }
+        let bubbleUnlocked = hasBeatenBoss || score >= 7000 || CampaignProgressStore.shared.record(for: 5).completed
+        guard !isBossFight, !isGameOver, bubbleUnlocked else { return }
         bubblePowerupTimer += dt
         if bubblePowerupTimer >= 45.0 {
             bubblePowerupTimer = 0
             // Very rare: coin flip on each 45s window, one on screen at most
             guard Bool.random() else { return }
             // After the second boss the vacuum can drop instead of the bubble
-            let vacuumUnlocked = hasBeatenBoss2 || score >= 12000
+            let vacuumUnlocked = hasBeatenBoss2 || score >= 12000 || CampaignProgressStore.shared.record(for: 10).completed
             if vacuumUnlocked && Bool.random() {
                 spawnVacuumPowerup()
             } else {
@@ -3889,12 +4068,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         isBossFight = true
         bossLevel = level
         AppServices.shared.analytics.track(.bossStarted(level: level))
-        bossMaxHP = switch MenuScene.difficulty { case .easy: 25; case .normal: 40; case .hard: 60 }
-        if level == 2 { bossMaxHP = bossMaxHP * 2 }     // Crow is tougher than the bear
-        if level == 3 { bossMaxHP = bossMaxHP * 5 / 2 } // UFO is the toughest
+        let profile = BossProfile.profile(for: level)
+        let baseHP = switch MenuScene.difficulty { case .easy: 25; case .normal: 40; case .hard: 60 }
+        bossMaxHP = Int(Double(baseHP) * profile.healthMultiplier)
         bossHP = bossMaxHP
         bossAttackTimer = 0
         bossAttackPhase = 0
+        bossCombatPhase = 1
+        bossAttackQueued = false
         bossBerryTimer = 0
 
         // Cave terrain will smooth-flatten via update loop (targets 0 during boss)
@@ -3902,11 +4083,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Move ladybug to safe starting position (left side)
         ladybug.position.x = size.width * 0.15
 
-        // Save checkpoint
-        GameScene.hasNightCheckpoint = true
-        let checkpointBiome: Biome = switch level { case 3: .space; case 2: .city; default: .cave }
-        GameScene.checkpointScore = switch level { case 3: 17000; case 2: 11600; default: 6000 }
-        GameScene.unlockBiome(checkpointBiome)
+        // Endless still writes its legacy resume point; Adventure saves on clear.
+        if campaignStageID == nil {
+            GameScene.hasNightCheckpoint = true
+            let checkpointBiome: Biome = switch level { case 3: .space; case 2: .city; default: .cave }
+            GameScene.checkpointScore = switch level { case 3: 17000; case 2: 11600; default: 6000 }
+            GameScene.unlockBiome(checkpointBiome)
+        }
 
         // Clear all existing entities from screen
         for child in children {
@@ -3933,7 +4116,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 SoundManager.shared.play("roar")
 
                 let banner = SKLabelNode(fontNamed: "AvenirNext-Bold")
-                banner.text = "BOSS FIGHT!"
+                banner.text = BossProfile.profile(for: self.bossLevel).name.uppercased()
                 banner.fontSize = 36
                 banner.fontColor = SKColor(red: 1, green: 0.25, blue: 0.15, alpha: 1)
                 banner.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2 + 20)
@@ -4017,15 +4200,25 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         hpBar.zPosition = 11
         hpBar.name = "bossHPBar"
         bear.addChild(hpBar)
+
+        bossTitleLabel?.removeFromParent()
+        let bossTitle = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        let profile = BossProfile.profile(for: bossLevel)
+        bossTitle.text = "\(profile.name.uppercased())  •  \(profile.phaseName(1).uppercased())"
+        bossTitle.fontSize = 13
+        bossTitle.fontColor = SKColor(red: 1.0, green: 0.82, blue: 0.28, alpha: 1)
+        bossTitle.position = CGPoint(x: size.width / 2, y: size.height - 66)
+        bossTitle.zPosition = 108
+        addChild(bossTitle)
+        bossTitleLabel = bossTitle
     }
 
     private func updateBossHP() {
         guard let boss = bossNode else { return }
-        let ratio = CGFloat(bossHP) / CGFloat(bossMaxHP)
+        let ratio = max(0, min(1, CGFloat(bossHP) / CGFloat(bossMaxHP)))
         if let bar = boss.childNode(withName: "bossHPBar") as? SKShapeNode {
             let w = 100 * ratio
             bar.path = CGPath(roundedRect: CGRect(x: -w / 2, y: -3, width: w, height: 6), cornerWidth: 2, cornerHeight: 2, transform: nil)
-            // Color shifts from green to yellow to red as HP drops
             if ratio > 0.5 {
                 bar.fillColor = SKColor(red: 0.15, green: 0.75, blue: 0.15, alpha: 1)
             } else if ratio > 0.25 {
@@ -4034,52 +4227,66 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 bar.fillColor = SKColor(red: 0.85, green: 0.15, blue: 0.10, alpha: 1)
             }
         }
+
+        guard bossHP > 0 else { return }
+        let newPhase = ratio > 0.66 ? 1 : (ratio > 0.33 ? 2 : 3)
+        if newPhase > bossCombatPhase { enterBossPhase(newPhase) }
+    }
+
+    private func enterBossPhase(_ phase: Int) {
+        bossCombatPhase = phase
+        bossAttackPhase = 0
+        bossAttackTimer = -0.8
+        bossAttackQueued = false
+        removeAction(forKey: "queuedBossAttack")
+        enumerateChildNodes(withName: "bossWarning") { node, _ in node.removeFromParent() }
+        enumerateChildNodes(withName: "bossRock") { node, _ in node.removeFromParent() }
+        enumerateChildNodes(withName: "shockwave") { node, _ in node.removeFromParent() }
+
+        let profile = BossProfile.profile(for: bossLevel)
+        bossTitleLabel?.text = "\(profile.name.uppercased())  •  \(profile.phaseName(phase).uppercased())"
+
+        let phaseCard = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        phaseCard.text = "PHASE \(phase)  •  \(profile.phaseName(phase).uppercased())"
+        phaseCard.fontSize = 24
+        phaseCard.fontColor = SKColor(red: 1.0, green: 0.42, blue: 0.22, alpha: 1)
+        phaseCard.position = CGPoint(x: size.width / 2, y: size.height * 0.64)
+        phaseCard.zPosition = 135
+        addChild(phaseCard)
+        phaseCard.run(SKAction.sequence([
+            SKAction.scale(to: 1.15, duration: 0.18),
+            SKAction.wait(forDuration: 0.65),
+            SKAction.group([SKAction.moveBy(x: 0, y: 16, duration: 0.35), SKAction.fadeOut(withDuration: 0.35)]),
+            SKAction.removeFromParent(),
+        ]))
+        bossNode?.run(SKAction.sequence([
+            SKAction.colorize(with: .red, colorBlendFactor: 0.65, duration: 0.12),
+            SKAction.colorize(withColorBlendFactor: 0, duration: 0.25),
+        ]))
+        SoundManager.shared.play("roar")
     }
 
     private func updateBossFight(dt: TimeInterval) {
-        guard isBossFight, bossHP > 0 else { return }
+        guard isBossFight, bossHP > 0, bossNode != nil else { return }
 
         bossAttackTimer += dt
         bossBerryTimer += dt
 
-        // Ladybug X movement during boss fight — follows touch with smooth lerp
+        // Ladybug X movement during boss fight — follows touch with smooth lerp.
         if let tx = touchX {
             let dx = tx - ladybug.position.x
             ladybug.position.x += dx * 0.08
             ladybug.position.x = max(ladybug.size.width / 2, min(size.width * 0.60, ladybug.position.x))
         }
 
-        // Boss attacks faster as HP drops — every 2.5s at full HP, 1.2s at low HP
-        let attackInterval = 1.2 + 1.3 * (CGFloat(bossHP) / CGFloat(bossMaxHP))
-        if bossAttackTimer >= Double(attackInterval) {
+        let difficultyPace: Double = switch MenuScene.difficulty { case .easy: 1.15; case .normal: 1.0; case .hard: 0.84 }
+        let phasePace: Double = switch bossCombatPhase { case 1: 2.5; case 2: 2.0; default: 1.55 }
+        if !bossAttackQueued, bossAttackTimer >= phasePace * difficultyPace {
             bossAttackTimer = 0
-            let phase = bossAttackPhase % 4
+            let moves = BossProfile.profile(for: bossLevel).moves(for: bossCombatPhase)
+            let move = moves[bossAttackPhase % moves.count]
             bossAttackPhase += 1
-
-            if bossLevel == 3 {
-                // The UFO attacks from above
-                switch phase {
-                case 0: ufoLaser()
-                case 1: ufoDropRock(); ufoDropRock()
-                case 2: ufoSweep()
-                default: ufoLaser(); ufoDropRock()
-                }
-            } else if bossLevel == 2 {
-                // The crow fights from the air
-                switch phase {
-                case 0: crowFeatherVolley()
-                case 1: crowSwoop()
-                case 2: crowFeatherVolley(count: 4)
-                default: crowGust()
-                }
-            } else {
-                switch phase {
-                case 0: bossThrowRock()
-                case 1: bossThrowRock(); bossThrowRock() // Double rocks
-                case 2: bossCharge()
-                default: bossGroundSlam()
-                }
-            }
+            queueBossAttack(move)
         }
 
         // Power-up pickup every 10s: bubble berry vs the bear,
@@ -4112,6 +4319,66 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if let boss = bossNode, boss.frame.contains(child.position) {
                 child.removeFromParent()
                 damageBoss()
+            }
+        }
+    }
+
+    private func queueBossAttack(_ move: Int) {
+        guard !bossAttackQueued else { return }
+        bossAttackQueued = true
+        let profile = BossProfile.profile(for: bossLevel)
+
+        let warning = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        warning.text = profile.warning(for: move)
+        warning.fontSize = 15
+        warning.fontColor = SKColor(red: 1.0, green: 0.28, blue: 0.18, alpha: 1)
+        warning.position = CGPoint(x: size.width / 2, y: size.height - 88)
+        warning.zPosition = 120
+        warning.name = "bossWarning"
+        addChild(warning)
+        warning.run(SKAction.repeat(SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.25, duration: 0.11),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.11),
+        ]), count: 2))
+        bossNode?.run(SKAction.sequence([
+            SKAction.colorize(with: .white, colorBlendFactor: 0.35, duration: 0.18),
+            SKAction.colorize(withColorBlendFactor: 0, duration: 0.22),
+        ]))
+
+        run(SKAction.sequence([
+            SKAction.wait(forDuration: 0.48),
+            SKAction.run { [weak self, weak warning] in
+                guard let self = self else { return }
+                warning?.removeFromParent()
+                self.bossAttackQueued = false
+                guard self.isBossFight, self.bossHP > 0, self.bossNode != nil else { return }
+                self.performBossMove(move)
+            },
+        ]), withKey: "queuedBossAttack")
+    }
+
+    private func performBossMove(_ move: Int) {
+        switch bossLevel {
+        case 3:
+            switch move {
+            case 0: ufoLaser()
+            case 1: ufoDropRock(); ufoDropRock()
+            case 2: ufoSweep()
+            default: ufoLaser(); ufoDropRock()
+            }
+        case 2:
+            switch move {
+            case 0: crowFeatherVolley()
+            case 1: crowSwoop()
+            case 2: crowFeatherVolley(count: 5)
+            default: crowGust()
+            }
+        default:
+            switch move {
+            case 0: bossThrowRock()
+            case 1: bossThrowRock(); bossThrowRock()
+            case 2: bossCharge()
+            default: bossGroundSlam()
             }
         }
     }
@@ -4615,6 +4882,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             SKAction.removeFromParent()
         ]))
         bossNode = nil
+        bossAttackQueued = false
+        removeAction(forKey: "queuedBossAttack")
+        bossTitleLabel?.removeFromParent()
+        bossTitleLabel = nil
+        enumerateChildNodes(withName: "bossWarning") { n, _ in n.removeFromParent() }
         // Clean up boss projectiles
         enumerateChildNodes(withName: "bossRock") { n, _ in n.removeFromParent() }
         enumerateChildNodes(withName: "shockwave") { n, _ in n.removeFromParent() }
@@ -4628,17 +4900,21 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         isReflectMode = false
         ladybug.childNode(withName: "reflectRing")?.removeFromParent()
 
-        // Award gems
+        // Endless bosses keep their repeatable run reward. Adventure awards its
+        // durable first-clear reward on the stage results screen instead.
         let baseBonus = startFromCheckpoint ? 10 : 50
         let diffMul: Int = switch MenuScene.difficulty { case .easy: 1; case .normal: 2; case .hard: 4 }
-        let bonusGems = (baseBonus * diffMul) / 2
-        GameScene.gemCount += bonusGems
-        gemLabel.text = "\(GameScene.gemCount)"
+        let bonusGems = campaignStageID == nil ? (baseBonus * diffMul) / 2 : 0
+        if bonusGems > 0 {
+            GameScene.gemCount += bonusGems
+            gemLabel.text = "\(GameScene.gemCount)"
+        }
 
-        // Victory banner (brief, then resume)
         let victory = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        let bossName = switch bossLevel { case 3: "UFO"; case 2: "CROW"; default: "BEAR" }
-        victory.text = "\(bossName) DEFEATED! +\(bonusGems) 💎"
+        let bossName = BossProfile.profile(for: bossLevel).name
+        victory.text = bonusGems > 0
+            ? "\(bossName.uppercased()) DEFEATED! +\(bonusGems) 💎"
+            : "\(bossName.uppercased()) DEFEATED!"
         victory.fontSize = 28
         victory.fontColor = SKColor(red: 1, green: 0.85, blue: 0.0, alpha: 1)
         victory.position = CGPoint(x: size.width / 2, y: size.height / 2 + 20)
@@ -4653,22 +4929,139 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             SKAction.removeFromParent()
         ]))
 
-        // Resume gameplay after 3.5s — transition into underwater biome
-        isBossFight = false
         isBubbleMode = false
         ladybug.colorBlendFactor = 0
-        run(SKAction.sequence([
-            SKAction.wait(forDuration: 3.5),
-            SKAction.run { [weak self] in
-                guard let self = self else { return }
-                // Score jumps to next biome threshold to trigger transition
-                // (space is the last biome — the UFO fight just resumes the run)
-                if self.bossLevel < 3 {
-                    let nextThreshold = self.bossLevel == 2 ? 12000 : 7000
-                    if self.score < nextThreshold { self.score = nextThreshold }
-                }
-            }
-        ]))
+
+        if campaignStageID != nil {
+            // Keep the arena frozen while the boss victory animation resolves.
+            run(SKAction.sequence([
+                SKAction.wait(forDuration: 3.5),
+                SKAction.run { [weak self] in
+                    guard let self = self else { return }
+                    self.isBossFight = false
+                    self.finishCampaignStage()
+                },
+            ]))
+        } else {
+            isBossFight = false
+            run(SKAction.sequence([
+                SKAction.wait(forDuration: 3.5),
+                SKAction.run { [weak self] in
+                    guard let self = self else { return }
+                    if self.bossLevel < 3 {
+                        let nextThreshold = self.bossLevel == 2 ? 12000 : 7000
+                        if self.score < nextThreshold { self.score = nextThreshold }
+                    }
+                },
+            ]))
+        }
+    }
+
+    private func finishCampaignStage() {
+        guard !isGameOver, !isCampaignStageComplete, let stage = activeCampaignStage else { return }
+        isCampaignStageComplete = true
+        isTouching = false
+        touchY = nil
+        touchX = nil
+        ladybug.targetY = nil
+
+        let result = CampaignProgressStore.shared.completeStage(
+            stage,
+            score: score,
+            distance: distanceTraveled,
+            hitsTaken: hitsTaken,
+            livesRemaining: lives
+        )
+        let improvedStars = max(0, result.stars - result.previousBestStars)
+        let reward = (result.isFirstClear ? stage.firstClearReward : 0) + improvedStars * 3
+        if reward > 0 {
+            PlayerWallet.shared.addGems(reward)
+            gemLabel.text = "\(GameScene.gemCount)"
+        }
+
+        AppServices.shared.analytics.track(
+            .stageCompleted(number: stage.number, name: stage.biome.name, stars: result.stars, score: score)
+        )
+        let runDuration = max(0, Int(Date().timeIntervalSince(runStartedAt)))
+        AppServices.shared.analytics.track(
+            .runEnded(score: score, biome: stage.biome.name, durationSeconds: runDuration)
+        )
+        SoundManager.shared.play("powerup")
+        showCampaignCompleteUI(stage: stage, result: result, reward: reward)
+    }
+
+    private func showCampaignCompleteUI(stage: CampaignStage, result: CampaignCompletionResult, reward: Int) {
+        let overlay = SKShapeNode(rectOf: size)
+        overlay.fillColor = SKColor(white: 0.01, alpha: 0.78)
+        overlay.strokeColor = .clear
+        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        overlay.zPosition = 180
+        overlay.name = "campaignResults"
+        addChild(overlay)
+
+        let heading = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        heading.text = stage.id == CampaignStage.all.count - 1 ? "ADVENTURE COMPLETE" : "STAGE CLEAR"
+        heading.fontSize = 32
+        heading.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.24, alpha: 1)
+        heading.position = CGPoint(x: size.width / 2, y: size.height / 2 + 92)
+        heading.zPosition = 190
+        addChild(heading)
+
+        let stageName = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        stageName.text = "\(stage.number)  •  \(stage.biome.name)"
+        stageName.fontSize = 18
+        stageName.fontColor = .white
+        stageName.position = CGPoint(x: size.width / 2, y: size.height / 2 + 58)
+        stageName.zPosition = 190
+        addChild(stageName)
+
+        let stars = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        stars.text = String(repeating: "★", count: result.stars) + String(repeating: "☆", count: 3 - result.stars)
+        stars.fontSize = 30
+        stars.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.18, alpha: 1)
+        stars.position = CGPoint(x: size.width / 2, y: size.height / 2 + 18)
+        stars.zPosition = 190
+        addChild(stars)
+
+        let summary = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        summary.text = "Score \(score) / \(stage.masteryScore)  •  Hits \(hitsTaken)  •  Best \(CampaignProgressStore.shared.record(for: stage.id).bestScore)"
+        summary.fontSize = 13
+        summary.fontColor = SKColor(white: 0.82, alpha: 1)
+        summary.position = CGPoint(x: size.width / 2, y: size.height / 2 - 15)
+        summary.zPosition = 190
+        addChild(summary)
+
+        let rewardLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        rewardLabel.text = reward > 0 ? "+\(reward) 💎" : (result.isNewBestScore ? "NEW BEST" : "MASTERY SAVED")
+        rewardLabel.fontSize = 15
+        rewardLabel.fontColor = SKColor(red: 0.72, green: 0.58, blue: 1.0, alpha: 1)
+        rewardLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 42)
+        rewardLabel.zPosition = 190
+        addChild(rewardLabel)
+
+        let hasNext = CampaignStage.stage(id: stage.id + 1) != nil
+        addResultButton(hasNext ? "Next Stage" : "Finish", name: "campaignNext", x: size.width / 2 - 125, y: size.height / 2 - 88, color: SKColor(red: 0.20, green: 0.62, blue: 0.32, alpha: 1))
+        addResultButton("Replay", name: "campaignReplay", x: size.width / 2, y: size.height / 2 - 88, color: SKColor(red: 0.22, green: 0.42, blue: 0.68, alpha: 1))
+        addResultButton("Menu", name: "campaignMenu", x: size.width / 2 + 125, y: size.height / 2 - 88, color: SKColor(white: 0.28, alpha: 1))
+    }
+
+    private func addResultButton(_ text: String, name: String, x: CGFloat, y: CGFloat, color: SKColor) {
+        let button = SKShapeNode(rectOf: CGSize(width: 112, height: 36), cornerRadius: 9)
+        button.fillColor = color
+        button.strokeColor = SKColor(white: 1.0, alpha: 0.25)
+        button.lineWidth = 1
+        button.position = CGPoint(x: x, y: y)
+        button.zPosition = 195
+        button.name = name
+        addChild(button)
+
+        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        label.text = text
+        label.fontSize = 14
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        label.name = name
+        button.addChild(label)
     }
 
     private func gameOver() {
@@ -4677,10 +5070,22 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         AppServices.shared.analytics.track(
             .runEnded(score: score, biome: currentBiome.name, durationSeconds: runDuration)
         )
+        if let stageID = campaignStageID {
+            CampaignProgressStore.shared.recordRun(
+                stageID: stageID,
+                score: score,
+                distance: distanceTraveled,
+                livesRemaining: lives
+            )
+        }
+        bossAttackQueued = false
+        removeAction(forKey: "queuedBossAttack")
+        bossTitleLabel?.removeFromParent()
+        bossTitleLabel = nil
         SoundManager.shared.stopMusic()
         SoundManager.shared.play("death")
         SoundManager.shared.play("gameOver")
-        if score > MenuScene.highScore { MenuScene.highScore = score }
+        if campaignStageID == nil, score > MenuScene.highScore { MenuScene.highScore = score }
         ladybug.exitBubble()
         isVacuumMode = false
         ladybug.childNode(withName: "vacuumRing")?.removeFromParent()
@@ -4699,44 +5104,43 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func showGameOverUI() {
         let overlay = SKShapeNode(rectOf: size)
-        overlay.fillColor = SKColor(white: 0.0, alpha: 0.5)
+        overlay.fillColor = SKColor(white: 0.0, alpha: 0.68)
         overlay.strokeColor = .clear
         overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
         overlay.zPosition = 150
         addChild(overlay)
 
         let goLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        goLabel.text = "Game Over"
-        goLabel.fontSize = 40
+        goLabel.text = campaignStageID == nil ? "RUN OVER" : "STAGE FAILED"
+        goLabel.fontSize = 36
         goLabel.fontColor = .white
-        goLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 30)
+        goLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 70)
         goLabel.zPosition = 200
         addChild(goLabel)
 
         let scoreText = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        scoreText.text = "Score: \(score)"
-        scoreText.fontSize = 24
+        scoreText.text = "Score  \(score)"
+        scoreText.fontSize = 22
         scoreText.fontColor = .white
-        scoreText.position = CGPoint(x: size.width / 2, y: size.height / 2 - 5)
+        scoreText.position = CGPoint(x: size.width / 2, y: size.height / 2 + 28)
         scoreText.zPosition = 200
         addChild(scoreText)
 
-        if score >= MenuScene.highScore && score > 0 {
-            let nh = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            nh.text = "New High Score!"
-            nh.fontSize = 18
-            nh.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.0, alpha: 1.0)
-            nh.position = CGPoint(x: size.width / 2, y: size.height / 2 - 30)
-            nh.zPosition = 200
-            addChild(nh)
+        let detail = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        if let stage = activeCampaignStage {
+            let percent = min(100, Int(distanceTraveled / stage.targetDistance * 100))
+            let best = CampaignProgressStore.shared.record(for: stage.id).bestScore
+            detail.text = "Stage \(stage.number)  •  \(percent)%  •  Best \(best)"
+        } else {
+            detail.text = "Endless Best  \(MenuScene.highScore)"
         }
+        detail.fontSize = 14
+        detail.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.25, alpha: 1)
+        detail.position = CGPoint(x: size.width / 2, y: size.height / 2 - 5)
+        detail.zPosition = 200
+        addChild(detail)
 
-        let tap = SKLabelNode(fontNamed: "AvenirNext-Regular")
-        tap.text = "Tap for menu"
-        tap.fontSize = 16
-        tap.fontColor = SKColor(white: 1.0, alpha: 0.6)
-        tap.position = CGPoint(x: size.width / 2, y: size.height / 2 - 55)
-        tap.zPosition = 200
-        addChild(tap)
+        addResultButton(campaignStageID == nil ? "Retry Run" : "Retry Stage", name: "gameOverRetry", x: size.width / 2 - 65, y: size.height / 2 - 60, color: SKColor(red: 0.22, green: 0.54, blue: 0.70, alpha: 1))
+        addResultButton("Menu", name: "gameOverMenu", x: size.width / 2 + 65, y: size.height / 2 - 60, color: SKColor(white: 0.28, alpha: 1))
     }
 }

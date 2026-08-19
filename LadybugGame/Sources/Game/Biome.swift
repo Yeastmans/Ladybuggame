@@ -1,7 +1,7 @@
 import SpriteKit
 
 /// Defines the current biome and its properties
-enum Biome: Int, CaseIterable {
+enum Biome: Int, CaseIterable, Sendable {
     case meadowDay = 0
     case meadowNight = 1
     case desert = 2
