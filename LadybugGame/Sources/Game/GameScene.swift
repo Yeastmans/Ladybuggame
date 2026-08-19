@@ -94,6 +94,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var stageProgressLabel: SKLabelNode?
     private let stageProgressWidth: CGFloat = 190
     private var roleCueTimer: TimeInterval = 0
+    private var rewardedRevivesUsed = 0
+    private var isMonetizationPresentationActive = false
+    private var hasFinalizedRun = false
+    private var shouldPresentPostRunInterstitial = false
+    private var campaignRewardEligibleForDouble = 0
+    private var campaignTotalReward = 0
+    private var hasDoubledCampaignReward = false
 
     private var isGameOver = false
     private var isPaused_ = false
@@ -573,7 +580,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Apply equipped cosmetics (hats, shoes, sparkle)
         applyLadybugCosmetics()
 
-        let body = SKPhysicsBody(circleOfRadius: bugSize.width / 2 * 0.6)
+        configureLadybugPhysics()
+        addChild(ladybug)
+    }
+
+    private func configureLadybugPhysics() {
+        let body = SKPhysicsBody(circleOfRadius: ladybug.size.width / 2 * 0.6)
         body.isDynamic = true
         body.categoryBitMask = PhysicsCategory.ladybug
         body.contactTestBitMask = PhysicsCategory.aphid | PhysicsCategory.bird | PhysicsCategory.fruitfly
@@ -581,7 +593,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         body.allowsRotation = false
         body.affectedByGravity = false
         ladybug.physicsBody = body
-        addChild(ladybug)
     }
 
     private func applyLadybugCosmetics() {
@@ -661,12 +672,21 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         if isGameOver {
             for node in tappedNodes {
+                if node.name == "gameOverRevive" {
+                    beginRewardedRevive()
+                    return
+                }
                 if node.name == "gameOverRetry" {
-                    presentRun(stageID: campaignStageID)
+                    finalizeRunIfNeeded(completed: false)
+                    let requestedStage = campaignStageID
+                    transitionFromFinishedRun { [weak self] in
+                        self?.presentRun(stageID: requestedStage)
+                    }
                     return
                 }
                 if node.name == "gameOverMenu" {
-                    returnToMenu()
+                    finalizeRunIfNeeded(completed: false)
+                    transitionFromFinishedRun { [weak self] in self?.returnToMenu() }
                     return
                 }
             }
@@ -675,22 +695,31 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         if isCampaignStageComplete {
             for node in tappedNodes {
+                if node.name == "campaignDoubleReward" {
+                    beginDoubleCampaignReward()
+                    return
+                }
                 if node.name == "campaignReplay" {
-                    presentRun(stageID: campaignStageID)
+                    let requestedStage = campaignStageID
+                    transitionFromFinishedRun { [weak self] in
+                        self?.presentRun(stageID: requestedStage)
+                    }
                     return
                 }
                 if node.name == "campaignNext" {
                     if let current = campaignStageID,
                        CampaignStage.stage(id: current + 1) != nil,
                        CampaignProgressStore.shared.isUnlocked(current + 1) {
-                        presentRun(stageID: current + 1)
+                        transitionFromFinishedRun { [weak self] in
+                            self?.presentRun(stageID: current + 1)
+                        }
                     } else {
-                        returnToMenu()
+                        transitionFromFinishedRun { [weak self] in self?.returnToMenu() }
                     }
                     return
                 }
                 if node.name == "campaignMenu" {
-                    returnToMenu()
+                    transitionFromFinishedRun { [weak self] in self?.returnToMenu() }
                     return
                 }
             }
@@ -729,6 +758,201 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         view?.presentScene(menu, transition: .fade(withDuration: 0.35))
     }
 
+    private var adPresenter: UIViewController? {
+        var presenter = view?.window?.rootViewController
+        while let presented = presenter?.presentedViewController {
+            presenter = presented
+        }
+        return presenter
+    }
+
+    private var canOfferRewardedRevive: Bool {
+        rewardedRevivesUsed < MonetizationPolicy.rewardedRevivesPerRun
+            && AppServices.shared.ads.isRewardedReady
+    }
+
+    private var rewardedAdButtonPrefix: String {
+        MonetizationConfiguration.usesSimulatedAds ? "Test Ad" : "Watch Ad"
+    }
+
+    private func finalizeRunIfNeeded(completed: Bool) {
+        guard !hasFinalizedRun else { return }
+        hasFinalizedRun = true
+
+        let duration = max(0, Date().timeIntervalSince(runStartedAt))
+        AppServices.shared.analytics.track(
+            .runEnded(score: score, biome: currentBiome.name, durationSeconds: Int(duration))
+        )
+
+        if !completed, let stageID = campaignStageID {
+            CampaignProgressStore.shared.recordRun(
+                stageID: stageID,
+                score: score,
+                distance: distanceTraveled,
+                livesRemaining: lives
+            )
+        }
+        if !completed, campaignStageID == nil, score > MenuScene.highScore {
+            MenuScene.highScore = score
+        }
+
+        let monetization = MonetizationStateStore.shared
+        monetization.registerEligibleRun(duration: duration)
+        shouldPresentPostRunInterstitial = monetization.shouldOfferPostRunInterstitial(
+            runDuration: duration,
+            hasRemoveAds: AppServices.shared.purchases.hasRemoveAds
+        )
+    }
+
+    private func transitionFromFinishedRun(_ transition: @escaping @MainActor () -> Void) {
+        guard !isMonetizationPresentationActive else { return }
+        guard shouldPresentPostRunInterstitial,
+              AppServices.shared.ads.isInterstitialReady,
+              let presenter = adPresenter else {
+            transition()
+            return
+        }
+
+        isMonetizationPresentationActive = true
+        shouldPresentPostRunInterstitial = false
+        SoundManager.shared.stopMusic()
+        AppServices.shared.analytics.track(
+            .adStarted(format: "interstitial", placement: InterstitialAdPlacement.postRun.rawValue)
+        )
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let completed = await AppServices.shared.ads.showInterstitial(
+                from: presenter,
+                placement: .postRun
+            )
+            if completed {
+                MonetizationStateStore.shared.markInterstitialPresented()
+                AppServices.shared.analytics.track(
+                    .adCompleted(format: "interstitial", placement: InterstitialAdPlacement.postRun.rawValue)
+                )
+            }
+            self.isMonetizationPresentationActive = false
+            transition()
+        }
+    }
+
+    private func beginRewardedRevive() {
+        guard canOfferRewardedRevive,
+              !isMonetizationPresentationActive,
+              let presenter = adPresenter else { return }
+
+        isMonetizationPresentationActive = true
+        setResultButtonTitle(named: "gameOverRevive", title: "Loading…")
+        AppServices.shared.analytics.track(
+            .adStarted(format: "rewarded", placement: RewardedAdPlacement.revive.rawValue)
+        )
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let completed = await AppServices.shared.ads.showRewarded(from: presenter, placement: .revive)
+            self.isMonetizationPresentationActive = false
+            guard self.isGameOver else { return }
+            guard completed else {
+                self.setResultButtonTitle(
+                    named: "gameOverRevive",
+                    title: "\(self.rewardedAdButtonPrefix) • Revive"
+                )
+                return
+            }
+
+            AppServices.shared.analytics.track(
+                .adCompleted(format: "rewarded", placement: RewardedAdPlacement.revive.rawValue)
+            )
+            self.rewardedRevivesUsed += 1
+            self.restoreRunAfterRewardedRevive()
+        }
+    }
+
+    private func restoreRunAfterRewardedRevive() {
+        isGameOver = false
+        isTouching = false
+        touchY = nil
+        touchX = nil
+        children.filter { $0.name?.hasPrefix("gameOver") == true }.forEach { $0.removeFromParent() }
+
+        lives = 1
+        updateLivesDisplay()
+        let revivedGroundY = effectiveGroundY(atScreenX: ladybug.position.x) + ladybug.size.height / 2
+        ladybug.restoreAfterRewardedRevive(groundY: revivedGroundY)
+        configureLadybugPhysics()
+        ladybug.makeInvincible(duration: 3.0)
+        lastUpdateTime = 0
+        SoundManager.shared.startMusic()
+        SoundManager.shared.play("powerup")
+
+        let banner = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        banner.text = "REVIVED!"
+        banner.fontSize = 26
+        banner.fontColor = SKColor(red: 0.35, green: 1.0, blue: 0.55, alpha: 1)
+        banner.position = CGPoint(x: size.width / 2, y: size.height / 2 + 36)
+        banner.zPosition = 210
+        addChild(banner)
+        banner.run(SKAction.sequence([
+            SKAction.wait(forDuration: 0.8),
+            SKAction.fadeOut(withDuration: 0.35),
+            SKAction.removeFromParent(),
+        ]))
+    }
+
+    private func beginDoubleCampaignReward() {
+        guard campaignRewardEligibleForDouble > 0,
+              !hasDoubledCampaignReward,
+              !isMonetizationPresentationActive,
+              AppServices.shared.ads.isRewardedReady,
+              let presenter = adPresenter else { return }
+
+        isMonetizationPresentationActive = true
+        setResultButtonTitle(named: "campaignDoubleReward", title: "Loading…")
+        SoundManager.shared.stopMusic()
+        AppServices.shared.analytics.track(
+            .adStarted(format: "rewarded", placement: RewardedAdPlacement.doubleRunReward.rawValue)
+        )
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let completed = await AppServices.shared.ads.showRewarded(
+                from: presenter,
+                placement: .doubleRunReward
+            )
+            self.isMonetizationPresentationActive = false
+            SoundManager.shared.startMusic()
+            guard self.isCampaignStageComplete else { return }
+            guard completed else {
+                self.setResultButtonTitle(
+                    named: "campaignDoubleReward",
+                    title: "\(self.rewardedAdButtonPrefix) • Double"
+                )
+                return
+            }
+
+            AppServices.shared.analytics.track(
+                .adCompleted(format: "rewarded", placement: RewardedAdPlacement.doubleRunReward.rawValue)
+            )
+            let bonus = self.campaignRewardEligibleForDouble
+            self.campaignRewardEligibleForDouble = 0
+            self.hasDoubledCampaignReward = true
+            self.campaignTotalReward += bonus
+            PlayerWallet.shared.addGems(bonus)
+            self.gemLabel.text = "\(GameScene.gemCount)"
+            if let rewardLabel = self.childNode(withName: "campaignRewardLabel") as? SKLabelNode {
+                rewardLabel.text = "+\(self.campaignTotalReward) 💎  •  DOUBLED"
+            }
+            self.childNode(withName: "campaignDoubleReward")?.removeFromParent()
+            SoundManager.shared.play("powerup")
+        }
+    }
+
+    private func setResultButtonTitle(named name: String, title: String) {
+        guard let button = childNode(withName: name),
+              let label = button.childNode(withName: name) as? SKLabelNode else { return }
+        label.text = title
+    }
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         if isPaused_ { return }
         guard let touch = touches.first else { return }
@@ -4974,6 +5198,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         )
         let improvedStars = max(0, result.stars - result.previousBestStars)
         let reward = (result.isFirstClear ? stage.firstClearReward : 0) + improvedStars * 3
+        campaignRewardEligibleForDouble = reward
+        campaignTotalReward = reward
         if reward > 0 {
             PlayerWallet.shared.addGems(reward)
             gemLabel.text = "\(GameScene.gemCount)"
@@ -4982,10 +5208,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         AppServices.shared.analytics.track(
             .stageCompleted(number: stage.number, name: stage.biome.name, stars: result.stars, score: score)
         )
-        let runDuration = max(0, Int(Date().timeIntervalSince(runStartedAt)))
-        AppServices.shared.analytics.track(
-            .runEnded(score: score, biome: stage.biome.name, durationSeconds: runDuration)
-        )
+        finalizeRunIfNeeded(completed: true)
         SoundManager.shared.play("powerup")
         showCampaignCompleteUI(stage: stage, result: result, reward: reward)
     }
@@ -5037,16 +5260,27 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         rewardLabel.fontColor = SKColor(red: 0.72, green: 0.58, blue: 1.0, alpha: 1)
         rewardLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 42)
         rewardLabel.zPosition = 190
+        rewardLabel.name = "campaignRewardLabel"
         addChild(rewardLabel)
 
         let hasNext = CampaignStage.stage(id: stage.id + 1) != nil
         addResultButton(hasNext ? "Next Stage" : "Finish", name: "campaignNext", x: size.width / 2 - 125, y: size.height / 2 - 88, color: SKColor(red: 0.20, green: 0.62, blue: 0.32, alpha: 1))
         addResultButton("Replay", name: "campaignReplay", x: size.width / 2, y: size.height / 2 - 88, color: SKColor(red: 0.22, green: 0.42, blue: 0.68, alpha: 1))
         addResultButton("Menu", name: "campaignMenu", x: size.width / 2 + 125, y: size.height / 2 - 88, color: SKColor(white: 0.28, alpha: 1))
+        if reward > 0, AppServices.shared.ads.isRewardedReady {
+            addResultButton(
+                "\(rewardedAdButtonPrefix) • Double",
+                name: "campaignDoubleReward",
+                x: size.width / 2,
+                y: size.height / 2 - 132,
+                color: SKColor(red: 0.48, green: 0.28, blue: 0.76, alpha: 1),
+                width: 184
+            )
+        }
     }
 
-    private func addResultButton(_ text: String, name: String, x: CGFloat, y: CGFloat, color: SKColor) {
-        let button = SKShapeNode(rectOf: CGSize(width: 112, height: 36), cornerRadius: 9)
+    private func addResultButton(_ text: String, name: String, x: CGFloat, y: CGFloat, color: SKColor, width: CGFloat = 112) {
+        let button = SKShapeNode(rectOf: CGSize(width: width, height: 36), cornerRadius: 9)
         button.fillColor = color
         button.strokeColor = SKColor(white: 1.0, alpha: 0.25)
         button.lineWidth = 1
@@ -5066,17 +5300,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func gameOver() {
         isGameOver = true
-        let runDuration = max(0, Int(Date().timeIntervalSince(runStartedAt)))
-        AppServices.shared.analytics.track(
-            .runEnded(score: score, biome: currentBiome.name, durationSeconds: runDuration)
-        )
-        if let stageID = campaignStageID {
-            CampaignProgressStore.shared.recordRun(
-                stageID: stageID,
-                score: score,
-                distance: distanceTraveled,
-                livesRemaining: lives
-            )
+        if !canOfferRewardedRevive {
+            finalizeRunIfNeeded(completed: false)
         }
         bossAttackQueued = false
         removeAction(forKey: "queuedBossAttack")
@@ -5085,7 +5310,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         SoundManager.shared.stopMusic()
         SoundManager.shared.play("death")
         SoundManager.shared.play("gameOver")
-        if campaignStageID == nil, score > MenuScene.highScore { MenuScene.highScore = score }
         ladybug.exitBubble()
         isVacuumMode = false
         ladybug.childNode(withName: "vacuumRing")?.removeFromParent()
@@ -5108,6 +5332,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         overlay.strokeColor = .clear
         overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
         overlay.zPosition = 150
+        overlay.name = "gameOverOverlay"
         addChild(overlay)
 
         let goLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
@@ -5116,6 +5341,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         goLabel.fontColor = .white
         goLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 70)
         goLabel.zPosition = 200
+        goLabel.name = "gameOverTitle"
         addChild(goLabel)
 
         let scoreText = SKLabelNode(fontNamed: "AvenirNext-Medium")
@@ -5124,6 +5350,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         scoreText.fontColor = .white
         scoreText.position = CGPoint(x: size.width / 2, y: size.height / 2 + 28)
         scoreText.zPosition = 200
+        scoreText.name = "gameOverScore"
         addChild(scoreText)
 
         let detail = SKLabelNode(fontNamed: "AvenirNext-Bold")
@@ -5132,15 +5359,29 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             let best = CampaignProgressStore.shared.record(for: stage.id).bestScore
             detail.text = "Stage \(stage.number)  •  \(percent)%  •  Best \(best)"
         } else {
-            detail.text = "Endless Best  \(MenuScene.highScore)"
+            detail.text = "Endless Best  \(max(MenuScene.highScore, score))"
         }
         detail.fontSize = 14
         detail.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.25, alpha: 1)
         detail.position = CGPoint(x: size.width / 2, y: size.height / 2 - 5)
         detail.zPosition = 200
+        detail.name = "gameOverDetail"
         addChild(detail)
 
-        addResultButton(campaignStageID == nil ? "Retry Run" : "Retry Stage", name: "gameOverRetry", x: size.width / 2 - 65, y: size.height / 2 - 60, color: SKColor(red: 0.22, green: 0.54, blue: 0.70, alpha: 1))
-        addResultButton("Menu", name: "gameOverMenu", x: size.width / 2 + 65, y: size.height / 2 - 60, color: SKColor(white: 0.28, alpha: 1))
+        if canOfferRewardedRevive {
+            addResultButton(
+                "\(rewardedAdButtonPrefix) • Revive",
+                name: "gameOverRevive",
+                x: size.width / 2,
+                y: size.height / 2 - 52,
+                color: SKColor(red: 0.26, green: 0.68, blue: 0.38, alpha: 1),
+                width: 184
+            )
+            addResultButton(campaignStageID == nil ? "Retry Run" : "Retry Stage", name: "gameOverRetry", x: size.width / 2 - 65, y: size.height / 2 - 98, color: SKColor(red: 0.22, green: 0.54, blue: 0.70, alpha: 1))
+            addResultButton("Menu", name: "gameOverMenu", x: size.width / 2 + 65, y: size.height / 2 - 98, color: SKColor(white: 0.28, alpha: 1))
+        } else {
+            addResultButton(campaignStageID == nil ? "Retry Run" : "Retry Stage", name: "gameOverRetry", x: size.width / 2 - 65, y: size.height / 2 - 60, color: SKColor(red: 0.22, green: 0.54, blue: 0.70, alpha: 1))
+            addResultButton("Menu", name: "gameOverMenu", x: size.width / 2 + 65, y: size.height / 2 - 60, color: SKColor(white: 0.28, alpha: 1))
+        }
     }
 }

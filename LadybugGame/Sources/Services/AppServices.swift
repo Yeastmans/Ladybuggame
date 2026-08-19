@@ -11,6 +11,10 @@ final class AppServices {
     private init() {
         analytics = LocalGameAnalytics()
         purchases = PurchaseService()
-        ads = DisabledAdService()
+        if MonetizationConfiguration.usesSimulatedAds {
+            ads = SimulatedAdService()
+        } else {
+            ads = DisabledAdService()
+        }
     }
 }

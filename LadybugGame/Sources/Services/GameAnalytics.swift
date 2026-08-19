@@ -12,6 +12,12 @@ enum GameAnalyticsEvent: Sendable {
     case bossStarted(level: Int)
     case bossDefeated(level: Int)
     case economySpend(itemID: String, gems: Int)
+    case adStarted(format: String, placement: String)
+    case adCompleted(format: String, placement: String)
+    case purchaseStarted(productID: String)
+    case purchaseCompleted(productID: String)
+    case purchaseFailed(productID: String, reason: String)
+    case purchasesRestored(success: Bool)
 
     var name: String {
         switch self {
@@ -24,6 +30,12 @@ enum GameAnalyticsEvent: Sendable {
         case .bossStarted: return "boss_started"
         case .bossDefeated: return "boss_defeated"
         case .economySpend: return "economy_spend"
+        case .adStarted: return "ad_started"
+        case .adCompleted: return "ad_completed"
+        case .purchaseStarted: return "purchase_started"
+        case .purchaseCompleted: return "purchase_completed"
+        case .purchaseFailed: return "purchase_failed"
+        case .purchasesRestored: return "purchases_restored"
         }
     }
 
@@ -45,6 +57,14 @@ enum GameAnalyticsEvent: Sendable {
             return ["boss_level": String(level)]
         case let .economySpend(itemID, gems):
             return ["item_id": itemID, "gems": String(gems)]
+        case let .adStarted(format, placement), let .adCompleted(format, placement):
+            return ["format": format, "placement": placement]
+        case let .purchaseStarted(productID), let .purchaseCompleted(productID):
+            return ["product_id": productID]
+        case let .purchaseFailed(productID, reason):
+            return ["product_id": productID, "reason": reason]
+        case let .purchasesRestored(success):
+            return ["success": String(success)]
         }
     }
 }

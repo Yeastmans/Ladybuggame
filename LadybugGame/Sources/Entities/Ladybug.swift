@@ -256,6 +256,28 @@ class Ladybug: SKSpriteNode {
         }
     }
 
+    func restoreAfterRewardedRevive(groundY: CGFloat) {
+        removeAllActions()
+        texture = walkTexture
+        position.y = groundY
+        zRotation = 0
+        xScale = 1
+        yScale = 1
+        alpha = 1
+        colorBlendFactor = 0
+        velocityY = 0
+        targetY = nil
+        isFlying = false
+        isOnGround = true
+        isInsideLog = false
+        isInBubble = false
+        invincibleTimer = 0
+        walkBobTime = 0
+        walkLegTime = 0
+        startBlinking()
+        startWalkAnimation()
+    }
+
     func playDeathAnimation(groundY: CGFloat, deadTexture: SKTexture) {
         removeAllActions()
         texture = deadTexture

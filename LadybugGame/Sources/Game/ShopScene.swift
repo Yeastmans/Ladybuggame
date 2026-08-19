@@ -1,4 +1,5 @@
 import SpriteKit
+import StoreKit
 
 class ShopScene: SKScene {
 
@@ -142,10 +143,18 @@ class ShopScene: SKScene {
 
     private var currentTab: Tab = .colors
     private var gemLabel: SKLabelNode!
+    private var storeStatusLabel: SKLabelNode?
+    private var isStoreOperationInProgress = false
 
     override func didMove(to view: SKView) {
         backgroundColor = SKColor(red: 0.10, green: 0.08, blue: 0.18, alpha: 1.0)
         showTab(.colors)
+        Task { @MainActor [weak self] in
+            await AppServices.shared.purchases.prepare()
+            guard let self,
+                  self.childNode(withName: "monetizationOverlay") != nil else { return }
+            self.showMonetizationStore()
+        }
     }
 
     private func showTab(_ tab: Tab) {
@@ -189,6 +198,22 @@ class ShopScene: SKScene {
         gemLabel.position = CGPoint(x: size.width - 20, y: size.height - 32)
         gemLabel.zPosition = 10
         addChild(gemLabel)
+
+        let gemStoreButton = SKShapeNode(rectOf: CGSize(width: 88, height: 24), cornerRadius: 7)
+        gemStoreButton.fillColor = SKColor(red: 0.48, green: 0.28, blue: 0.76, alpha: 1)
+        gemStoreButton.strokeColor = SKColor(white: 1, alpha: 0.25)
+        gemStoreButton.position = CGPoint(x: size.width - 66, y: size.height - 60)
+        gemStoreButton.zPosition = 12
+        gemStoreButton.name = "openMonetizationStore"
+        addChild(gemStoreButton)
+
+        let gemStoreLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        gemStoreLabel.text = "Get Gems"
+        gemStoreLabel.fontSize = 11
+        gemStoreLabel.fontColor = .white
+        gemStoreLabel.verticalAlignmentMode = .center
+        gemStoreLabel.name = "openMonetizationStore"
+        gemStoreButton.addChild(gemStoreLabel)
 
         // Tabs
         let tabs: [(Tab, String, SKColor)] = [
@@ -320,7 +345,39 @@ class ShopScene: SKScene {
         guard let touch = touches.first else { return }
         let nodes = self.nodes(at: touch.location(in: self))
 
+        if childNode(withName: "monetizationOverlay") != nil {
+            for node in nodes {
+                guard let name = node.name else { continue }
+                if name == "closeMonetizationStore" {
+                    if !isStoreOperationInProgress {
+                        childNode(withName: "monetizationOverlay")?.removeFromParent()
+                    }
+                    return
+                }
+                if name == "watchDailyBonus" {
+                    beginDailyBonusAd()
+                    return
+                }
+                if name == "restorePurchases" {
+                    beginRestorePurchases()
+                    return
+                }
+                if name.hasPrefix("purchase_") {
+                    let rawID = String(name.dropFirst("purchase_".count))
+                    if let productID = PurchaseProductID(rawValue: rawID) {
+                        beginPurchase(productID)
+                    }
+                    return
+                }
+            }
+            return
+        }
+
         for node in nodes {
+            if node.name == "openMonetizationStore" {
+                showMonetizationStore()
+                return
+            }
             if node.name == "back" {
                 let menu = MenuScene(size: size)
                 menu.scaleMode = scaleMode
@@ -340,6 +397,330 @@ class ShopScene: SKScene {
         }
     }
 
+    private var storePresenter: UIViewController? {
+        var presenter = view?.window?.rootViewController
+        while let presented = presenter?.presentedViewController {
+            presenter = presented
+        }
+        return presenter
+    }
+
+    private func showMonetizationStore(status: String? = nil) {
+        childNode(withName: "monetizationOverlay")?.removeFromParent()
+
+        let overlay = SKNode()
+        overlay.name = "monetizationOverlay"
+        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        overlay.zPosition = 200
+        addChild(overlay)
+
+        let shade = SKShapeNode(rectOf: size)
+        shade.fillColor = SKColor(white: 0, alpha: 0.82)
+        shade.strokeColor = .clear
+        shade.name = "monetizationBackdrop"
+        overlay.addChild(shade)
+
+        let panelWidth = min(size.width - 32, 610)
+        let panelHeight = min(size.height - 24, 340)
+        let panel = SKShapeNode(rectOf: CGSize(width: panelWidth, height: panelHeight), cornerRadius: 18)
+        panel.fillColor = SKColor(red: 0.10, green: 0.08, blue: 0.18, alpha: 0.98)
+        panel.strokeColor = SKColor(red: 0.64, green: 0.44, blue: 0.96, alpha: 0.9)
+        panel.lineWidth = 2
+        panel.name = "monetizationPanel"
+        overlay.addChild(panel)
+
+        let halfHeight = panelHeight / 2
+        let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        title.text = "Gem Store"
+        title.fontSize = 24
+        title.fontColor = .white
+        title.position = CGPoint(x: 0, y: halfHeight - 38)
+        panel.addChild(title)
+
+        let close = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        close.text = "×"
+        close.fontSize = 28
+        close.fontColor = SKColor(white: 0.75, alpha: 1)
+        close.position = CGPoint(x: panelWidth / 2 - 25, y: halfHeight - 34)
+        close.name = "closeMonetizationStore"
+        panel.addChild(close)
+
+        let testNotice = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        testNotice.text = MonetizationConfiguration.usesSimulatedAds
+            ? "TEST ADS ON  •  blank screen for 5 seconds"
+            : "Optional rewards • purchases never expire"
+        testNotice.fontSize = 10
+        testNotice.fontColor = MonetizationConfiguration.usesSimulatedAds
+            ? SKColor(red: 1.0, green: 0.76, blue: 0.20, alpha: 1)
+            : SKColor(white: 0.68, alpha: 1)
+        testNotice.position = CGPoint(x: 0, y: halfHeight - 58)
+        panel.addChild(testNotice)
+
+        let columnX = panelWidth * 0.24
+        let buttonWidth = panelWidth * 0.43
+        addStoreProductButton(
+            .starterPack,
+            title: "Starter Pack",
+            detail: "+80 Gems • one time",
+            x: -columnX,
+            y: 54,
+            width: buttonWidth,
+            parent: panel
+        )
+        addStoreProductButton(
+            .gemsSmall,
+            title: "Gem Pouch",
+            detail: "+50 Gems",
+            x: -columnX,
+            y: 8,
+            width: buttonWidth,
+            parent: panel
+        )
+        addStoreProductButton(
+            .gemsMedium,
+            title: "Gem Chest",
+            detail: "+300 Gems",
+            x: -columnX,
+            y: -38,
+            width: buttonWidth,
+            parent: panel
+        )
+        addStoreProductButton(
+            .gemsLarge,
+            title: "Gem Vault",
+            detail: "+800 Gems",
+            x: columnX,
+            y: 54,
+            width: buttonWidth,
+            parent: panel
+        )
+        addStoreProductButton(
+            .removeAds,
+            title: "Remove Ads",
+            detail: "No interstitial breaks",
+            x: columnX,
+            y: 8,
+            width: buttonWidth,
+            parent: panel
+        )
+        addStoreActionButton(
+            title: "Restore Purchases",
+            name: "restorePurchases",
+            x: columnX,
+            y: -38,
+            width: buttonWidth,
+            color: SKColor(white: 0.25, alpha: 1),
+            parent: panel
+        )
+
+        let bonusAvailable = MonetizationStateStore.shared.canClaimDailyBonus
+            && AppServices.shared.ads.isRewardedReady
+        let bonusTitle = bonusAvailable
+            ? "\(MonetizationConfiguration.usesSimulatedAds ? "Test Ad" : "Watch Ad")  •  +\(MonetizationStateStore.dailyBonusGems) Gems"
+            : "Daily Ad Bonus Claimed"
+        addStoreActionButton(
+            title: bonusTitle,
+            name: "watchDailyBonus",
+            x: 0,
+            y: -91,
+            width: min(270, panelWidth * 0.55),
+            color: bonusAvailable
+                ? SKColor(red: 0.25, green: 0.64, blue: 0.38, alpha: 1)
+                : SKColor(white: 0.22, alpha: 1),
+            parent: panel
+        )
+
+        let statusLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        statusLabel.text = status ?? "Balance: \(GameScene.gemCount) Gems"
+        statusLabel.fontSize = 11
+        statusLabel.fontColor = status == nil
+            ? SKColor(red: 0.78, green: 0.62, blue: 1.0, alpha: 1)
+            : SKColor(white: 0.84, alpha: 1)
+        statusLabel.position = CGPoint(x: 0, y: -halfHeight + 13)
+        statusLabel.name = "storeStatus"
+        panel.addChild(statusLabel)
+        storeStatusLabel = statusLabel
+    }
+
+    private func addStoreProductButton(
+        _ id: PurchaseProductID,
+        title: String,
+        detail: String,
+        x: CGFloat,
+        y: CGFloat,
+        width: CGFloat,
+        parent: SKNode
+    ) {
+        let isOwned = !id.isConsumable && AppServices.shared.purchases.entitlements.contains(id)
+        let product = AppServices.shared.purchases.products[id]
+        let price = isOwned ? "Owned" : (product?.displayPrice ?? "Unavailable")
+        let name = "purchase_\(id.rawValue)"
+
+        let button = SKShapeNode(rectOf: CGSize(width: width, height: 38), cornerRadius: 8)
+        button.fillColor = isOwned
+            ? SKColor(red: 0.20, green: 0.48, blue: 0.30, alpha: 1)
+            : SKColor(red: 0.22, green: 0.18, blue: 0.34, alpha: 1)
+        button.strokeColor = SKColor(white: 1, alpha: 0.16)
+        button.position = CGPoint(x: x, y: y)
+        button.name = name
+        parent.addChild(button)
+
+        let titleLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        titleLabel.text = title
+        titleLabel.fontSize = 12
+        titleLabel.fontColor = .white
+        titleLabel.horizontalAlignmentMode = .left
+        titleLabel.position = CGPoint(x: -width / 2 + 10, y: 3)
+        titleLabel.name = name
+        button.addChild(titleLabel)
+
+        let detailLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        detailLabel.text = detail
+        detailLabel.fontSize = 8
+        detailLabel.fontColor = SKColor(white: 0.68, alpha: 1)
+        detailLabel.horizontalAlignmentMode = .left
+        detailLabel.position = CGPoint(x: -width / 2 + 10, y: -10)
+        detailLabel.name = name
+        button.addChild(detailLabel)
+
+        let priceLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        priceLabel.text = price
+        priceLabel.fontSize = product == nil && !isOwned ? 8 : 11
+        priceLabel.fontColor = isOwned
+            ? SKColor(red: 0.65, green: 1.0, blue: 0.72, alpha: 1)
+            : SKColor(red: 1.0, green: 0.82, blue: 0.28, alpha: 1)
+        priceLabel.horizontalAlignmentMode = .right
+        priceLabel.position = CGPoint(x: width / 2 - 10, y: -2)
+        priceLabel.name = name
+        button.addChild(priceLabel)
+    }
+
+    private func addStoreActionButton(
+        title: String,
+        name: String,
+        x: CGFloat,
+        y: CGFloat,
+        width: CGFloat,
+        color: SKColor,
+        parent: SKNode
+    ) {
+        let button = SKShapeNode(rectOf: CGSize(width: width, height: 36), cornerRadius: 8)
+        button.fillColor = color
+        button.strokeColor = SKColor(white: 1, alpha: 0.16)
+        button.position = CGPoint(x: x, y: y)
+        button.name = name
+        parent.addChild(button)
+
+        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        label.text = title
+        label.fontSize = 11
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        label.name = name
+        button.addChild(label)
+    }
+
+    private func beginPurchase(_ id: PurchaseProductID) {
+        guard !isStoreOperationInProgress else { return }
+        if !id.isConsumable, AppServices.shared.purchases.entitlements.contains(id) {
+            showMonetizationStore(status: "Already owned.")
+            return
+        }
+
+        isStoreOperationInProgress = true
+        showMonetizationStore(status: "Contacting the App Store…")
+        AppServices.shared.analytics.track(.purchaseStarted(productID: id.rawValue))
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            if AppServices.shared.purchases.products[id] == nil {
+                await AppServices.shared.purchases.prepare()
+            }
+            let outcome = await AppServices.shared.purchases.purchase(id)
+            self.isStoreOperationInProgress = false
+
+            let status: String
+            switch outcome {
+            case .purchased:
+                AppServices.shared.analytics.track(.purchaseCompleted(productID: id.rawValue))
+                status = "Purchase complete. Thank you!"
+                SoundManager.shared.play("powerup")
+            case .pending:
+                status = "Purchase pending approval."
+            case .cancelled:
+                AppServices.shared.analytics.track(.purchaseFailed(productID: id.rawValue, reason: "cancelled"))
+                status = "Purchase cancelled."
+            case .unavailable:
+                AppServices.shared.analytics.track(.purchaseFailed(productID: id.rawValue, reason: "unavailable"))
+                status = "This item is not configured in the App Store yet."
+            case let .failed(reason):
+                AppServices.shared.analytics.track(.purchaseFailed(productID: id.rawValue, reason: reason))
+                status = "Purchase failed. Please try again."
+            }
+
+            self.gemLabel.text = "\(GameScene.gemCount)"
+            self.showMonetizationStore(status: status)
+        }
+    }
+
+    private func beginRestorePurchases() {
+        guard !isStoreOperationInProgress else { return }
+        isStoreOperationInProgress = true
+        showMonetizationStore(status: "Restoring purchases…")
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let restored = await AppServices.shared.purchases.restorePurchases()
+            self.isStoreOperationInProgress = false
+            AppServices.shared.analytics.track(.purchasesRestored(success: restored))
+            self.gemLabel.text = "\(GameScene.gemCount)"
+            self.showMonetizationStore(
+                status: restored ? "Purchases restored." : "Restore failed. Please try again."
+            )
+        }
+    }
+
+    private func beginDailyBonusAd() {
+        guard !isStoreOperationInProgress,
+              MonetizationStateStore.shared.canClaimDailyBonus,
+              AppServices.shared.ads.isRewardedReady,
+              let presenter = storePresenter else { return }
+
+        isStoreOperationInProgress = true
+        showMonetizationStore(status: "Opening the test ad…")
+        SoundManager.shared.stopMusic()
+        AppServices.shared.analytics.track(
+            .adStarted(format: "rewarded", placement: RewardedAdPlacement.dailyBonus.rawValue)
+        )
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let completed = await AppServices.shared.ads.showRewarded(
+                from: presenter,
+                placement: .dailyBonus
+            )
+            self.isStoreOperationInProgress = false
+            SoundManager.shared.startMusic()
+
+            guard completed else {
+                self.showMonetizationStore(status: "Ad not completed. No reward was used.")
+                return
+            }
+
+            AppServices.shared.analytics.track(
+                .adCompleted(format: "rewarded", placement: RewardedAdPlacement.dailyBonus.rawValue)
+            )
+            let reward = MonetizationStateStore.shared.claimDailyBonusIfAvailable()
+            if reward > 0 {
+                PlayerWallet.shared.addGems(reward)
+                self.gemLabel.text = "\(GameScene.gemCount)"
+                SoundManager.shared.play("powerup")
+            }
+            self.showMonetizationStore(
+                status: reward > 0 ? "+\(reward) Gems added!" : "Daily bonus already claimed."
+            )
+        }
+    }
     private func handleItemTap(_ itemId: String) {
         guard let item = ShopScene.allItems.first(where: { $0.id == itemId }) else { return }
 
@@ -363,9 +744,8 @@ class ShopScene: SKScene {
             case .spots: ShopScene.equippedSpots = itemId
             }
             showTab(currentTab)
-        } else if GameScene.gemCount >= item.price {
+        } else if PlayerWallet.shared.spendGems(item.price) {
             // Buy
-            GameScene.gemCount -= item.price
             AppServices.shared.analytics.track(.economySpend(itemID: itemId, gems: item.price))
             var owned = ShopScene.ownedItems
             owned.append(itemId)

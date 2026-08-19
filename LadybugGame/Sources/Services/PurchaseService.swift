@@ -88,6 +88,12 @@ final class PurchaseService {
             return
         }
 
+        if transaction.revocationDate != nil {
+            entitlements.remove(id)
+            await transaction.finish()
+            return
+        }
+
         if !id.isConsumable {
             entitlements.insert(id)
         }
