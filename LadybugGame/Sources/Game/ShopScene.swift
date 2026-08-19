@@ -366,6 +366,7 @@ class ShopScene: SKScene {
         } else if GameScene.gemCount >= item.price {
             // Buy
             GameScene.gemCount -= item.price
+            AppServices.shared.analytics.track(.economySpend(itemID: itemId, gems: item.price))
             var owned = ShopScene.ownedItems
             owned.append(itemId)
             ShopScene.ownedItems = owned

@@ -14,6 +14,9 @@ class GameViewController: UIViewController {
 
         guard !hasPresented, let skView = view as? SKView, view.bounds.width > 0 else { return }
         hasPresented = true
+        AppServices.shared.analytics.track(.appLaunched)
+        AppServices.shared.ads.prepare()
+        Task { await AppServices.shared.purchases.prepare() }
 
         let scene = MenuScene(size: view.bounds.size)
         scene.scaleMode = .aspectFill

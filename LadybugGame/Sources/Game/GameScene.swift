@@ -16,14 +16,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var groundY: CGFloat = 0
     private var scrollSpeed: CGFloat = 160
     private var distanceTraveled: CGFloat = 0
+    private var runStartedAt = Date()
 
     private var scoreLabel: SKLabelNode!
     private var gemLabel: SKLabelNode!
 
-    private static let gemCountKey = "GemstoneCount"
     static var gemCount: Int {
-        get { UserDefaults.standard.integer(forKey: gemCountKey) }
-        set { UserDefaults.standard.set(newValue, forKey: gemCountKey) }
+        get { PlayerWallet.shared.gems }
+        set { PlayerWallet.shared.gems = newValue }
     }
     private var hasShownRainbow = false
     private var currentBiome: Biome = .meadowDay
@@ -46,6 +46,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 GameScene.hasNightCheckpoint = true
                 GameScene.checkpointScore = newBiome.scoreThreshold
                 GameScene.unlockBiome(newBiome)
+                AppServices.shared.analytics.track(.biomeReached(name: newBiome.name, score: score))
             }
         }
     }
@@ -174,6 +175,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         groundY = size.height * 0.20
         // Starting lives scale with difficulty
         lives = switch MenuScene.difficulty { case .easy: 5; case .normal: 4; case .hard: 3 }
+        runStartedAt = Date()
+        let checkpointName = startFromCheckpoint ? Biome.biome(for: GameScene.checkpointScore).name : nil
+        AppServices.shared.analytics.track(
+            .runStarted(difficulty: MenuScene.difficulty.name, checkpoint: checkpointName)
+        )
 
         birdTextures = TextureGenerator.generateBirdTextures(size: CGSize(width: 50, height: 36))
         vultureFrames = TextureGenerator.generateVultureFrames(size: CGSize(width: 56, height: 40))
@@ -3882,6 +3888,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private func startBossFight(level: Int = 1) {
         isBossFight = true
         bossLevel = level
+        AppServices.shared.analytics.track(.bossStarted(level: level))
         bossMaxHP = switch MenuScene.difficulty { case .easy: 25; case .normal: 40; case .hard: 60 }
         if level == 2 { bossMaxHP = bossMaxHP * 2 }     // Crow is tougher than the bear
         if level == 3 { bossMaxHP = bossMaxHP * 5 / 2 } // UFO is the toughest
@@ -4595,6 +4602,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func bossDefeated() {
+        AppServices.shared.analytics.track(.bossDefeated(level: bossLevel))
         switch bossLevel {
         case 3: hasBeatenBoss3 = true
         case 2: hasBeatenBoss2 = true
@@ -4665,6 +4673,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func gameOver() {
         isGameOver = true
+        let runDuration = max(0, Int(Date().timeIntervalSince(runStartedAt)))
+        AppServices.shared.analytics.track(
+            .runEnded(score: score, biome: currentBiome.name, durationSeconds: runDuration)
+        )
         SoundManager.shared.stopMusic()
         SoundManager.shared.play("death")
         SoundManager.shared.play("gameOver")
