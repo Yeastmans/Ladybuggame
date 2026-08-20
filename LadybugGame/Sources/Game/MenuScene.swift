@@ -29,12 +29,21 @@ class MenuScene: SKScene {
         let continueStage = CampaignStage.stage(id: progress.continueStageID) ?? CampaignStage.all[0]
 
         backgroundColor = SKColor(red: 0.35, green: 0.62, blue: 0.85, alpha: 1.0)
+        addMenuBackdrop()
 
         let ground = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height * 0.35))
         ground.fillColor = SKColor(red: 0.45, green: 0.72, blue: 0.30, alpha: 1.0)
         ground.strokeColor = .clear
         ground.position = CGPoint(x: size.width / 2, y: size.height * 0.175)
+        ground.zPosition = 0
         addChild(ground)
+
+        let grassGlow = SKShapeNode(rectOf: CGSize(width: size.width, height: 8), cornerRadius: 3)
+        grassGlow.fillColor = SKColor(red: 0.68, green: 0.88, blue: 0.34, alpha: 0.72)
+        grassGlow.strokeColor = .clear
+        grassGlow.position = CGPoint(x: size.width / 2, y: size.height * 0.35)
+        grassGlow.zPosition = 1
+        addChild(grassGlow)
 
         // Resolve equipped body color
         var menuBodyColor: UIColor? = nil
@@ -53,6 +62,16 @@ class MenuScene: SKScene {
         ladybug.position = CGPoint(x: size.width * 0.15, y: size.height * 0.35 + 32)
         ladybug.zPosition = 10
         addChild(ladybug)
+        ladybug.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.group([
+                SKAction.moveBy(x: 0, y: 5, duration: 0.75),
+                SKAction.rotate(toAngle: 0.05, duration: 0.75),
+            ]),
+            SKAction.group([
+                SKAction.moveBy(x: 0, y: -5, duration: 0.75),
+                SKAction.rotate(toAngle: -0.04, duration: 0.75),
+            ]),
+        ])), withKey: "menuIdle")
 
         // Show equipped hat on menu ladybug
         if let hatId = ShopScene.equippedHat {
@@ -92,70 +111,172 @@ class MenuScene: SKScene {
             }
         }
 
+        let titleShadow = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        titleShadow.text = "Ladybug Run"
+        titleShadow.fontSize = 46
+        titleShadow.fontColor = SKColor(white: 0, alpha: 0.28)
+        titleShadow.position = CGPoint(x: size.width / 2 + 2, y: size.height * 0.80 - 4)
+        titleShadow.zPosition = 18
+        addChild(titleShadow)
+
         let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
         title.text = "Ladybug Run"
-        title.fontSize = 44
+        title.fontSize = 46
         title.fontColor = .white
-        title.position = CGPoint(x: size.width / 2, y: size.height * 0.75)
+        title.position = CGPoint(x: size.width / 2, y: size.height * 0.80)
         title.zPosition = 20
         addChild(title)
 
+        let tagline = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        tagline.text = "RUN  •  COLLECT  •  CUSTOMIZE"
+        tagline.fontSize = 10
+        tagline.fontColor = SKColor(red: 1.0, green: 0.89, blue: 0.42, alpha: 1)
+        tagline.position = CGPoint(x: size.width / 2, y: size.height * 0.71)
+        tagline.zPosition = 20
+        addChild(tagline)
+
         // Adventure progress and Endless score are deliberately separate.
+        let progressCard = GameUITheme.makePanel(
+            size: CGSize(width: min(470, size.width * 0.70), height: 31),
+            cornerRadius: 10,
+            fillColor: SKColor(red: 0.08, green: 0.07, blue: 0.16, alpha: 0.78),
+            strokeColor: SKColor(white: 1, alpha: 0.18)
+        )
+        progressCard.position = CGPoint(x: size.width / 2, y: size.height * 0.64)
+        progressCard.zPosition = 18
+        addChild(progressCard)
+
         let hsLabel = SKLabelNode(fontNamed: "AvenirNext-Medium")
         hsLabel.text = "Adventure \(progress.completedCount)/\(CampaignStage.all.count)  •  \(progress.totalStars)/45 ★  •  Endless \(MenuScene.highScore)"
-        hsLabel.fontSize = 14
-        hsLabel.fontColor = SKColor(red: 1.0, green: 0.88, blue: 0.35, alpha: 0.9)
-        hsLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.68)
+        hsLabel.fontSize = 13
+        hsLabel.fontColor = SKColor(red: 1.0, green: 0.88, blue: 0.35, alpha: 1)
+        hsLabel.verticalAlignmentMode = .center
+        hsLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.64)
         hsLabel.zPosition = 20
         addChild(hsLabel)
 
+        let gemBadge = GameUITheme.makePanel(
+            size: CGSize(width: 86, height: 30),
+            cornerRadius: 10,
+            fillColor: SKColor(red: 0.13, green: 0.09, blue: 0.23, alpha: 0.90),
+            strokeColor: SKColor(red: 0.70, green: 0.50, blue: 1.0, alpha: 0.50)
+        )
+        gemBadge.position = CGPoint(x: size.width - 62, y: size.height - 28)
+        gemBadge.zPosition = 20
+        addChild(gemBadge)
+        let gemText = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        gemText.text = "💎  \(GameScene.gemCount)"
+        gemText.fontSize = 12
+        gemText.fontColor = .white
+        gemText.verticalAlignmentMode = .center
+        gemBadge.addChild(gemText)
+
         let continueText = progress.isAdventureComplete
-            ? "Replay Final Stage"
-            : "Continue: \(continueStage.number)  \(continueStage.biome.name)"
+            ? "↻  Replay Final Stage"
+            : "▶  Stage \(continueStage.number)  •  \(continueStage.biome.name)"
         addButton(continueText, name: "startButton",
                   color: SKColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0),
-                  x: size.width / 2, y: size.height * 0.56, w: 250)
+                  x: size.width / 2, y: size.height * 0.52, w: 270)
 
         // Modes are explicit: finite Adventure progression or the original run.
-        addButton("Stages", name: "stageMenu",
+        addButton("▦  Stages", name: "stageMenu",
                   color: SKColor(red: 0.20, green: 0.15, blue: 0.45, alpha: 1.0),
-                  x: size.width / 2 - 62, y: size.height * 0.44, w: 116)
-        addButton("Endless", name: "endlessButton",
+                  x: size.width / 2 - 66, y: size.height * 0.40, w: 124)
+        addButton("∞  Endless", name: "endlessButton",
                   color: SKColor(red: 0.18, green: 0.42, blue: 0.62, alpha: 1.0),
-                  x: size.width / 2 + 62, y: size.height * 0.44, w: 116)
+                  x: size.width / 2 + 66, y: size.height * 0.40, w: 124)
 
-        addButton("Difficulty", name: "difficultyBtn",
+        addButton("⚙  Difficulty", name: "difficultyBtn",
                   color: SKColor(red: 0.45, green: 0.40, blue: 0.55, alpha: 1),
-                  x: size.width / 2 - 108, y: size.height * 0.32, w: 100)
-        addButton("Shop", name: "shopButton",
+                  x: size.width / 2 - 112, y: size.height * 0.28, w: 104)
+        addButton("✦  Shop", name: "shopButton",
                   color: SKColor(red: 0.82, green: 0.65, blue: 0.12, alpha: 1.0),
-                  x: size.width / 2, y: size.height * 0.32, w: 100)
-        addButton("Collection", name: "bugTracker",
+                  x: size.width / 2, y: size.height * 0.28, w: 104)
+        addButton("●  Collection", name: "bugTracker",
                   color: SKColor(red: 0.55, green: 0.35, blue: 0.70, alpha: 1.0),
-                  x: size.width / 2 + 108, y: size.height * 0.32, w: 100)
+                  x: size.width / 2 + 112, y: size.height * 0.28, w: 104)
     }
 
+    private func addMenuBackdrop() {
+        let skyColors: [SKColor] = [
+            SKColor(red: 0.22, green: 0.46, blue: 0.78, alpha: 1),
+            SKColor(red: 0.31, green: 0.58, blue: 0.86, alpha: 1),
+            SKColor(red: 0.43, green: 0.69, blue: 0.91, alpha: 1),
+            SKColor(red: 0.56, green: 0.78, blue: 0.94, alpha: 1),
+        ]
+        let bandHeight = size.height / CGFloat(skyColors.count)
+        for (index, color) in skyColors.enumerated() {
+            let band = SKShapeNode(rectOf: CGSize(width: size.width + 4, height: bandHeight + 2))
+            band.fillColor = color
+            band.strokeColor = .clear
+            band.position = CGPoint(x: size.width / 2, y: bandHeight * (CGFloat(index) + 0.5))
+            band.zPosition = -20
+            addChild(band)
+        }
+
+        let sunGlow = SKShapeNode(circleOfRadius: 52)
+        sunGlow.fillColor = SKColor(red: 1.0, green: 0.89, blue: 0.36, alpha: 0.15)
+        sunGlow.strokeColor = .clear
+        sunGlow.position = CGPoint(x: size.width * 0.84, y: size.height * 0.82)
+        sunGlow.zPosition = -12
+        addChild(sunGlow)
+        let sun = SKShapeNode(circleOfRadius: 30)
+        sun.fillColor = SKColor(red: 1.0, green: 0.87, blue: 0.32, alpha: 0.92)
+        sun.strokeColor = SKColor(white: 1, alpha: 0.42)
+        sun.lineWidth = 2
+        sun.position = sunGlow.position
+        sun.zPosition = -11
+        addChild(sun)
+
+        for index in 0..<3 {
+            let cloud = SKNode()
+            cloud.position = CGPoint(
+                x: size.width * (0.24 + CGFloat(index) * 0.26),
+                y: size.height * (0.78 - CGFloat(index % 2) * 0.12)
+            )
+            cloud.zPosition = -10
+            addChild(cloud)
+            for puff in 0..<4 {
+                let shape = SKShapeNode(ellipseOf: CGSize(width: 34 + CGFloat(puff % 2) * 10, height: 18 + CGFloat(puff % 2) * 5))
+                shape.fillColor = SKColor(white: 1, alpha: 0.28)
+                shape.strokeColor = .clear
+                shape.position = CGPoint(x: CGFloat(puff) * 21 - 30, y: CGFloat(puff % 2) * 5)
+                cloud.addChild(shape)
+            }
+            cloud.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.moveBy(x: 8, y: 0, duration: 2.4 + Double(index) * 0.3),
+                SKAction.moveBy(x: -8, y: 0, duration: 2.4 + Double(index) * 0.3),
+            ])))
+        }
+
+        for index in 0..<4 {
+            let hill = SKShapeNode(ellipseOf: CGSize(width: size.width * 0.42, height: size.height * 0.22))
+            hill.fillColor = index.isMultiple(of: 2)
+                ? SKColor(red: 0.29, green: 0.60, blue: 0.32, alpha: 0.72)
+                : SKColor(red: 0.23, green: 0.52, blue: 0.30, alpha: 0.62)
+            hill.strokeColor = .clear
+            hill.position = CGPoint(x: CGFloat(index) * size.width * 0.29, y: size.height * 0.35)
+            hill.zPosition = -2
+            addChild(hill)
+        }
+        GameUITheme.addAmbientSparkles(to: self, size: size, count: 10, zPosition: -8)
+    }
     private func addButton(_ text: String, name: String, color: SKColor, y: CGFloat) {
         addButton(text, name: name, color: color, x: size.width / 2, y: y, w: 200)
     }
 
     private func addButton(_ text: String, name: String, color: SKColor, x: CGFloat, y: CGFloat, w: CGFloat) {
-        let bg = SKShapeNode(rectOf: CGSize(width: w, height: 38), cornerRadius: 10)
-        bg.fillColor = color
-        bg.strokeColor = SKColor(white: 0, alpha: 0.2)
-        bg.lineWidth = 1.5
-        bg.position = CGPoint(x: x, y: y)
-        bg.zPosition = 20
-        bg.name = name
-        addChild(bg)
-
-        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        label.text = text
-        label.fontSize = 18
-        label.fontColor = .white
-        label.verticalAlignmentMode = .center
-        label.name = name
-        bg.addChild(label)
+        let fontSize: CGFloat = name == "startButton" ? 17 : (w < 110 ? 12 : 14)
+        let button = GameUITheme.makeButton(
+            title: text,
+            name: name,
+            size: CGSize(width: w, height: name == "startButton" ? 44 : 40),
+            color: color,
+            fontSize: fontSize
+        )
+        button.position = CGPoint(x: x, y: y)
+        button.zPosition = 20
+        addChild(button)
     }
 
     private func startAdventureStage(_ stageID: Int) {

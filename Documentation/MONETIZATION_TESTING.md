@@ -4,8 +4,9 @@ This build enables the complete monetization flow without connecting to an ad ne
 
 ## Simulated ads
 
-- Rewarded ads display a blank black screen for 5 seconds.
-- Interstitial ads display a blank black screen for 3 seconds.
+- Rewarded ads display a branded **YOUR AD HERE** test placeholder for 5 seconds, with the exact pending reward, countdown, and progress bar.
+- Interstitial ads display the same test placeholder for 3 seconds and explain that the next run is almost ready.
+- The screen clearly states that no production ad network is connected.
 - A reward is granted only when the full simulated ad completes.
 - Closing or interrupting a future production ad must report failure and grant nothing.
 - Interstitials still obey the normal cap: after three eligible runs, at least four minutes apart, and never during gameplay.
@@ -13,12 +14,19 @@ This build enables the complete monetization flow without connecting to an ad ne
 
 The temporary switch is `MonetizationConfiguration.usesSimulatedAds` in `SimulatedAdService.swift`. It must be replaced with a production provider and set to `false` before App Store submission.
 
+## Gem purchase confirmation
+
+- Tapping a locked cosmetic opens a confirmation card showing the item, current balance, and gem price.
+- Gems are not spent until **Buy** is tapped.
+- If the balance is too low, the confirmation offers **Get More Gems** instead of a buy action.
+- Owned cosmetics equip immediately and do not trigger another purchase.
+
 ## Test flows
 
 1. Lose all lives and choose **Test Ad • Revive**. After 5 seconds the run resumes with one life and brief invincibility. This is limited to once per run.
 2. Complete a stage with a gem reward and choose **Test Ad • Double**. After 5 seconds the same reward is granted once more.
 3. Open **Shop → Get Gems** and choose the daily test-ad bonus. After 5 seconds, 5 gems are granted. It is available once per calendar day.
-4. Complete three runs that each last at least 60 seconds. The next result-screen exit displays a 3-second blank interstitial.
+4. Complete three runs that each last at least 60 seconds. The next result-screen exit displays a 3-second **YOUR AD HERE** interstitial.
 5. StoreKit buttons use real StoreKit 2 products. They remain unavailable until matching products are configured in App Store Connect (or an Xcode StoreKit test configuration).
 
 ## Before release

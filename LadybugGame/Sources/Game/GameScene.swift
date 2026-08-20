@@ -412,29 +412,58 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func setupHUD() {
+        let leftPanel = GameUITheme.makePanel(
+            size: CGSize(width: 146, height: 56),
+            cornerRadius: 14,
+            fillColor: SKColor(red: 0.055, green: 0.045, blue: 0.12, alpha: 0.82),
+            strokeColor: SKColor(white: 1, alpha: 0.20)
+        )
+        leftPanel.position = CGPoint(x: 96, y: size.height - 36)
+        leftPanel.zPosition = 98
+        addChild(leftPanel)
+
         let scoreIcon = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        scoreIcon.text = "Score:"
-        scoreIcon.fontSize = 18
-        scoreIcon.fontColor = .white
+        scoreIcon.text = "SCORE"
+        scoreIcon.fontSize = 10
+        scoreIcon.fontColor = SKColor(white: 1, alpha: 0.58)
         scoreIcon.horizontalAlignmentMode = .left
-        scoreIcon.position = CGPoint(x: 50, y: size.height - 30)
+        scoreIcon.position = CGPoint(x: 34, y: size.height - 25)
         scoreIcon.zPosition = 100
         addChild(scoreIcon)
 
         scoreLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
         scoreLabel.text = "0"
-        scoreLabel.fontSize = 18
+        scoreLabel.fontSize = 19
         scoreLabel.fontColor = .white
         scoreLabel.horizontalAlignmentMode = .left
-        scoreLabel.position = CGPoint(x: 114, y: size.height - 30)
+        scoreLabel.position = CGPoint(x: 82, y: size.height - 29)
         scoreLabel.zPosition = 100
         addChild(scoreLabel)
 
+        let livesPanel = GameUITheme.makePanel(
+            size: CGSize(width: 138, height: 40),
+            cornerRadius: 13,
+            fillColor: SKColor(red: 0.12, green: 0.045, blue: 0.09, alpha: 0.84),
+            strokeColor: GameUITheme.coral.withAlphaComponent(0.48)
+        )
+        livesPanel.position = CGPoint(x: size.width - 87, y: size.height - 30)
+        livesPanel.zPosition = 98
+        addChild(livesPanel)
+
+        let livesCaption = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        livesCaption.text = "LIVES"
+        livesCaption.fontSize = 9
+        livesCaption.fontColor = SKColor(white: 1, alpha: 0.52)
+        livesCaption.horizontalAlignmentMode = .left
+        livesCaption.position = CGPoint(x: size.width - 151, y: size.height - 33)
+        livesCaption.zPosition = 100
+        addChild(livesCaption)
+
         livesLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        livesLabel.fontSize = 18
-        livesLabel.fontColor = .white
+        livesLabel.fontSize = 16
+        livesLabel.fontColor = SKColor(red: 1.0, green: 0.34, blue: 0.40, alpha: 1)
         livesLabel.horizontalAlignmentMode = .right
-        livesLabel.position = CGPoint(x: size.width - 50, y: size.height - 30)
+        livesLabel.position = CGPoint(x: size.width - 23, y: size.height - 35)
         livesLabel.zPosition = 100
         updateLivesDisplay()
         addChild(livesLabel)
@@ -442,39 +471,49 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Gem counter (top-left, below score)
         let gemIcon = SKLabelNode(fontNamed: "AvenirNext-Bold")
         gemIcon.text = "💎"
-        gemIcon.fontSize = 13
+        gemIcon.fontSize = 12
         gemIcon.horizontalAlignmentMode = .left
-        gemIcon.position = CGPoint(x: 50, y: size.height - 50)
+        gemIcon.position = CGPoint(x: 34, y: size.height - 49)
         gemIcon.zPosition = 100
         addChild(gemIcon)
 
         gemLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
         gemLabel.text = "\(GameScene.gemCount)"
         gemLabel.fontSize = 14
-        gemLabel.fontColor = SKColor(red: 0.75, green: 0.55, blue: 1.0, alpha: 1.0)
+        gemLabel.fontColor = SKColor(red: 0.86, green: 0.72, blue: 1.0, alpha: 1.0)
         gemLabel.horizontalAlignmentMode = .left
-        gemLabel.position = CGPoint(x: 70, y: size.height - 50)
+        gemLabel.position = CGPoint(x: 56, y: size.height - 49)
         gemLabel.zPosition = 100
         addChild(gemLabel)
 
         if let stage = activeCampaignStage {
+            let stagePanel = GameUITheme.makePanel(
+                size: CGSize(width: stageProgressWidth + 30, height: 56),
+                cornerRadius: 14,
+                fillColor: SKColor(red: 0.055, green: 0.045, blue: 0.12, alpha: 0.82),
+                strokeColor: stage.biome.skyColor.withAlphaComponent(0.58)
+            )
+            stagePanel.position = CGPoint(x: size.width / 2, y: size.height - 36)
+            stagePanel.zPosition = 98
+            addChild(stagePanel)
+
             let stageLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
             stageLabel.text = "STAGE \(stage.number)  •  \(stage.biome.name.uppercased())"
-            stageLabel.fontSize = 12
+            stageLabel.fontSize = 11
             stageLabel.fontColor = .white
-            stageLabel.position = CGPoint(x: size.width / 2, y: size.height - 20)
+            stageLabel.position = CGPoint(x: size.width / 2, y: size.height - 24)
             stageLabel.zPosition = 100
             addChild(stageLabel)
             stageProgressLabel = stageLabel
 
-            let track = SKSpriteNode(color: SKColor(white: 0.05, alpha: 0.58), size: CGSize(width: stageProgressWidth, height: 8))
-            track.position = CGPoint(x: size.width / 2, y: size.height - 41)
+            let track = SKSpriteNode(color: SKColor(white: 0.02, alpha: 0.72), size: CGSize(width: stageProgressWidth, height: 8))
+            track.position = CGPoint(x: size.width / 2, y: size.height - 47)
             track.zPosition = 100
             addChild(track)
 
             let fill = SKSpriteNode(color: SKColor(red: 1.0, green: 0.80, blue: 0.18, alpha: 1), size: CGSize(width: 1, height: 6))
             fill.anchorPoint = CGPoint(x: 0, y: 0.5)
-            fill.position = CGPoint(x: size.width / 2 - stageProgressWidth / 2, y: size.height - 41)
+            fill.position = CGPoint(x: size.width / 2 - stageProgressWidth / 2, y: size.height - 47)
             fill.zPosition = 101
             addChild(fill)
             stageProgressFill = fill
@@ -482,16 +521,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         // Pause button
-        let pauseBtn = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        pauseBtn.text = "❚❚"
-        pauseBtn.fontSize = 20
-        pauseBtn.fontColor = SKColor(white: 1.0, alpha: 0.7)
-        pauseBtn.horizontalAlignmentMode = .center
-        pauseBtn.verticalAlignmentMode = .center
-        let pauseX = activeCampaignStage == nil ? size.width / 2 : size.width / 2 + stageProgressWidth / 2 + 28
-        pauseBtn.position = CGPoint(x: pauseX, y: size.height - 28)
+        let pauseBtn = GameUITheme.makeButton(
+            title: "Ⅱ",
+            name: "pauseButton",
+            size: CGSize(width: 38, height: 38),
+            color: SKColor(red: 0.25, green: 0.20, blue: 0.40, alpha: 0.96),
+            fontSize: 15
+        )
+        let pauseX = activeCampaignStage == nil ? size.width / 2 : size.width / 2 + stageProgressWidth / 2 + 42
+        pauseBtn.position = CGPoint(x: pauseX, y: size.height - 30)
         pauseBtn.zPosition = 100
-        pauseBtn.name = "pauseButton"
         addChild(pauseBtn)
     }
 
@@ -4237,47 +4276,63 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             ladybug.targetY = nil
 
             let overlay = SKShapeNode(rectOf: size)
-            overlay.fillColor = SKColor(white: 0.0, alpha: 0.5)
+            overlay.fillColor = SKColor(white: 0.0, alpha: 0.68)
             overlay.strokeColor = .clear
             overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
             overlay.zPosition = 140
             overlay.name = "pauseOverlay"
             addChild(overlay)
 
+            let pauseCard = GameUITheme.makePanel(
+                size: CGSize(width: min(330, size.width - 50), height: 220),
+                cornerRadius: 22,
+                fillColor: SKColor(red: 0.075, green: 0.055, blue: 0.14, alpha: 0.98),
+                strokeColor: GameUITheme.violet.withAlphaComponent(0.82),
+                name: "pauseOverlay"
+            )
+            pauseCard.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            pauseCard.zPosition = 141
+            addChild(pauseCard)
+
+            let eyebrow = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            eyebrow.text = "RUN ON HOLD"
+            eyebrow.fontSize = 9
+            eyebrow.fontColor = SKColor(white: 1, alpha: 0.48)
+            eyebrow.position = CGPoint(x: size.width / 2, y: size.height / 2 + 76)
+            eyebrow.zPosition = 143
+            eyebrow.name = "pauseOverlay"
+            addChild(eyebrow)
+
             let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
             label.text = "PAUSED"
-            label.fontSize = 36
+            label.fontSize = 34
             label.fontColor = .white
-            label.position = CGPoint(x: size.width / 2, y: size.height / 2 + 20)
-            label.zPosition = 141
+            label.position = CGPoint(x: size.width / 2, y: size.height / 2 + 43)
+            label.zPosition = 143
             label.name = "pauseOverlay"
             addChild(label)
 
-            let resume = SKLabelNode(fontNamed: "AvenirNext-Medium")
-            resume.text = "Tap to Resume"
-            resume.fontSize = 18
-            resume.fontColor = SKColor(white: 1.0, alpha: 0.6)
-            resume.position = CGPoint(x: size.width / 2, y: size.height / 2 - 20)
-            resume.zPosition = 141
-            resume.name = "resumeLabel"
+            let resume = GameUITheme.makeButton(
+                title: "▶  Resume Run",
+                name: "resumeLabel",
+                size: CGSize(width: 190, height: 42),
+                color: GameUITheme.mint,
+                fontSize: 15
+            )
+            resume.position = CGPoint(x: size.width / 2, y: size.height / 2 - 10)
+            resume.zPosition = 143
             addChild(resume)
 
-            // Menu button
-            let menuBg = SKShapeNode(rectOf: CGSize(width: 140, height: 34), cornerRadius: 8)
-            menuBg.fillColor = SKColor(red: 0.55, green: 0.15, blue: 0.15, alpha: 0.9)
-            menuBg.strokeColor = SKColor(white: 1.0, alpha: 0.3)
-            menuBg.lineWidth = 1
-            menuBg.position = CGPoint(x: size.width / 2, y: size.height / 2 - 60)
-            menuBg.zPosition = 141
-            menuBg.name = "pauseMenuBtn"
+            let menuBg = GameUITheme.makeButton(
+                title: "Back to Menu",
+                name: "pauseMenuBtn",
+                size: CGSize(width: 154, height: 36),
+                color: SKColor(red: 0.48, green: 0.18, blue: 0.25, alpha: 1),
+                fontSize: 13
+            )
+            menuBg.position = CGPoint(x: size.width / 2, y: size.height / 2 - 61)
+            menuBg.zPosition = 143
             addChild(menuBg)
-            let menuLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            menuLabel.text = "Back to Menu"
-            menuLabel.fontSize = 14
-            menuLabel.fontColor = .white
-            menuLabel.verticalAlignmentMode = .center
-            menuLabel.name = "pauseMenuBtn"
-            menuBg.addChild(menuLabel)
         } else {
             enumerateChildNodes(withName: "pauseOverlay") { node, _ in node.removeFromParent() }
             enumerateChildNodes(withName: "resumeLabel") { node, _ in node.removeFromParent() }
@@ -5222,6 +5277,24 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         overlay.name = "campaignResults"
         addChild(overlay)
 
+        let resultsCard = GameUITheme.makePanel(
+            size: CGSize(width: min(540, size.width - 42), height: min(330, size.height - 24)),
+            cornerRadius: 22,
+            fillColor: SKColor(red: 0.075, green: 0.055, blue: 0.14, alpha: 0.98),
+            strokeColor: GameUITheme.gold.withAlphaComponent(0.80)
+        )
+        resultsCard.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        resultsCard.zPosition = 185
+        addChild(resultsCard)
+
+        let resultsEyebrow = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        resultsEyebrow.text = "ADVENTURE RESULTS"
+        resultsEyebrow.fontSize = 9
+        resultsEyebrow.fontColor = SKColor(white: 1, alpha: 0.50)
+        resultsEyebrow.position = CGPoint(x: size.width / 2, y: size.height / 2 + 126)
+        resultsEyebrow.zPosition = 190
+        addChild(resultsEyebrow)
+
         let heading = SKLabelNode(fontNamed: "AvenirNext-Bold")
         heading.text = stage.id == CampaignStage.all.count - 1 ? "ADVENTURE COMPLETE" : "STAGE CLEAR"
         heading.fontSize = 32
@@ -5280,22 +5353,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func addResultButton(_ text: String, name: String, x: CGFloat, y: CGFloat, color: SKColor, width: CGFloat = 112) {
-        let button = SKShapeNode(rectOf: CGSize(width: width, height: 36), cornerRadius: 9)
-        button.fillColor = color
-        button.strokeColor = SKColor(white: 1.0, alpha: 0.25)
-        button.lineWidth = 1
+        let button = GameUITheme.makeButton(
+            title: text,
+            name: name,
+            size: CGSize(width: width, height: 38),
+            color: color,
+            fontSize: width > 150 ? 13 : 14
+        )
         button.position = CGPoint(x: x, y: y)
         button.zPosition = 195
-        button.name = name
         addChild(button)
-
-        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        label.text = text
-        label.fontSize = 14
-        label.fontColor = .white
-        label.verticalAlignmentMode = .center
-        label.name = name
-        button.addChild(label)
     }
 
     private func gameOver() {
@@ -5335,10 +5402,28 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         overlay.name = "gameOverOverlay"
         addChild(overlay)
 
+        let gameOverCard = GameUITheme.makePanel(
+            size: CGSize(width: min(470, size.width - 42), height: min(300, size.height - 24)),
+            cornerRadius: 22,
+            fillColor: SKColor(red: 0.10, green: 0.045, blue: 0.085, alpha: 0.98),
+            strokeColor: GameUITheme.coral.withAlphaComponent(0.82)
+        )
+        gameOverCard.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        gameOverCard.zPosition = 190
+        addChild(gameOverCard)
+
+        let gameOverEyebrow = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        gameOverEyebrow.text = campaignStageID == nil ? "ENDLESS RESULTS" : "ADVENTURE RESULTS"
+        gameOverEyebrow.fontSize = 9
+        gameOverEyebrow.fontColor = SKColor(white: 1, alpha: 0.48)
+        gameOverEyebrow.position = CGPoint(x: size.width / 2, y: size.height / 2 + 112)
+        gameOverEyebrow.zPosition = 200
+        addChild(gameOverEyebrow)
+
         let goLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
         goLabel.text = campaignStageID == nil ? "RUN OVER" : "STAGE FAILED"
         goLabel.fontSize = 36
-        goLabel.fontColor = .white
+        goLabel.fontColor = SKColor(red: 1.0, green: 0.42, blue: 0.45, alpha: 1)
         goLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 70)
         goLabel.zPosition = 200
         goLabel.name = "gameOverTitle"

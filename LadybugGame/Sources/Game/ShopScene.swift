@@ -145,6 +145,7 @@ class ShopScene: SKScene {
     private var gemLabel: SKLabelNode!
     private var storeStatusLabel: SKLabelNode?
     private var isStoreOperationInProgress = false
+    private var pendingGemPurchaseItemID: String?
 
     override func didMove(to view: SKView) {
         backgroundColor = SKColor(red: 0.10, green: 0.08, blue: 0.18, alpha: 1.0)
@@ -157,18 +158,52 @@ class ShopScene: SKScene {
         }
     }
 
+    private func addShopBackdrop() {
+        let colors: [SKColor] = [
+            SKColor(red: 0.075, green: 0.045, blue: 0.15, alpha: 1),
+            SKColor(red: 0.11, green: 0.06, blue: 0.20, alpha: 1),
+            SKColor(red: 0.12, green: 0.08, blue: 0.23, alpha: 1),
+            SKColor(red: 0.08, green: 0.07, blue: 0.17, alpha: 1),
+        ]
+        let bandHeight = size.height / CGFloat(colors.count)
+        for (index, color) in colors.enumerated() {
+            let band = SKShapeNode(rectOf: CGSize(width: size.width + 4, height: bandHeight + 2))
+            band.fillColor = color
+            band.strokeColor = .clear
+            band.position = CGPoint(x: size.width / 2, y: bandHeight * (CGFloat(index) + 0.5))
+            band.zPosition = -20
+            addChild(band)
+        }
+
+        let glow = SKShapeNode(ellipseOf: CGSize(width: size.width * 0.72, height: size.height * 0.42))
+        glow.fillColor = SKColor(red: 0.45, green: 0.20, blue: 0.72, alpha: 0.11)
+        glow.strokeColor = .clear
+        glow.position = CGPoint(x: size.width / 2, y: size.height * 0.56)
+        glow.zPosition = -15
+        addChild(glow)
+        GameUITheme.addAmbientSparkles(to: self, size: size, count: 12, zPosition: -12)
+    }
     private func showTab(_ tab: Tab) {
         currentTab = tab
         removeAllChildren()
+        addShopBackdrop()
 
         // Title
         let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        title.text = "Shop"
+        title.text = "STYLE SHOP"
         title.fontSize = 28
         title.fontColor = .white
         title.position = CGPoint(x: size.width / 2, y: size.height - 32)
         title.zPosition = 10
         addChild(title)
+
+        let subtitle = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        subtitle.text = "Collect a look • make it yours"
+        subtitle.fontSize = 10
+        subtitle.fontColor = SKColor(white: 0.68, alpha: 1)
+        subtitle.position = CGPoint(x: size.width / 2, y: size.height - 48)
+        subtitle.zPosition = 10
+        addChild(subtitle)
 
         // Back
         let back = SKLabelNode(fontNamed: "AvenirNext-Bold")
@@ -182,6 +217,16 @@ class ShopScene: SKScene {
         addChild(back)
 
         // Gem count
+        let gemCapsule = GameUITheme.makePanel(
+            size: CGSize(width: 88, height: 28),
+            cornerRadius: 9,
+            fillColor: SKColor(red: 0.17, green: 0.12, blue: 0.28, alpha: 0.96),
+            strokeColor: SKColor(red: 0.68, green: 0.47, blue: 1.0, alpha: 0.50)
+        )
+        gemCapsule.position = CGPoint(x: size.width - 62, y: size.height - 28)
+        gemCapsule.zPosition = 8
+        addChild(gemCapsule)
+
         let gemIcon = SKLabelNode(fontNamed: "AvenirNext-Bold")
         gemIcon.text = "💎"
         gemIcon.fontSize = 14
@@ -199,21 +244,16 @@ class ShopScene: SKScene {
         gemLabel.zPosition = 10
         addChild(gemLabel)
 
-        let gemStoreButton = SKShapeNode(rectOf: CGSize(width: 88, height: 24), cornerRadius: 7)
-        gemStoreButton.fillColor = SKColor(red: 0.48, green: 0.28, blue: 0.76, alpha: 1)
-        gemStoreButton.strokeColor = SKColor(white: 1, alpha: 0.25)
-        gemStoreButton.position = CGPoint(x: size.width - 66, y: size.height - 60)
+        let gemStoreButton = GameUITheme.makeButton(
+            title: "+  GET GEMS",
+            name: "openMonetizationStore",
+            size: CGSize(width: 96, height: 27),
+            color: GameUITheme.violet,
+            fontSize: 10
+        )
+        gemStoreButton.position = CGPoint(x: size.width - 67, y: size.height - 61)
         gemStoreButton.zPosition = 12
-        gemStoreButton.name = "openMonetizationStore"
         addChild(gemStoreButton)
-
-        let gemStoreLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        gemStoreLabel.text = "Get Gems"
-        gemStoreLabel.fontSize = 11
-        gemStoreLabel.fontColor = .white
-        gemStoreLabel.verticalAlignmentMode = .center
-        gemStoreLabel.name = "openMonetizationStore"
-        gemStoreButton.addChild(gemStoreLabel)
 
         // Tabs
         let tabs: [(Tab, String, SKColor)] = [
@@ -224,27 +264,25 @@ class ShopScene: SKScene {
             (.spots, "Spots", SKColor(red: 0.40, green: 0.30, blue: 0.20, alpha: 1)),
         ]
         for (i, (t, label, color)) in tabs.enumerated() {
-            let tabBg = SKShapeNode(rectOf: CGSize(width: 58, height: 24), cornerRadius: 6)
-            tabBg.fillColor = t == tab ? color : SKColor(white: 0.20, alpha: 1)
-            tabBg.strokeColor = .clear
-            tabBg.position = CGPoint(x: size.width / 2 + CGFloat(i) * 64 - CGFloat(tabs.count - 1) * 32, y: size.height - 62)
+            let tabName = "tab_\(t.rawValue)"
+            let tabBg = GameUITheme.makeButton(
+                title: label,
+                name: tabName,
+                size: CGSize(width: 60, height: 26),
+                color: t == tab ? color : SKColor(red: 0.18, green: 0.15, blue: 0.26, alpha: 1),
+                fontSize: 10
+            )
+            tabBg.position = CGPoint(x: size.width / 2 + CGFloat(i) * 64 - CGFloat(tabs.count - 1) * 32, y: size.height - 67)
             tabBg.zPosition = 10
-            tabBg.name = "tab_\(t.rawValue)"
+            if t == tab { tabBg.setScale(1.04) }
             addChild(tabBg)
-            let tl = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            tl.text = label
-            tl.fontSize = 12
-            tl.fontColor = .white
-            tl.verticalAlignmentMode = .center
-            tl.name = "tab_\(t.rawValue)"
-            tabBg.addChild(tl)
         }
 
         // Items grid
         let items = ShopScene.allItems.filter { $0.tab == tab }
         let cols = 4
         let cellW: CGFloat = 72
-        let cellH: CGFloat = 80
+        let cellH: CGFloat = 74
         let gridW = CGFloat(min(cols, items.count)) * cellW
         let startX = (size.width - gridW) / 2 + cellW / 2
         let startY = size.height - 100
@@ -255,11 +293,29 @@ class ShopScene: SKScene {
             let x = startX + CGFloat(col) * cellW
             let y = startY - CGFloat(row) * cellH
 
-            // Item icon
-            let iconBg = SKShapeNode(rectOf: CGSize(width: 36, height: 36), cornerRadius: 6)
             let isOwned = ShopScene.isOwned(item.id)
             let isEquipped = ShopScene.isEquipped(item.id)
-            iconBg.fillColor = SKColor(white: 0.15, alpha: 1)
+            let itemName = "item_\(item.id)"
+            let card = GameUITheme.makePanel(
+                size: CGSize(width: 66, height: 72),
+                cornerRadius: 10,
+                fillColor: isEquipped
+                    ? SKColor(red: 0.25, green: 0.19, blue: 0.35, alpha: 0.98)
+                    : SKColor(red: 0.12, green: 0.10, blue: 0.19, alpha: 0.94),
+                strokeColor: isEquipped
+                    ? GameUITheme.gold
+                    : (isOwned ? SKColor(white: 0.45, alpha: 0.65) : SKColor(white: 1, alpha: 0.10)),
+                name: itemName
+            )
+            card.position = CGPoint(x: x, y: y - 8)
+            card.zPosition = 4
+            addChild(card)
+
+            // Item icon
+            let iconBg = SKShapeNode(rectOf: CGSize(width: 36, height: 36), cornerRadius: 8)
+            iconBg.fillColor = isEquipped
+                ? SKColor(red: 0.38, green: 0.27, blue: 0.52, alpha: 1)
+                : SKColor(white: 0.15, alpha: 1)
             iconBg.strokeColor = isEquipped ? SKColor(red: 1, green: 0.85, blue: 0.2, alpha: 1) :
                                  isOwned ? SKColor(white: 0.4, alpha: 1) : SKColor(white: 0.2, alpha: 1)
             iconBg.lineWidth = isEquipped ? 2 : 1
@@ -345,6 +401,25 @@ class ShopScene: SKScene {
         guard let touch = touches.first else { return }
         let nodes = self.nodes(at: touch.location(in: self))
 
+        if childNode(withName: "gemPurchaseConfirmation") != nil {
+            for node in nodes {
+                if node.name == "cancelGemPurchase" {
+                    dismissGemPurchaseConfirmation()
+                    return
+                }
+                if node.name == "confirmGemPurchase" {
+                    completePendingGemPurchase()
+                    return
+                }
+                if node.name == "getGemsFromConfirmation" {
+                    dismissGemPurchaseConfirmation()
+                    showMonetizationStore()
+                    return
+                }
+            }
+            return
+        }
+
         if childNode(withName: "monetizationOverlay") != nil {
             for node in nodes {
                 guard let name = node.name else { continue }
@@ -397,6 +472,238 @@ class ShopScene: SKScene {
         }
     }
 
+    private func showGemPurchaseConfirmation(_ item: ShopItem) {
+        childNode(withName: "gemPurchaseConfirmation")?.removeFromParent()
+        pendingGemPurchaseItemID = item.id
+
+        let overlay = SKNode()
+        overlay.name = "gemPurchaseConfirmation"
+        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        overlay.zPosition = 600
+        overlay.alpha = 0
+        overlay.setScale(0.92)
+        addChild(overlay)
+
+        let dim = SKShapeNode(rectOf: size)
+        dim.fillColor = SKColor(white: 0, alpha: 0.80)
+        dim.strokeColor = .clear
+        dim.name = "gemPurchaseBackdrop"
+        overlay.addChild(dim)
+
+        let cardWidth = min(430, size.width - 44)
+        let card = GameUITheme.makePanel(
+            size: CGSize(width: cardWidth, height: 250),
+            cornerRadius: 18,
+            fillColor: SKColor(red: 0.105, green: 0.075, blue: 0.19, alpha: 0.99),
+            strokeColor: GameUITheme.violet
+        )
+        overlay.addChild(card)
+
+        let eyebrow = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        eyebrow.text = "CONFIRM PURCHASE"
+        eyebrow.fontSize = 11
+        eyebrow.fontColor = SKColor(red: 0.74, green: 0.56, blue: 1.0, alpha: 1)
+        eyebrow.position = CGPoint(x: 0, y: 94)
+        card.addChild(eyebrow)
+
+        let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        title.text = item.displayName
+        title.fontSize = 24
+        title.fontColor = .white
+        title.position = CGPoint(x: 0, y: 65)
+        card.addChild(title)
+
+        addConfirmationPreview(for: item, to: card)
+
+        let detail = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        detail.text = "\(item.tab.rawValue) cosmetic • equips immediately"
+        detail.fontSize = 11
+        detail.fontColor = SKColor(white: 0.69, alpha: 1)
+        detail.position = CGPoint(x: 0, y: -17)
+        card.addChild(detail)
+
+        let balance = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        balance.text = "Balance  \(GameScene.gemCount) 💎     Price  \(item.price) 💎"
+        balance.fontSize = 13
+        balance.fontColor = GameScene.gemCount >= item.price ? GameUITheme.gold : GameUITheme.coral
+        balance.position = CGPoint(x: 0, y: -45)
+        card.addChild(balance)
+
+        let cancel = GameUITheme.makeButton(
+            title: "Cancel",
+            name: "cancelGemPurchase",
+            size: CGSize(width: 126, height: 38),
+            color: SKColor(white: 0.27, alpha: 1),
+            fontSize: 14
+        )
+        cancel.position = CGPoint(x: -76, y: -88)
+        card.addChild(cancel)
+
+        let canAfford = GameScene.gemCount >= item.price
+        let action = GameUITheme.makeButton(
+            title: canAfford ? "Buy • \(item.price) 💎" : "Get More Gems",
+            name: canAfford ? "confirmGemPurchase" : "getGemsFromConfirmation",
+            size: CGSize(width: 158, height: 38),
+            color: canAfford ? GameUITheme.mint : GameUITheme.violet,
+            fontSize: 13
+        )
+        action.position = CGPoint(x: 72, y: -88)
+        card.addChild(action)
+
+        overlay.run(SKAction.group([
+            SKAction.fadeIn(withDuration: 0.16),
+            SKAction.scale(to: 1.0, duration: 0.18),
+        ]))
+    }
+
+    private func addConfirmationPreview(for item: ShopItem, to parent: SKNode) {
+        if item.tab == .colors || item.tab == .spots, let color = item.color {
+            let preview = SKShapeNode(circleOfRadius: 24)
+            preview.fillColor = SKColor(cgColor: color.cgColor)
+            preview.strokeColor = SKColor(white: 1, alpha: 0.46)
+            preview.lineWidth = 2
+            preview.position = CGPoint(x: 0, y: 23)
+            parent.addChild(preview)
+
+            if item.tab == .spots {
+                for offset in [CGPoint(x: -8, y: 5), CGPoint(x: 7, y: 8), CGPoint(x: 1, y: -8)] {
+                    let spot = SKShapeNode(circleOfRadius: 4)
+                    spot.fillColor = GameUITheme.ink
+                    spot.strokeColor = .clear
+                    spot.position = offset
+                    preview.addChild(spot)
+                }
+            }
+        } else {
+            let preview = SKLabelNode(text: itemPreviewSymbol(for: item))
+            preview.fontSize = 38
+            preview.verticalAlignmentMode = .center
+            preview.position = CGPoint(x: 0, y: 23)
+            parent.addChild(preview)
+        }
+
+        if item.isSparkly {
+            let sparkle = SKLabelNode(text: "✦")
+            sparkle.fontSize = 16
+            sparkle.fontColor = GameUITheme.gold
+            sparkle.position = CGPoint(x: 34, y: 43)
+            parent.addChild(sparkle)
+            sparkle.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.scale(to: 1.35, duration: 0.42),
+                SKAction.scale(to: 0.82, duration: 0.42),
+            ])))
+        }
+    }
+
+    private func itemPreviewSymbol(for item: ShopItem) -> String {
+        switch item.tab {
+        case .colors: return "●"
+        case .shoes: return "👟"
+        case .wings: return "🦋"
+        case .spots: return "•••"
+        case .hats:
+            switch item.id {
+            case "hat_tophat": return "🎩"
+            case "hat_cap": return "🧢"
+            case "hat_crown", "hat_gem": return "👑"
+            case "hat_flower": return "🌸"
+            case "hat_wizard": return "🧙"
+            case "hat_pirate": return "🏴‍☠️"
+            case "hat_chef": return "👨‍🍳"
+            case "hat_cowboy": return "🤠"
+            case "hat_beanie": return "🧶"
+            case "hat_halo": return "😇"
+            case "hat_horns": return "😈"
+            case "hat_party": return "🎉"
+            case "hat_bow": return "🎀"
+            case "hat_mushroom": return "🍄"
+            case "hat_leaf": return "🍃"
+            default: return "🎭"
+            }
+        }
+    }
+
+    private func dismissGemPurchaseConfirmation() {
+        pendingGemPurchaseItemID = nil
+        childNode(withName: "gemPurchaseConfirmation")?.removeFromParent()
+    }
+
+    private func completePendingGemPurchase() {
+        guard let itemID = pendingGemPurchaseItemID,
+              let item = ShopScene.allItems.first(where: { $0.id == itemID }) else {
+            dismissGemPurchaseConfirmation()
+            return
+        }
+        guard !ShopScene.isOwned(itemID) else {
+            dismissGemPurchaseConfirmation()
+            showTab(currentTab)
+            showShopToast("Already owned")
+            return
+        }
+        guard PlayerWallet.shared.spendGems(item.price) else {
+            showGemPurchaseConfirmation(item)
+            showShopToast("Not enough gems")
+            return
+        }
+
+        var owned = Set(ShopScene.ownedItems)
+        owned.insert(itemID)
+        ShopScene.ownedItems = owned.sorted()
+        equip(item)
+        AppServices.shared.analytics.track(.economySpend(itemID: itemID, gems: item.price))
+        SoundManager.shared.play("powerup")
+        pendingGemPurchaseItemID = nil
+        showTab(currentTab)
+        showShopToast("\(item.displayName) purchased + equipped")
+    }
+
+    private func equip(_ item: ShopItem) {
+        switch item.tab {
+        case .colors: ShopScene.equippedColor = item.id
+        case .hats: ShopScene.equippedHat = item.id
+        case .shoes: ShopScene.equippedShoes = item.id
+        case .wings: ShopScene.equippedWings = item.id
+        case .spots: ShopScene.equippedSpots = item.id
+        }
+    }
+
+    private func unequip(_ item: ShopItem) {
+        switch item.tab {
+        case .colors: ShopScene.equippedColor = nil
+        case .hats: ShopScene.equippedHat = nil
+        case .shoes: ShopScene.equippedShoes = nil
+        case .wings: ShopScene.equippedWings = nil
+        case .spots: ShopScene.equippedSpots = nil
+        }
+    }
+
+    private func showShopToast(_ message: String) {
+        childNode(withName: "shopToast")?.removeFromParent()
+        let toast = GameUITheme.makePanel(
+            size: CGSize(width: min(340, size.width - 50), height: 38),
+            cornerRadius: 11,
+            fillColor: SKColor(red: 0.10, green: 0.08, blue: 0.17, alpha: 0.96),
+            strokeColor: GameUITheme.gold,
+            name: "shopToast"
+        )
+        toast.position = CGPoint(x: size.width / 2, y: size.height * 0.52)
+        toast.zPosition = 500
+        toast.alpha = 0
+        addChild(toast)
+
+        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        label.text = message
+        label.fontSize = 12
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        toast.addChild(label)
+        toast.run(SKAction.sequence([
+            SKAction.fadeIn(withDuration: 0.12),
+            SKAction.wait(forDuration: 1.15),
+            SKAction.fadeOut(withDuration: 0.25),
+            SKAction.removeFromParent(),
+        ]))
+    }
     private var storePresenter: UIViewController? {
         var presenter = view?.window?.rootViewController
         while let presented = presenter?.presentedViewController {
@@ -422,18 +729,20 @@ class ShopScene: SKScene {
 
         let panelWidth = min(size.width - 32, 610)
         let panelHeight = min(size.height - 24, 340)
-        let panel = SKShapeNode(rectOf: CGSize(width: panelWidth, height: panelHeight), cornerRadius: 18)
-        panel.fillColor = SKColor(red: 0.10, green: 0.08, blue: 0.18, alpha: 0.98)
-        panel.strokeColor = SKColor(red: 0.64, green: 0.44, blue: 0.96, alpha: 0.9)
-        panel.lineWidth = 2
-        panel.name = "monetizationPanel"
+        let panel = GameUITheme.makePanel(
+            size: CGSize(width: panelWidth, height: panelHeight),
+            cornerRadius: 20,
+            fillColor: SKColor(red: 0.085, green: 0.06, blue: 0.16, alpha: 0.99),
+            strokeColor: GameUITheme.violet,
+            name: "monetizationPanel"
+        )
         overlay.addChild(panel)
 
         let halfHeight = panelHeight / 2
         let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        title.text = "Gem Store"
+        title.text = "GEM STORE"
         title.fontSize = 24
-        title.fontColor = .white
+        title.fontColor = GameUITheme.gold
         title.position = CGPoint(x: 0, y: halfHeight - 38)
         panel.addChild(title)
 
@@ -447,8 +756,8 @@ class ShopScene: SKScene {
 
         let testNotice = SKLabelNode(fontNamed: "AvenirNext-Bold")
         testNotice.text = MonetizationConfiguration.usesSimulatedAds
-            ? "TEST ADS ON  •  blank screen for 5 seconds"
-            : "Optional rewards • purchases never expire"
+            ? "TEST ADS ON  •  YOUR AD HERE placeholder"
+            : "OPTIONAL REWARDS  •  PURCHASES NEVER EXPIRE"
         testNotice.fontSize = 10
         testNotice.fontColor = MonetizationConfiguration.usesSimulatedAds
             ? SKColor(red: 1.0, green: 0.76, blue: 0.20, alpha: 1)
@@ -556,13 +865,16 @@ class ShopScene: SKScene {
         let price = isOwned ? "Owned" : (product?.displayPrice ?? "Unavailable")
         let name = "purchase_\(id.rawValue)"
 
-        let button = SKShapeNode(rectOf: CGSize(width: width, height: 38), cornerRadius: 8)
-        button.fillColor = isOwned
-            ? SKColor(red: 0.20, green: 0.48, blue: 0.30, alpha: 1)
-            : SKColor(red: 0.22, green: 0.18, blue: 0.34, alpha: 1)
-        button.strokeColor = SKColor(white: 1, alpha: 0.16)
+        let button = GameUITheme.makePanel(
+            size: CGSize(width: width, height: 38),
+            cornerRadius: 9,
+            fillColor: isOwned
+                ? SKColor(red: 0.18, green: 0.43, blue: 0.28, alpha: 1)
+                : SKColor(red: 0.19, green: 0.14, blue: 0.30, alpha: 1),
+            strokeColor: isOwned ? GameUITheme.mint.withAlphaComponent(0.60) : SKColor(white: 1, alpha: 0.16),
+            name: name
+        )
         button.position = CGPoint(x: x, y: y)
-        button.name = name
         parent.addChild(button)
 
         let titleLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
@@ -604,20 +916,15 @@ class ShopScene: SKScene {
         color: SKColor,
         parent: SKNode
     ) {
-        let button = SKShapeNode(rectOf: CGSize(width: width, height: 36), cornerRadius: 8)
-        button.fillColor = color
-        button.strokeColor = SKColor(white: 1, alpha: 0.16)
+        let button = GameUITheme.makeButton(
+            title: title,
+            name: name,
+            size: CGSize(width: width, height: 36),
+            color: color,
+            fontSize: 11
+        )
         button.position = CGPoint(x: x, y: y)
-        button.name = name
         parent.addChild(button)
-
-        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        label.text = title
-        label.fontSize = 11
-        label.fontColor = .white
-        label.verticalAlignmentMode = .center
-        label.name = name
-        button.addChild(label)
     }
 
     private func beginPurchase(_ id: PurchaseProductID) {
@@ -725,50 +1032,15 @@ class ShopScene: SKScene {
         guard let item = ShopScene.allItems.first(where: { $0.id == itemId }) else { return }
 
         if ShopScene.isEquipped(itemId) {
-            // Unequip
-            switch item.tab {
-            case .colors: ShopScene.equippedColor = nil
-            case .hats: ShopScene.equippedHat = nil
-            case .shoes: ShopScene.equippedShoes = nil
-            case .wings: ShopScene.equippedWings = nil
-            case .spots: ShopScene.equippedSpots = nil
-            }
+            unequip(item)
             showTab(currentTab)
+            showShopToast("\(item.displayName) unequipped")
         } else if ShopScene.isOwned(itemId) {
-            // Equip
-            switch item.tab {
-            case .colors: ShopScene.equippedColor = itemId
-            case .hats: ShopScene.equippedHat = itemId
-            case .shoes: ShopScene.equippedShoes = itemId
-            case .wings: ShopScene.equippedWings = itemId
-            case .spots: ShopScene.equippedSpots = itemId
-            }
+            equip(item)
             showTab(currentTab)
-        } else if PlayerWallet.shared.spendGems(item.price) {
-            // Buy
-            AppServices.shared.analytics.track(.economySpend(itemID: itemId, gems: item.price))
-            var owned = ShopScene.ownedItems
-            owned.append(itemId)
-            ShopScene.ownedItems = owned
-            // Auto-equip
-            switch item.tab {
-            case .colors: ShopScene.equippedColor = itemId
-            case .hats: ShopScene.equippedHat = itemId
-            case .shoes: ShopScene.equippedShoes = itemId
-            case .wings: ShopScene.equippedWings = itemId
-            case .spots: ShopScene.equippedSpots = itemId
-            }
-            SoundManager.shared.play("powerup")
-            showTab(currentTab)
+            showShopToast("\(item.displayName) equipped")
         } else {
-            // Not enough gems — flash the gem label red briefly
-            gemLabel.fontColor = SKColor(red: 1.0, green: 0.3, blue: 0.3, alpha: 1.0)
-            gemLabel.run(SKAction.sequence([
-                SKAction.wait(forDuration: 0.4),
-                SKAction.run { [weak self] in
-                    self?.gemLabel.fontColor = SKColor(red: 0.75, green: 0.55, blue: 1.0, alpha: 1.0)
-                }
-            ]))
+            showGemPurchaseConfirmation(item)
         }
     }
 }
