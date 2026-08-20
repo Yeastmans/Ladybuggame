@@ -19,14 +19,14 @@ class BugopediaScene: SKScene {
         case .jungle: return [.jungleBeetle, .butterfly, .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee]
         case .cave: return [.caveCricket, .glowworm, .crystalBeetle, .caveSpider, .vampireBat, .rockWorm, .caveFish]
         case .underwater: return [.clownfish, .seaSnail, .starfish, .shrimplet, .seahorse, .jellyfish, .anglerFish, .seaUrchin, .electricEel, .stingray, .pufferfish]
-        case .volcano: return [.emberBeetle, .ashMoth, .magmaSnail, .fireAnt, .phoenixBird, .obsidianGolem, .komodoDragon, .sloth]
+        case .volcano: return [.emberBeetle, .ashMoth, .magmaSnail, .fireAnt, .phoenixBird, .komodoDragon, .sloth]
         case .cloud: return [.cloudMite, .starBug, .skyButterfly, .stormHawk, .windSprite, .thunderWasp, .lightningBug]
         case .swamp: return [.mudCricket, .swampFly, .leech, .mosquitoSwarm, .alligator, .swampSnake, .bogSpider]
         case .city: return [.gardenAnt, .honeybee, .pillBug, .houseCat, .gardenSnake, .yellowJacket, .gardenSpider, .guardDog]
         case .ruins: return [.scarab, .dustMite, .templeWorm, .stoneGuardian, .tombSpider, .curseWraith, .sandViper]
-        case .mushroom: return [.sporeBug, .glowShroom, .fungusGnat, .toxicSpore, .shroomGolem, .myceliumCrawler, .capBouncer]
+        case .mushroom: return [.sporeBug, .glowShroom, .fungusGnat, .toxicSpore, .myceliumCrawler, .capBouncer]
         case .crystal: return [.gemLarva, .prismFly, .crystalMite, .shardSentinel, .crystalWyrm, .refractor, .geodeRoller]
-        case .space: return [.cosmicDust, .starLarva, .nebulaJelly, .alienDrone, .asteroidBeetle, .voidMoth, .cosmicSerpent]
+        case .space: return [.cosmicDust, .starLarva, .nebulaJelly, .alienDrone, .voidMoth, .cosmicSerpent]
         }
     }
 

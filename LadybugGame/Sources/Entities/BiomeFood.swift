@@ -18,29 +18,48 @@ class BiomeFood: SKSpriteNode {
         zPosition = 5
     }
 
-    /// Make this a rare gemstone bug — pink glow aura around it
+    /// Make this a rare gemstone bug without wrapping friendly art in an aura.
+    /// A compact diamond badge communicates the bonus without resembling danger.
     func makeGemBug() {
         isGemBug = true
-        // Pink glow circle behind the bug (like firefly but pink and smaller)
-        let glow = SKShapeNode(circleOfRadius: size.width * 0.6)
-        glow.fillColor = SKColor(red: 1.0, green: 0.35, blue: 0.65, alpha: 0.22)
-        glow.strokeColor = SKColor(red: 1.0, green: 0.40, blue: 0.70, alpha: 0.35)
-        glow.lineWidth = 1.5
-        glow.zPosition = -1
-        glow.name = "gemGlow"
-        addChild(glow)
-        // Pulse the glow
-        let pulse = SKAction.sequence([
-            SKAction.fadeAlpha(to: 0.6, duration: 0.3),
-            SKAction.fadeAlpha(to: 1.0, duration: 0.3),
-        ])
-        glow.run(SKAction.repeatForever(pulse))
-        // Also tint the bug slightly pink
-        let flash = SKAction.sequence([
-            SKAction.colorize(with: SKColor(red: 1.0, green: 0.4, blue: 0.7, alpha: 1.0), colorBlendFactor: 0.5, duration: 0.2),
-            SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2),
-        ])
-        run(SKAction.repeatForever(flash), withKey: "gemFlash")
+
+        let marker = SKNode()
+        marker.name = "gemMarker"
+        marker.position = CGPoint(x: 0, y: size.height * 0.72)
+        marker.zPosition = 6
+        addChild(marker)
+
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: 0, y: 7))
+        path.addLine(to: CGPoint(x: 6, y: 0))
+        path.addLine(to: CGPoint(x: 0, y: -7))
+        path.addLine(to: CGPoint(x: -6, y: 0))
+        path.closeSubpath()
+        let diamond = SKShapeNode(path: path)
+        diamond.fillColor = SKColor(red: 0.95, green: 0.34, blue: 0.82, alpha: 1)
+        diamond.strokeColor = SKColor(white: 1, alpha: 0.92)
+        diamond.lineWidth = 1
+        marker.addChild(diamond)
+
+        let sparkle = SKLabelNode(text: "✦")
+        sparkle.fontSize = 8
+        sparkle.fontColor = SKColor(red: 1.0, green: 0.88, blue: 0.35, alpha: 1)
+        sparkle.position = CGPoint(x: 10, y: 5)
+        sparkle.zPosition = 1
+        marker.addChild(sparkle)
+
+        marker.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.moveBy(x: 0, y: 3, duration: 0.45),
+            SKAction.moveBy(x: 0, y: -3, duration: 0.45),
+        ])))
+        diamond.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.scale(to: 1.12, duration: 0.35),
+            SKAction.scale(to: 0.92, duration: 0.35),
+        ])))
+        sparkle.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.25, duration: 0.28),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.28),
+        ])))
     }
 
     required init?(coder aDecoder: NSCoder) {

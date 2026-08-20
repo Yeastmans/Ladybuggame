@@ -110,8 +110,25 @@ class Ladybug: SKSpriteNode {
         }
     }
 
-    func updatePhysics(dt: TimeInterval, groundY: CGFloat, ceilingY: CGFloat) {
+    func beginFloating(at y: CGFloat) {
+        position.y = y
+        velocityY = 0
+        isOnGround = false
+        isFlying = true
+        startFlapAnimation()
+    }
+
+    func updatePhysics(
+        dt: TimeInterval,
+        groundY: CGFloat,
+        ceilingY: CGFloat,
+        allowsLanding: Bool = true,
+        gravityScale: CGFloat = 1
+    ) {
         if invincibleTimer > 0 { invincibleTimer -= dt }
+        if !allowsLanding && isOnGround {
+            beginFloating(at: max(position.y, groundY + 24))
+        }
 
         if let ty = targetY, !isInsideLog {
             if isOnGround && ty > groundY + 10 {
@@ -135,7 +152,7 @@ class Ladybug: SKSpriteNode {
             }
         } else if !isOnGround {
             isFlying = false
-            velocityY += gravity * CGFloat(dt)
+            velocityY += gravity * gravityScale * CGFloat(dt)
 
             // Nose-dive tilt when falling
             let tilt = max(-0.5, min(0, velocityY * 0.0015))
@@ -175,16 +192,22 @@ class Ladybug: SKSpriteNode {
 
         if position.y <= groundY {
             position.y = groundY
-            velocityY = 0
-            isOnGround = true
-            isFlying = false
-            zRotation = 0
-            walkBobTime = 0
-            walkLegTime = 0
-            xScale = 1.0
-            yScale = 1.0
-            stopFlapAnimation()
-            SoundManager.shared.play("land")
+            if allowsLanding {
+                velocityY = 0
+                isOnGround = true
+                isFlying = false
+                zRotation = 0
+                walkBobTime = 0
+                walkLegTime = 0
+                xScale = 1.0
+                yScale = 1.0
+                stopFlapAnimation()
+                SoundManager.shared.play("land")
+            } else {
+                velocityY = max(28, abs(velocityY) * 0.18)
+                isOnGround = false
+                isFlying = true
+            }
         }
     }
 

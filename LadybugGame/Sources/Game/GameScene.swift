@@ -381,6 +381,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             tile.position = CGPoint(x: CGFloat(i) * (tileWidth - 10), y: 0)
             tile.zPosition = 0
             tile.name = "groundTile"
+            tile.alpha = (currentBiome == .space || currentBiome == .cave) ? 0 : 1
             addChild(tile)
             groundTiles.append(tile)
 
@@ -614,13 +615,17 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let flyFrames = TextureGenerator.generateLadybugFlyFrames(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat, wingColor: wingColor, spotColor: spotColor)
         let walkFrames = TextureGenerator.generateLadybugWalkFrames(size: bugSize, bodyColor: bodyColor, hideAntennae: hasHat, spotColor: spotColor)
         ladybug = Ladybug(walkTexture: walkTex, blinkTexture: blinkTex, flyFrames: flyFrames, walkFrames: walkFrames)
-        ladybug.position = CGPoint(x: size.width * 0.18, y: groundY + bugSize.height / 2)
+        let spawnY = currentBiome == .space ? size.height * 0.52 : groundY + bugSize.height / 2
+        ladybug.position = CGPoint(x: size.width * 0.18, y: spawnY)
 
         // Apply equipped cosmetics (hats, shoes, sparkle)
         applyLadybugCosmetics()
 
         configureLadybugPhysics()
         addChild(ladybug)
+        if currentBiome == .space {
+            ladybug.beginFloating(at: spawnY)
+        }
     }
 
     private func configureLadybugPhysics() {
@@ -917,8 +922,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         lives = 1
         updateLivesDisplay()
-        let revivedGroundY = effectiveGroundY(atScreenX: ladybug.position.x) + ladybug.size.height / 2
-        ladybug.restoreAfterRewardedRevive(groundY: revivedGroundY)
+        let revivedY = currentBiome == .space
+            ? size.height * 0.50
+            : effectiveGroundY(atScreenX: ladybug.position.x) + ladybug.size.height / 2
+        ladybug.restoreAfterRewardedRevive(groundY: revivedY)
+        if currentBiome == .space {
+            ladybug.beginFloating(at: revivedY)
+        }
         configureLadybugPhysics()
         ladybug.makeInvincible(duration: 3.0)
         lastUpdateTime = 0
@@ -1036,7 +1046,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Check if inside a log — clamp ceiling to log top
         checkLogTube(bugGroundY: bugGroundY, ceilingY: &ceilingY)
 
-        ladybug.updatePhysics(dt: dt, groundY: bugGroundY, ceilingY: ceilingY)
+        ladybug.updatePhysics(
+            dt: dt,
+            groundY: bugGroundY,
+            ceilingY: ceilingY,
+            allowsLanding: currentBiome != .space,
+            gravityScale: currentBiome == .space ? 0.18 : 1
+        )
 
         pushEntitiesFromLogs()
         checkPondSplash()
@@ -1244,6 +1260,14 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         enumerateChildNodes(withName: "hill") { node, _ in
             node.position.x -= delta * 0.25
             if node.position.x < -350 { node.position.x = self.size.width + CGFloat.random(in: 50...200) }
+        }
+        enumerateChildNodes(withName: "underwaterSeaweedBack") { node, _ in
+            node.position.x -= delta * 0.38
+            if node.position.x < -100 { node.removeFromParent() }
+        }
+        enumerateChildNodes(withName: "underwaterSeaweedFront") { node, _ in
+            node.position.x -= delta
+            if node.position.x < -100 { node.removeFromParent() }
         }
         enumerateChildNodes(withName: "envDecor") { node, _ in
             node.position.x -= delta
@@ -1484,6 +1508,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             let frog = Frog(texture: tex)
             frog.position = CGPoint(x: spawnX + pondW * 0.3, y: groundY + frog.size.height / 2)
             addChild(frog)
+            CreatureReadability.applyThreatCue(to: frog)
 
             let checkDistance = SKAction.run { [weak self, weak frog] in
                 guard let self = self, let frog = frog else { return }
@@ -1751,58 +1776,114 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
 
+    private func spawnUnderwaterSeaweedCluster(x: CGFloat, background: Bool) {
+        let cluster = SKNode()
+        cluster.name = background ? "underwaterSeaweedBack" : "underwaterSeaweedFront"
+        cluster.position = CGPoint(x: x, y: groundY)
+        cluster.zPosition = background ? -0.25 : 3
+        addChild(cluster)
+
+        let palette: [SKColor] = [
+            SKColor(red: 0.08, green: 0.48, blue: 0.28, alpha: 1),
+            SKColor(red: 0.08, green: 0.60, blue: 0.48, alpha: 1),
+            SKColor(red: 0.25, green: 0.56, blue: 0.32, alpha: 1),
+            SKColor(red: 0.40, green: 0.24, blue: 0.52, alpha: 1),
+            SKColor(red: 0.60, green: 0.30, blue: 0.17, alpha: 1),
+            SKColor(red: 0.64, green: 0.20, blue: 0.24, alpha: 1),
+            SKColor(red: 0.12, green: 0.36, blue: 0.66, alpha: 1),
+        ]
+        let strandCount = background ? Int.random(in: 4...7) : Int.random(in: 2...5)
+        let heightRange: ClosedRange<CGFloat> = background ? (95...215) : (70...180)
+        let centerOffset = CGFloat(strandCount - 1) / 2
+
+        for index in 0..<strandCount {
+            let strandHeight = CGFloat.random(in: heightRange)
+            let horizontalSpacing = CGFloat.random(in: 8...14)
+            let strandX = (CGFloat(index) - centerOffset) * horizontalSpacing + CGFloat.random(in: -4...4)
+            let bend = CGFloat.random(in: 10...24) * (Bool.random() ? 1 : -1)
+            let path = UIBezierPath()
+            path.move(to: .zero)
+            path.addCurve(
+                to: CGPoint(x: CGFloat.random(in: -5...5), y: strandHeight),
+                controlPoint1: CGPoint(x: bend, y: strandHeight * 0.32),
+                controlPoint2: CGPoint(x: -bend * 0.75, y: strandHeight * 0.72)
+            )
+
+            let color = palette.randomElement()!
+            let strand = SKShapeNode(path: path.cgPath)
+            strand.strokeColor = color.withAlphaComponent(background ? 0.52 : 0.82)
+            strand.lineWidth = background ? CGFloat.random(in: 2...3.6) : CGFloat.random(in: 3...5)
+            strand.lineCap = .round
+            strand.fillColor = .clear
+            strand.position = CGPoint(x: strandX, y: 0)
+            cluster.addChild(strand)
+
+            if Bool.random() {
+                for leafIndex in 0..<Int.random(in: 1...3) {
+                    let fraction = CGFloat(leafIndex + 1) / 4 + CGFloat.random(in: 0.04...0.15)
+                    let leaf = SKShapeNode(ellipseOf: CGSize(
+                        width: background ? CGFloat.random(in: 7...12) : CGFloat.random(in: 9...15),
+                        height: background ? CGFloat.random(in: 3...6) : CGFloat.random(in: 4...7)
+                    ))
+                    leaf.fillColor = color.withAlphaComponent(background ? 0.42 : 0.72)
+                    leaf.strokeColor = .clear
+                    leaf.position = CGPoint(
+                        x: CGFloat.random(in: -5...5),
+                        y: min(strandHeight - 12, strandHeight * fraction)
+                    )
+                    leaf.zRotation = CGFloat.random(in: -0.65...0.65)
+                    strand.addChild(leaf)
+                }
+            }
+
+            let swayAngle = CGFloat.random(in: 0.035...0.075)
+            let swayDuration = Double.random(in: 1.5...2.5)
+            strand.zRotation = CGFloat.random(in: -swayAngle...swayAngle)
+            strand.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.rotate(toAngle: swayAngle, duration: swayDuration),
+                SKAction.rotate(toAngle: -swayAngle, duration: swayDuration),
+            ])))
+        }
+    }
+
+    private func seedUnderwaterSeaweed() {
+        for index in 0..<9 {
+            let x = size.width * CGFloat(index) / 8 + CGFloat.random(in: -28...28)
+            spawnUnderwaterSeaweedCluster(x: x, background: true)
+        }
+        for index in 0..<3 {
+            let x = size.width * (CGFloat(index) + 0.5) / 3 + CGFloat.random(in: -35...35)
+            spawnUnderwaterSeaweedCluster(x: x, background: false)
+        }
+    }
+
     private func spawnUnderwaterDecor(x: CGFloat) {
+        // Every decor event adds a slower background layer, while the foreground
+        // still varies between kelp, coral, bubbles, shells, and sand ripples.
+        spawnUnderwaterSeaweedCluster(x: x + CGFloat.random(in: -30...30), background: true)
+
         let roll = Int.random(in: 0...4)
         switch roll {
-        case 0: // Tall swaying seaweed (1-4 strands, mixed kelp colors)
-            let weedColors: [SKColor] = [
-                SKColor(red: 0.12, green: 0.55, blue: 0.28, alpha: 0.75), // green
-                SKColor(red: 0.10, green: 0.62, blue: 0.45, alpha: 0.75), // teal
-                SKColor(red: 0.35, green: 0.50, blue: 0.15, alpha: 0.75), // olive
-                SKColor(red: 0.48, green: 0.20, blue: 0.40, alpha: 0.75), // purple dulse
-                SKColor(red: 0.55, green: 0.38, blue: 0.12, alpha: 0.75), // golden kelp
-                SKColor(red: 0.65, green: 0.25, blue: 0.20, alpha: 0.70), // red algae
-            ]
-            let strands = Int.random(in: 1...4)
-            for s in 0..<strands {
-                let wH = CGFloat.random(in: 60...170)
-                let bend = CGFloat.random(in: 7...18)
-                let path = UIBezierPath()
-                path.move(to: .zero)
-                path.addCurve(to: CGPoint(x: 0, y: wH),
-                              controlPoint1: CGPoint(x: bend, y: wH * 0.33),
-                              controlPoint2: CGPoint(x: -bend, y: wH * 0.66))
-                let weed = SKShapeNode(path: path.cgPath)
-                weed.strokeColor = weedColors.randomElement()!
-                weed.lineWidth = CGFloat.random(in: 2.5...4.5)
-                weed.lineCap = .round
-                weed.fillColor = .clear
-                weed.position = CGPoint(x: x + CGFloat(s - 1) * 8, y: groundY)
-                weed.zPosition = 1
-                weed.name = "envDecor"
-                addChild(weed)
-                // Sway around the rooted base
-                let lean = SKAction.sequence([
-                    SKAction.rotate(toAngle: 0.10, duration: Double.random(in: 1.2...1.8)),
-                    SKAction.rotate(toAngle: -0.10, duration: Double.random(in: 1.2...1.8)),
-                ])
-                weed.run(SKAction.repeatForever(lean))
-            }
+        case 0:
+            spawnUnderwaterSeaweedCluster(x: x + CGFloat.random(in: -16...16), background: false)
         case 1: // Coral
             let coral = SKShapeNode(circleOfRadius: CGFloat.random(in: 8...16))
             coral.fillColor = [SKColor.orange, SKColor.magenta, SKColor(red: 0.9, green: 0.4, blue: 0.5, alpha: 1)].randomElement()!.withAlphaComponent(0.7)
             addDecor(coral, x: x, y: groundY + CGFloat.random(in: 4...10))
         case 2: // Bubbles rising
             for _ in 0..<Int.random(in: 2...4) {
-                let bub = SKShapeNode(circleOfRadius: CGFloat.random(in: 1.5...3.5))
-                bub.fillColor = SKColor(red: 0.50, green: 0.70, blue: 0.90, alpha: 0.3)
-                bub.strokeColor = SKColor(red: 0.60, green: 0.80, blue: 1.0, alpha: 0.4)
-                bub.lineWidth = 0.5
-                bub.position = CGPoint(x: x + CGFloat.random(in: -8...8), y: groundY + CGFloat.random(in: 10...40))
-                bub.zPosition = 1
-                bub.name = "envDecor"
-                addChild(bub)
-                bub.run(SKAction.sequence([SKAction.moveBy(x: 0, y: CGFloat.random(in: 40...80), duration: Double.random(in: 2...4)), SKAction.removeFromParent()]))
+                let bubble = SKShapeNode(circleOfRadius: CGFloat.random(in: 1.5...3.5))
+                bubble.fillColor = SKColor(red: 0.50, green: 0.70, blue: 0.90, alpha: 0.3)
+                bubble.strokeColor = SKColor(red: 0.60, green: 0.80, blue: 1.0, alpha: 0.4)
+                bubble.lineWidth = 0.5
+                bubble.position = CGPoint(x: x + CGFloat.random(in: -8...8), y: groundY + CGFloat.random(in: 10...40))
+                bubble.zPosition = 1
+                bubble.name = "envDecor"
+                addChild(bubble)
+                bubble.run(SKAction.sequence([
+                    SKAction.moveBy(x: 0, y: CGFloat.random(in: 40...80), duration: Double.random(in: 2...4)),
+                    SKAction.removeFromParent(),
+                ]))
             }
         case 3: // Shell
             let shell = SKShapeNode(circleOfRadius: CGFloat.random(in: 4...7))
@@ -2077,20 +2158,20 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case 0: // Distant star
             let star = SKShapeNode(circleOfRadius: CGFloat.random(in: 1...2.5))
             star.fillColor = [SKColor.white, SKColor(red: 0.8, green: 0.9, blue: 1.0, alpha: 1), SKColor(red: 1.0, green: 0.9, blue: 0.7, alpha: 1)].randomElement()!.withAlphaComponent(CGFloat.random(in: 0.4...0.9))
-            addDecor(star, x: x, y: CGFloat.random(in: groundY + 30...size.height * 0.85))
+            addDecor(star, x: x, y: CGFloat.random(in: size.height * 0.08...size.height * 0.92))
         case 1: // Asteroid
             let asteroid = SKShapeNode(circleOfRadius: CGFloat.random(in: 5...12))
             asteroid.fillColor = SKColor(red: 0.35, green: 0.32, blue: 0.30, alpha: 0.7)
-            addDecor(asteroid, x: x, y: CGFloat.random(in: groundY + 15...size.height * 0.60))
+            addDecor(asteroid, x: x, y: CGFloat.random(in: size.height * 0.12...size.height * 0.86))
         case 2: // Nebula cloud
             let neb = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 25...50), height: CGFloat.random(in: 12...25)))
             neb.fillColor = [SKColor(red: 0.50, green: 0.20, blue: 0.60, alpha: 0.08), SKColor(red: 0.20, green: 0.40, blue: 0.65, alpha: 0.08), SKColor(red: 0.60, green: 0.25, blue: 0.35, alpha: 0.08)].randomElement()!
-            addDecor(neb, x: x, y: CGFloat.random(in: groundY + 20...size.height * 0.70))
+            addDecor(neb, x: x, y: CGFloat.random(in: size.height * 0.10...size.height * 0.90))
         default: // Cosmic dust particles
             for _ in 0..<2 {
                 let dust = SKShapeNode(circleOfRadius: 0.8)
                 dust.fillColor = SKColor(red: 0.70, green: 0.65, blue: 0.85, alpha: 0.6)
-                dust.position = CGPoint(x: x + CGFloat.random(in: -8...8), y: CGFloat.random(in: groundY + 10...size.height * 0.50))
+                dust.position = CGPoint(x: x + CGFloat.random(in: -8...8), y: CGFloat.random(in: size.height * 0.08...size.height * 0.92))
                 dust.zPosition = 1; dust.name = "envDecor"
                 addChild(dust)
             }
@@ -2570,7 +2651,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Pufferfish": unlockBug(.pufferfish)
                     case "Lava Slime": unlockBug(.lavaSlime)
                     case "Fire Ant": unlockBug(.fireAnt)
-                    case "Obsidian Golem": unlockBug(.obsidianGolem)
                     case "Komodo Dragon": unlockBug(.komodoDragon)
                     case "Wind Sprite": unlockBug(.windSprite)
                     case "Lightning Bug": unlockBug(.lightningBug)
@@ -2583,13 +2663,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Stone Guardian": unlockBug(.stoneGuardian)
                     case "Tomb Spider": unlockBug(.tombSpider)
                     case "Sand Viper": unlockBug(.sandViper)
-                    case "Shroom Golem": unlockBug(.shroomGolem)
                     case "Mycelium Crawler": unlockBug(.myceliumCrawler)
                     case "Cap Bouncer": unlockBug(.capBouncer)
                     case "Shard Sentinel": unlockBug(.shardSentinel)
                     case "Crystal Wyrm": unlockBug(.crystalWyrm)
                     case "Geode Roller": unlockBug(.geodeRoller)
-                    case "Asteroid Beetle": unlockBug(.asteroidBeetle)
                     case "Cosmic Serpent": unlockBug(.cosmicSerpent)
                     default: break
                     }
@@ -2896,8 +2974,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Phoenix") }
             dragonflyTimer += edt // Komodo dragon (ground stalker)
             if dragonflyTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Komodo Dragon", size: CGSize(width: 64, height: 30)), name: "Komodo Dragon") }
-            waspTimer += edt // Obsidian golem (sky patrol)
-            if waspTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Obsidian Golem", size: CGSize(width: 48, height: 40)), name: "Obsidian Golem") }
             slothTimer += edt // Sloth hanging from a vine
             if slothTimer >= max(8.0, 13.0 - Double(distanceTraveled) * 0.0003) { slothTimer = 0; spawnSloth() }
             lavaPoolTimer += edt // Lava pools with rocky edges
@@ -2976,8 +3052,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Glow Shroom", size: CGSize(width: 24, height: 22)), pts: 40, flying: true, name: "Glow Shroom") }
             gnatTimer += fdt
             if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Fungus Gnat", size: CGSize(width: 18, height: 16)), pts: 25, flying: true, name: "Fungus Gnat") }
-            spiderTimer += edt
-            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Shroom Golem", size: CGSize(width: 46, height: 38)), name: "Shroom Golem") }
             birdTimer += edt
             if birdTimer >= max(3.5, 7.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Toxic Spore") }
             dragonflyTimer += edt
@@ -3008,12 +3082,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if flyTimer >= 1.5 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Star Larva", size: CGSize(width: 24, height: 22)), pts: 55, flying: true, name: "Star Larva") }
             gnatTimer += fdt
             if gnatTimer >= 2.0 { gnatTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Nebula Jelly", size: CGSize(width: 26, height: 24)), pts: 50, flying: true, name: "Nebula Jelly") }
-            spiderTimer += edt
-            if spiderTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { spiderTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Asteroid Beetle", size: CGSize(width: 40, height: 34)), name: "Asteroid Beetle") }
             birdTimer += edt
             if birdTimer >= max(3.0, 6.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Void Moth") }
             dragonflyTimer += edt
-            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Cosmic Serpent", size: CGSize(width: 54, height: 28)), name: "Cosmic Serpent") }
+            if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnFloatingBiomeEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Cosmic Serpent", size: CGSize(width: 54, height: 28)), name: "Cosmic Serpent") }
             waspTimer += edt
             if waspTimer >= max(4.5, 8.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeSwooper(name: "Alien Drone") }
         }
@@ -3023,9 +3095,16 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let spawnX = size.width + 30
         if !flying && isNearGroundObject(x: spawnX, range: 60) { return }
         let food = BiomeFood(texture: texture, points: pts, biomeName: name, isFlying: flying)
-        let y: CGFloat = flying ? groundY + CGFloat.random(in: 40...size.height * 0.45) : groundY + food.size.height / 2
+        let y: CGFloat
+        if flying, currentBiome == .space {
+            y = CGFloat.random(in: size.height * 0.14...size.height * 0.84)
+        } else if flying {
+            y = groundY + CGFloat.random(in: 40...size.height * 0.45)
+        } else {
+            y = groundY + food.size.height / 2
+        }
         food.position = CGPoint(x: spawnX, y: y)
-        food.minY = groundY
+        food.minY = currentBiome == .space ? 0 : groundY
         // Butterflies and glowworms evade the player
         if food.biomeName.contains("Butterfly") {
             food.position.y = groundY + CGFloat.random(in: 80...size.height * 0.55)
@@ -3042,6 +3121,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Cave Terrain Helpers
 
     private func effectiveGroundY(atScreenX screenX: CGFloat) -> CGFloat {
+        if currentBiome == .space { return 0 }
         if let terrain = caveTerrain, isCaveBiome {
             return terrain.groundY(atScreenX: screenX)
         }
@@ -3118,6 +3198,26 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(enemy)
     }
 
+    private func spawnFloatingBiomeEnemy(texture: SKTexture, name: String) {
+        let spawnX = size.width + 40
+        if isNearBiomeEnemy(x: spawnX, range: 160) { return }
+        let enemy = BiomeEnemy(texture: texture, biomeName: name)
+        enemy.position = CGPoint(
+            x: spawnX,
+            y: CGFloat.random(in: size.height * 0.18...size.height * 0.68)
+        )
+        enemy.setupPhysics()
+        enemy.startPatrolling()
+        addChild(enemy)
+
+        let hoverDistance = CGFloat.random(in: 9...16)
+        let hoverUp = SKAction.moveBy(x: 0, y: hoverDistance, duration: Double.random(in: 1.2...1.8))
+        hoverUp.timingMode = .easeInEaseOut
+        let hoverDown = SKAction.moveBy(x: 0, y: -hoverDistance, duration: Double.random(in: 1.2...1.8))
+        hoverDown.timingMode = .easeInEaseOut
+        enemy.run(SKAction.repeatForever(SKAction.sequence([hoverUp, hoverDown])), withKey: "spaceHover")
+    }
+
     private func spawnBiomeSwooper(name: String) {
         let frames: [SKTexture]
         switch name {
@@ -3189,8 +3289,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 SoundManager.shared.play("whoosh")
             }]))
             let targetY = ladybug.position.y
+            let logicalFloorY: CGFloat = currentBiome == .space ? 0 : groundY
             swooper.swoopAcross(sceneWidth: size.width, ladybugX: ladybug.position.x,
-                                targetY: targetY, groundY: groundY,
+                                targetY: targetY, groundY: logicalFloorY,
                                 duration: 2.4 + Double.random(in: 0...0.6))
         }
     }
@@ -3850,7 +3951,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Fade out and remove all previous sky decorations
         for child in children {
             switch child.name {
-            case "skyBg", "cloud", "hill", "nightBg", "nightOverlay", "biomeSkyDecor":
+            case "skyBg", "cloud", "hill", "nightBg", "nightOverlay", "biomeSkyDecor", "underwaterSeaweedBack", "underwaterSeaweedFront":
                 child.run(SKAction.sequence([SKAction.fadeOut(withDuration: 1.5), SKAction.removeFromParent()]))
             default: break
             }
@@ -3869,8 +3970,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             SKAction.removeFromParent()
         ]))
 
-        // Transition ground color + grass line
+        // Transition ground color + grass line. Space has no usable or visible
+        // floor; Cave continues to use its separate shaped terrain.
+        let flatGroundAlpha: CGFloat = (biome == .space || biome == .cave) ? 0 : 1
+        if biome != .cave {
+            for tile in caveGroundTiles { tile.run(SKAction.fadeAlpha(to: 0, duration: 1.5)) }
+            for tile in caveCeilingTiles { tile.run(SKAction.fadeAlpha(to: 0, duration: 1.5)) }
+        }
         for tile in groundTiles {
+            tile.run(SKAction.fadeAlpha(to: flatGroundAlpha, duration: 1.5))
             tile.run(SKAction.colorize(with: biome.groundColor, colorBlendFactor: 0.8, duration: 2.0))
             // Update grass line and tuft colors
             for child in tile.children {
@@ -3983,8 +4091,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             addChild(ambient)
         }
 
-        // Underwater: bubbles rising constantly
+        // Underwater: dense layered kelp plus bubbles rising constantly
         if biome == .underwater {
+            seedUnderwaterSeaweed()
             let bubbles = SKAction.run { [weak self] in
                 guard let self = self else { return }
                 let bub = SKShapeNode(circleOfRadius: CGFloat.random(in: 1...3))
@@ -4062,14 +4171,15 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             run(SKAction.repeatForever(SKAction.sequence([fog, SKAction.wait(forDuration: 0.8)])), withKey: "swampFog")
         }
 
-        // Space: twinkling stars
+        // Space: no ground, low gravity, and twinkling stars across the full view.
         if biome == .space {
+            ladybug.beginFloating(at: size.height * 0.52)
             // Add fixed stars
             for _ in 0..<40 {
                 let star = SKShapeNode(circleOfRadius: CGFloat.random(in: 0.5...2))
                 star.fillColor = .white
                 star.strokeColor = .clear
-                star.position = CGPoint(x: CGFloat.random(in: 0...size.width), y: CGFloat.random(in: groundY + 10...size.height * 0.95))
+                star.position = CGPoint(x: CGFloat.random(in: 0...size.width), y: CGFloat.random(in: size.height * 0.04...size.height * 0.96))
                 star.zPosition = -0.5
                 star.alpha = CGFloat.random(in: 0.3...0.9)
                 star.name = "biomeSkyDecor"
@@ -4378,7 +4488,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider ||
                child is FallingRock || child is Bubble || child is Vacuum || child.name == "monkey" || child.name == "envDecor" ||
                child.name == "pond" || child.name == "rockShadow" ||
-               child.name == "slothRig" || child.name == "lavaPool" {
+               child.name == "slothRig" || child.name == "lavaPool" ||
+               child.name == "underwaterSeaweedBack" || child.name == "underwaterSeaweedFront" {
                 child.removeFromParent()
             }
         }
@@ -5384,7 +5495,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ladybug.childNode(withName: "reflectRing")?.removeFromParent()
 
         // Death animation — flip over with X eyes, fall to ground
-        let bugGroundY = groundY + ladybug.size.height / 2
+        let bugGroundY = currentBiome == .space ? -ladybug.size.height : effectiveGroundY(atScreenX: ladybug.position.x) + ladybug.size.height / 2
         ladybug.playDeathAnimation(groundY: bugGroundY, deadTexture: deadTexture)
 
         // Delay game over UI to let death animation play

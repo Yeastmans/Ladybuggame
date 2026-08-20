@@ -83,7 +83,6 @@ final class BugTracker: @unchecked Sendable {
         case lavaSlime = "Lava Slime"
         case fireAnt = "Fire Ant"
         case phoenixBird = "Phoenix"
-        case obsidianGolem = "Obsidian Golem"
         case komodoDragon = "Komodo Dragon"
         case sloth = "Sloth"
         // Cloud food
@@ -129,7 +128,6 @@ final class BugTracker: @unchecked Sendable {
         case fungusGnat = "Fungus Gnat"
         // Mushroom enemies
         case toxicSpore = "Toxic Spore"
-        case shroomGolem = "Shroom Golem"
         case myceliumCrawler = "Mycelium Crawler"
         case capBouncer = "Cap Bouncer"
         // Crystal food
@@ -147,7 +145,6 @@ final class BugTracker: @unchecked Sendable {
         case nebulaJelly = "Nebula Jelly"
         // Space enemies
         case alienDrone = "Alien Drone"
-        case asteroidBeetle = "Asteroid Beetle"
         case voidMoth = "Void Moth"
         case cosmicSerpent = "Cosmic Serpent"
 
@@ -172,14 +169,14 @@ final class BugTracker: @unchecked Sendable {
                  .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee,
                  .caveSpider, .vampireBat, .rockWorm, .caveFish,
                  .jellyfish, .anglerFish, .seaUrchin, .electricEel, .stingray, .pufferfish,
-                 .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem, .komodoDragon, .sloth,
+                 .lavaSlime, .fireAnt, .phoenixBird, .komodoDragon, .sloth,
                  .stormHawk, .windSprite, .thunderWasp, .lightningBug,
                  .mosquitoSwarm, .alligator, .swampSnake, .bogSpider,
                  .houseCat, .gardenSnake, .yellowJacket, .gardenSpider, .guardDog,
                  .stoneGuardian, .tombSpider, .curseWraith, .sandViper,
-                 .toxicSpore, .shroomGolem, .myceliumCrawler, .capBouncer,
+                 .toxicSpore, .myceliumCrawler, .capBouncer,
                  .shardSentinel, .crystalWyrm, .refractor, .geodeRoller,
-                 .alienDrone, .asteroidBeetle, .voidMoth, .cosmicSerpent:
+                 .alienDrone, .voidMoth, .cosmicSerpent:
                 return .enemy
             }
         }
@@ -248,7 +245,6 @@ final class BugTracker: @unchecked Sendable {
             case .lavaSlime: return "Bubbling lava blob. Slides toward you!"
             case .fireAnt: return "Red-hot ant. Patrols volcanic rock!"
             case .phoenixBird: return "Blazing bird reborn from flames. Dives with fire!"
-            case .obsidianGolem: return "Slow stone creature. Throws rocks when near!"
             case .komodoDragon: return "Giant lizard prowling the volcanic rock. Huge bite!"
             case .sloth: return "Hangs from a vine and swipes with long claws. Slow but deadly!"
             // Cloud
@@ -289,7 +285,6 @@ final class BugTracker: @unchecked Sendable {
             case .glowShroom: return "Edible glowing mushroom bug. Tasty!"
             case .fungusGnat: return "Gnat living among giant fungi."
             case .toxicSpore: return "Poisonous spore cloud! Don't breathe it in!"
-            case .shroomGolem: return "Walking mushroom. Stomps toward you!"
             case .myceliumCrawler: return "Underground root creature. Surfaces to attack!"
             case .capBouncer: return "Bouncy mushroom cap that launches at you!"
             // Crystal
@@ -305,7 +300,6 @@ final class BugTracker: @unchecked Sendable {
             case .starLarva: return "Baby star creature. Warm and glowing!"
             case .nebulaJelly: return "Floating space jellyfish. Colorful snack!"
             case .alienDrone: return "Small alien scout. Zips around erratically!"
-            case .asteroidBeetle: return "Beetle made of space rock. Tough shell!"
             case .voidMoth: return "Dark matter moth. Swoops from the void!"
             case .cosmicSerpent: return "Space snake slithering through stars!"
             }
@@ -366,14 +360,14 @@ final class BugTracker: @unchecked Sendable {
                  .poisonDartFrog, .jungleSpider, .toucan, .monkey, .cicadaBee,
                  .caveSpider, .vampireBat, .rockWorm, .caveFish,
                  .jellyfish, .anglerFish, .seaUrchin, .electricEel, .stingray, .pufferfish,
-                 .lavaSlime, .fireAnt, .phoenixBird, .obsidianGolem, .komodoDragon, .sloth,
+                 .lavaSlime, .fireAnt, .phoenixBird, .komodoDragon, .sloth,
                  .stormHawk, .windSprite, .thunderWasp, .lightningBug,
                  .mosquitoSwarm, .alligator, .swampSnake, .bogSpider,
                  .houseCat, .gardenSnake, .yellowJacket, .gardenSpider, .guardDog,
                  .stoneGuardian, .tombSpider, .curseWraith, .sandViper,
-                 .toxicSpore, .shroomGolem, .myceliumCrawler, .capBouncer,
+                 .toxicSpore, .myceliumCrawler, .capBouncer,
                  .shardSentinel, .crystalWyrm, .refractor, .geodeRoller,
-                 .alienDrone, .asteroidBeetle, .voidMoth, .cosmicSerpent:
+                 .alienDrone, .voidMoth, .cosmicSerpent:
                 return "Danger!"
             }
         }
@@ -471,7 +465,6 @@ final class BugTracker: @unchecked Sendable {
         case .lavaSlime: return TextureGenerator.generateLavaSlimeTexture(size: size)
         case .fireAnt: return TextureGenerator.biomeCreatureTexture(named: "Fire Ant", size: size)
         case .phoenixBird: return TextureGenerator.generatePhoenixFrames(size: size).first!
-        case .obsidianGolem: return TextureGenerator.biomeCreatureTexture(named: "Obsidian Golem", size: size)
         // Cloud
         case .cloudMite: return TextureGenerator.biomeCreatureTexture(named: "Cloud Mite", size: size)
         case .starBug: return TextureGenerator.biomeCreatureTexture(named: "Star Bug", size: size)
@@ -509,7 +502,6 @@ final class BugTracker: @unchecked Sendable {
         case .glowShroom: return TextureGenerator.biomeCreatureTexture(named: "Glow Shroom", size: size)
         case .fungusGnat: return TextureGenerator.biomeCreatureTexture(named: "Fungus Gnat", size: size)
         case .toxicSpore: return TextureGenerator.biomeCreatureTexture(named: "Toxic Spore", size: size)
-        case .shroomGolem: return TextureGenerator.biomeCreatureTexture(named: "Shroom Golem", size: size)
         case .myceliumCrawler: return TextureGenerator.biomeCreatureTexture(named: "Mycelium Crawler", size: size)
         case .capBouncer: return TextureGenerator.biomeCreatureTexture(named: "Cap Bouncer", size: size)
         // Crystal
@@ -525,7 +517,6 @@ final class BugTracker: @unchecked Sendable {
         case .starLarva: return TextureGenerator.biomeCreatureTexture(named: "Star Larva", size: size)
         case .nebulaJelly: return TextureGenerator.biomeCreatureTexture(named: "Nebula Jelly", size: size)
         case .alienDrone: return TextureGenerator.generateAlienDroneTexture(size: size)
-        case .asteroidBeetle: return TextureGenerator.biomeCreatureTexture(named: "Asteroid Beetle", size: size)
         case .voidMoth: return TextureGenerator.generateVoidMothFrames(size: size).first!
         case .cosmicSerpent: return TextureGenerator.biomeCreatureTexture(named: "Cosmic Serpent", size: size)
         }

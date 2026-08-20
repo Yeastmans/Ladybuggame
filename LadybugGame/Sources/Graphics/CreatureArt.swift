@@ -1117,8 +1117,6 @@ extension TextureGenerator {
             return generateFoodCreature(size: size, style: .snail, body: UIColor(red: 0.95, green: 0.55, blue: 0.20, alpha: 1), accent: UIColor(red: 0.36, green: 0.26, blue: 0.24, alpha: 1))
         case "Fire Ant":
             return generateEnemyCreature(size: size, style: .ant, body: UIColor(red: 0.75, green: 0.15, blue: 0.08, alpha: 1), eye: UIColor.orange, accent: UIColor(red: 0.98, green: 0.50, blue: 0.10, alpha: 1))
-        case "Obsidian Golem":
-            return generateEnemyCreature(size: size, style: .golem, body: UIColor(red: 0.20, green: 0.17, blue: 0.23, alpha: 1), eye: UIColor.red, accent: UIColor(red: 0.95, green: 0.32, blue: 0.10, alpha: 1))
         // Cloud
         case "Cloud Mite":
             return generateFoodCreature(size: size, style: .mite, body: UIColor(red: 0.90, green: 0.92, blue: 0.98, alpha: 1), accent: UIColor(red: 0.55, green: 0.70, blue: 0.95, alpha: 1))
@@ -1182,8 +1180,6 @@ extension TextureGenerator {
             return generateFoodCreature(size: size, style: .jelly, body: UIColor(red: 0.40, green: 0.70, blue: 0.45, alpha: 1), accent: UIColor(red: 0.80, green: 1.00, blue: 0.50, alpha: 1))
         case "Fungus Gnat":
             return generateFoodCreature(size: size, style: .moth, body: UIColor(red: 0.48, green: 0.38, blue: 0.32, alpha: 1), accent: UIColor(red: 0.72, green: 0.62, blue: 0.50, alpha: 1))
-        case "Shroom Golem":
-            return generateEnemyCreature(size: size, style: .golem, body: UIColor(red: 0.50, green: 0.35, blue: 0.28, alpha: 1), eye: UIColor(red: 0.80, green: 0.90, blue: 0.40, alpha: 1), accent: UIColor(red: 0.80, green: 0.90, blue: 0.40, alpha: 1))
         case "Mycelium Crawler":
             return generateEnemyCreature(size: size, style: .centipede, body: UIColor(red: 0.62, green: 0.52, blue: 0.44, alpha: 1), eye: UIColor(red: 0.95, green: 0.90, blue: 0.75, alpha: 1), accent: UIColor(red: 0.88, green: 0.80, blue: 0.68, alpha: 1))
         case "Cap Bouncer":
@@ -1212,8 +1208,6 @@ extension TextureGenerator {
             return generateFoodCreature(size: size, style: .grub, body: UIColor(red: 0.95, green: 0.85, blue: 0.35, alpha: 1), accent: UIColor(red: 1.00, green: 0.98, blue: 0.75, alpha: 1))
         case "Nebula Jelly":
             return generateFoodCreature(size: size, style: .jelly, body: UIColor(red: 0.60, green: 0.30, blue: 0.80, alpha: 1), accent: UIColor(red: 0.85, green: 0.55, blue: 1.00, alpha: 1))
-        case "Asteroid Beetle":
-            return generateEnemyCreature(size: size, style: .golem, body: UIColor(red: 0.40, green: 0.38, blue: 0.35, alpha: 1), eye: UIColor(red: 0.90, green: 0.45, blue: 0.20, alpha: 1), accent: UIColor(red: 0.90, green: 0.45, blue: 0.20, alpha: 1))
         case "Cosmic Serpent":
             return generateEnemyCreature(size: size, style: .serpent, body: UIColor(red: 0.28, green: 0.23, blue: 0.48, alpha: 1), eye: UIColor(red: 0.50, green: 0.80, blue: 1.00, alpha: 1), accent: UIColor(red: 0.55, green: 0.65, blue: 0.95, alpha: 1))
         default:

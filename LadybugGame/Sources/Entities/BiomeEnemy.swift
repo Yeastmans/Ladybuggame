@@ -55,6 +55,7 @@ class BiomeEnemy: SKSpriteNode {
         let dist = playerX - position.x
         let isSnake = biomeName == "Rattlesnake" || biomeName == "Garden Snake"
             || biomeName == "Swamp Snake" || biomeName == "Sand Viper"
+            || biomeName == "Cosmic Serpent"
         let isCharger = biomeName == "Guard Dog" || biomeName == "Komodo Dragon"
         let minDist: CGFloat = isCharger ? -20 : -15
         let maxDist: CGFloat = isCharger ? 240 : 70

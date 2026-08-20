@@ -1,9 +1,14 @@
 import SpriteKit
 
-/// Shared visual grammar layered beneath biome-specific art. Snacks use a calm
-/// mint halo; threats use a red warning shadow and an exclamation chevron.
+/// Shared visual grammar layered beneath biome-specific art. Food relies on its
+/// friendly creature art; threats receive a red warning shadow and exclamation.
 enum CreatureReadability {
     static func applyCue(to node: SKNode, category: UInt32) {
+        guard category == GameScene.PhysicsCategory.bird else { return }
+        applyThreatCue(to: node)
+    }
+
+    static func applyThreatCue(to node: SKNode) {
         guard node.childNode(withName: "roleCue") == nil, node.name != "boss" else { return }
 
         let dimensions: CGSize
@@ -13,30 +18,7 @@ enum CreatureReadability {
             let frame = node.calculateAccumulatedFrame()
             dimensions = CGSize(width: max(24, frame.width), height: max(24, frame.height))
         }
-
-        if category == GameScene.PhysicsCategory.aphid || category == GameScene.PhysicsCategory.fruitfly {
-            addFoodCue(to: node, size: dimensions)
-        } else if category == GameScene.PhysicsCategory.bird {
-            addThreatCue(to: node, size: dimensions)
-        }
-    }
-
-    private static func addFoodCue(to node: SKNode, size: CGSize) {
-        let root = SKNode()
-        root.name = "roleCue"
-        root.zPosition = -4
-        node.addChild(root)
-
-        let halo = SKShapeNode(ellipseOf: CGSize(width: max(22, size.width * 1.05), height: max(10, size.height * 0.42)))
-        halo.fillColor = SKColor(red: 0.35, green: 1.0, blue: 0.62, alpha: 0.13)
-        halo.strokeColor = SKColor(red: 0.55, green: 1.0, blue: 0.72, alpha: 0.48)
-        halo.lineWidth = 1.2
-        halo.position.y = -size.height * 0.22
-        root.addChild(halo)
-        halo.run(SKAction.repeatForever(SKAction.sequence([
-            SKAction.group([SKAction.scale(to: 1.12, duration: 0.7), SKAction.fadeAlpha(to: 0.55, duration: 0.7)]),
-            SKAction.group([SKAction.scale(to: 0.92, duration: 0.7), SKAction.fadeAlpha(to: 1.0, duration: 0.7)]),
-        ])))
+        addThreatCue(to: node, size: dimensions)
     }
 
     private static func addThreatCue(to node: SKNode, size: CGSize) {
