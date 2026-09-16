@@ -16,7 +16,7 @@ final class GameScreenshots: XCTestCase {
         let pause = app.buttons["Pause game"]
         XCTAssertTrue(pause.waitForExistence(timeout: 10))
         pause.tap()
-        let resume = app.buttons["▶  Resume Run"]
+        let resume = app.buttons["Resume run"]
         XCTAssertTrue(resume.waitForExistence(timeout: 5))
         resume.tap()
         XCUIDevice.shared.press(.home)
@@ -27,6 +27,10 @@ final class GameScreenshots: XCTestCase {
         app.buttons["Settings"].tap()
         XCTAssertTrue(app.buttons["Practice flying"].waitForExistence(timeout: 5))
         XCUIDevice.shared.orientation = .landscapeRight
+        let rotated = expectation(description: "orientation animation settled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { rotated.fulfill() }
+        wait(for: [rotated], timeout: 4)
+        XCTAssertGreaterThan(app.windows.firstMatch.frame.width, app.windows.firstMatch.frame.height)
         XCTAssertTrue(app.buttons["Practice flying"].isHittable)
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = "settings-landscape-right"

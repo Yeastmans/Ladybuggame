@@ -4747,7 +4747,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             addChild(label)
 
             let resume = GameUITheme.makeButton(
-                title: "▶  Resume Run",
+                title: "Resume run",
                 name: "resumeLabel",
                 size: CGSize(width: 190, height: 46),
                 color: GameUITheme.mint,
@@ -4926,8 +4926,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         bossTitle.text = "\(profile.name.uppercased())  •  \(profile.phaseName(1).uppercased())"
         bossTitle.fontSize = 13
         bossTitle.fontColor = SKColor(red: 1.0, green: 0.82, blue: 0.28, alpha: 1)
-        bossTitle.position = CGPoint(x: size.width / 2, y: size.height - 66)
+        bossTitle.verticalAlignmentMode = .center
+        bossTitle.position = CGPoint(x: safeContentFrame.midX, y: safeContentFrame.maxY - 90)
         bossTitle.zPosition = 108
+        let titleBackground = GameUITheme.makePanel(size: CGSize(width: min(390, safeContentFrame.width - 20), height: 25), cornerRadius: 9)
+        titleBackground.zPosition = -1
+        bossTitle.addChild(titleBackground)
         addChild(bossTitle)
         bossTitleLabel = bossTitle
     }
@@ -5050,9 +5054,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let warning = SKLabelNode(fontNamed: "AvenirNext-Bold")
         warning.text = profile.warning(for: move)
         warning.fontSize = 15
-        warning.fontColor = SKColor(red: 1.0, green: 0.28, blue: 0.18, alpha: 1)
-        warning.position = CGPoint(x: size.width / 2, y: size.height - 88)
+        warning.fontColor = GameUITheme.gold
+        warning.verticalAlignmentMode = .center
+        warning.position = CGPoint(x: safeContentFrame.midX, y: safeContentFrame.maxY - 118)
         warning.zPosition = 120
+        let warningBackground = GameUITheme.makePanel(size: CGSize(width: min(300, safeContentFrame.width - 20), height: 23), cornerRadius: 8)
+        warningBackground.zPosition = -1
+        warning.addChild(warningBackground)
         warning.name = "bossWarning"
         addChild(warning)
         warning.run(SKAction.repeat(SKAction.sequence([
@@ -5717,14 +5725,17 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
 #if DEBUG && targetEnvironment(simulator)
     func previewBoss(level: Int) {
+        campaignBossTriggered = true
+        distanceTraveled = activeCampaignStage?.targetDistance ?? 0
         startBossFight(level: level)
+        updateCampaignProgressHUD()
     }
 
     /// Visual fixtures exercise the real overlays without granting progression or currency.
     func previewResult(completed: Bool) {
         score = activeCampaignStage?.masteryScore ?? 500
         hitsTaken = 1
-        distanceTraveled = 7200
+        distanceTraveled = completed ? (activeCampaignStage?.targetDistance ?? 11000) : 7200
         ladybug.targetY = nil
         if completed, let stage = activeCampaignStage {
             isCampaignStageComplete = true
@@ -5734,6 +5745,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             isGameOver = true
             showGameOverUI()
         }
+        updateCampaignProgressHUD()
     }
 #endif
 

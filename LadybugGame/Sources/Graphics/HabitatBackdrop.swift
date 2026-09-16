@@ -16,6 +16,7 @@ enum HabitatBackdrop {
                 sprite.anchorPoint = .zero
                 sprite.position = CGPoint(x: CGFloat(tile) * dimensions.width, y: groundY - 4)
                 sprite.zPosition = -0.65 + CGFloat(depth) * 0.025
+                sprite.alpha = depth == 0 ? 0.15 : 0.23
                 sprite.name = "habitatBackdrop"
                 sprite.userData = ["speed": depth == 0 ? 0.12 : 0.22, "period": Double(dimensions.width)]
                 scene.addChild(sprite)
@@ -49,8 +50,9 @@ enum HabitatBackdrop {
             case .crystal: palette = UIColor(red: 0.49, green: 0.60, blue: 0.85, alpha: 1)
             default: palette = UIColor(red: 0.20, green: 0.40, blue: 0.36, alpha: 1)
             }
-            c.setFillColor(palette.withAlphaComponent(depth == 0 ? 0.15 : 0.23).cgColor)
-            c.setStrokeColor(palette.withAlphaComponent(depth == 0 ? 0.15 : 0.23).cgColor)
+            // Composite opacity once per layer, so overlapping leaves form a solid silhouette.
+            c.setFillColor(palette.cgColor)
+            c.setStrokeColor(palette.cgColor)
             let floor = size.height
             func polygon(_ points: [CGPoint]) {
                 guard let first = points.first else { return }
