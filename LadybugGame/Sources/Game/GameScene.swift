@@ -306,20 +306,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Setup
 
     private func setupSky() {
-        let skyColors: [(y: CGFloat, h: CGFloat, r: CGFloat, g: CGFloat, b: CGFloat)] = [
-            (0.95, 0.10, 0.40, 0.68, 0.92),
-            (0.85, 0.10, 0.48, 0.75, 0.94),
-            (0.75, 0.10, 0.55, 0.80, 0.95),
-        ]
-        for sc in skyColors {
-            let band = SKShapeNode(rectOf: CGSize(width: size.width + 10, height: size.height * sc.h))
-            band.fillColor = SKColor(red: sc.r, green: sc.g, blue: sc.b, alpha: 1.0)
-            band.strokeColor = .clear
-            band.position = CGPoint(x: size.width / 2, y: size.height * sc.y)
-            band.zPosition = -10
-            band.name = "skyBg"
-            addChild(band)
-        }
+        let sky = GameUITheme.gardenSky(size: size)
+        sky.name = "skyBg"
+        addChild(sky)
+        HabitatBackdrop.install(in: self, biome: .meadowDay, groundY: groundY)
 
         // Sunshine rays from top-right
         let sunX = size.width * 0.85
@@ -458,7 +448,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         pause.isAccessibilityElement = true
         pause.accessibilityLabel = "Pause game"
         pause.accessibilityTraits = .button
-        pause.onActivate = { [weak self] in self?.togglePause() }
+        pause.onActivate = { [weak self] in
+            guard let self, !self.isGameOver, !self.isCampaignStageComplete else { return }
+            self.togglePause()
+        }
         root.addChild(pause)
 
         let hearts = GameUITheme.makePanel(size: CGSize(width: 112, height: 46), cornerRadius: 12)
@@ -506,9 +499,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func updateLivesDisplay() {
-        var h = ""
-        for i in 0..<lives { if i > 0 { h += " " }; h += "♥" }
-        livesLabel.text = h
+        // Text presentation keeps hearts inside the HUD instead of emoji metrics.
+        livesLabel.text = Array(repeating: "♥\u{FE0E}", count: max(0, lives)).joined(separator: " ")
+        livesLabel.fontSize = 16
+        if livesLabel.frame.width > 96 { livesLabel.fontSize *= 96 / livesLabel.frame.width }
+        livesLabel.isAccessibilityElement = true
+        livesLabel.accessibilityLabel = "\(lives) lives remaining"
     }
 
     private func showCampaignStageIntro(_ stage: CampaignStage) {
@@ -1175,6 +1171,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func scrollParallax(delta: CGFloat) {
+        HabitatBackdrop.scroll(in: self, delta: delta)
         enumerateChildNodes(withName: "cloud") { node, _ in
             node.position.x -= delta * 0.1
             if node.position.x < -150 {
@@ -4287,7 +4284,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Fade out and remove all previous sky decorations
         for child in children {
             switch child.name {
-            case "skyBg", "cloud", "hill", "nightBg", "nightOverlay", "biomeSkyDecor", "underwaterSeaweedBack", "underwaterSeaweedFront":
+            case "skyBg", "cloud", "hill", "nightBg", "nightOverlay", "biomeSkyDecor", "biomeSkyBase", "biomeAtmosphere", "habitatBackdrop", "underwaterSeaweedBack", "underwaterSeaweedFront":
                 child.run(SKAction.sequence([SKAction.fadeOut(withDuration: 1.5), SKAction.removeFromParent()]))
             default: break
             }
@@ -4330,11 +4327,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         // Sky color transition
-        let skyOverlay = SKShapeNode(rectOf: CGSize(width: size.width + 20, height: size.height))
-        skyOverlay.fillColor = biome.skyColor
-        skyOverlay.strokeColor = .clear
-        skyOverlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        let skyOverlay = GameUITheme.habitatSky(size: size, biome: biome)
         skyOverlay.zPosition = -1
+        skyOverlay.name = "biomeSkyBase"
         skyOverlay.alpha = 0
         addChild(skyOverlay)
         skyOverlay.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
@@ -4346,30 +4341,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             transitionToNight()
         }
 
-        // Desert: warm gradient sky (golden horizon fading to deeper orange top)
-        if biome == .desert {
-            let horizonBand = SKShapeNode(rectOf: CGSize(width: size.width + 10, height: size.height * 0.25))
-            horizonBand.fillColor = SKColor(red: 0.95, green: 0.78, blue: 0.45, alpha: 0.5)
-            horizonBand.strokeColor = .clear
-            horizonBand.position = CGPoint(x: size.width / 2, y: groundY + size.height * 0.12)
-            horizonBand.zPosition = -0.8
-            horizonBand.alpha = 0
-            horizonBand.name = "biomeSkyDecor"
-            addChild(horizonBand)
-            horizonBand.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
-
-            let midBand = SKShapeNode(rectOf: CGSize(width: size.width + 10, height: size.height * 0.20))
-            midBand.fillColor = SKColor(red: 0.90, green: 0.65, blue: 0.30, alpha: 0.35)
-            midBand.strokeColor = .clear
-            midBand.position = CGPoint(x: size.width / 2, y: size.height * 0.50)
-            midBand.zPosition = -0.8
-            midBand.alpha = 0
-            midBand.name = "biomeSkyDecor"
-            addChild(midBand)
-            midBand.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
-        }
-
-        // Snow: falling snowflakes
+        // Snow: drifting flakes above the generated habitat backdrop.
         if biome == .snow {
             let snowfall = SKAction.run { [weak self] in
                 guard let self = self else { return }
@@ -4388,19 +4360,6 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
 
-        // Jungle: warm haze gradient near horizon
-        if biome == .jungle {
-            let horizonBand = SKShapeNode(rectOf: CGSize(width: size.width + 10, height: size.height * 0.20))
-            horizonBand.fillColor = SKColor(red: 0.45, green: 0.60, blue: 0.35, alpha: 0.35)
-            horizonBand.strokeColor = .clear
-            horizonBand.position = CGPoint(x: size.width / 2, y: groundY + size.height * 0.10)
-            horizonBand.zPosition = -0.8
-            horizonBand.alpha = 0
-            horizonBand.name = "biomeSkyDecor"
-            addChild(horizonBand)
-            horizonBand.run(SKAction.fadeAlpha(to: 1.0, duration: 2.5))
-        }
-
         // Jungle: mist
         if biome == .jungle {
             let mist = SKShapeNode(rectOf: CGSize(width: size.width, height: size.height * 0.2))
@@ -4408,6 +4367,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             mist.strokeColor = .clear
             mist.position = CGPoint(x: size.width / 2, y: groundY + size.height * 0.1)
             mist.zPosition = 48
+            mist.name = "biomeAtmosphere"
             addChild(mist)
         }
 
@@ -4424,6 +4384,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             ambient.strokeColor = .clear
             ambient.position = CGPoint(x: size.width / 2, y: size.height / 2)
             ambient.zPosition = 45
+            ambient.name = "biomeAtmosphere"
             addChild(ambient)
         }
 
@@ -4452,6 +4413,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             waterOverlay.strokeColor = .clear
             waterOverlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
             waterOverlay.zPosition = 46
+            waterOverlay.name = "biomeAtmosphere"
             addChild(waterOverlay)
         }
 
@@ -4483,7 +4445,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 puff.fillColor = SKColor(white: 1.0, alpha: CGFloat.random(in: 0.15...0.30))
                 puff.strokeColor = .clear
                 puff.position = CGPoint(x: self.size.width + 40, y: CGFloat.random(in: self.groundY + 20...self.size.height * 0.80))
-                puff.zPosition = -3
+                puff.zPosition = -0.6
                 puff.name = "biomeSkyDecor"
                 self.addChild(puff)
                 puff.run(SKAction.sequence([SKAction.moveBy(x: -(self.size.width + 100), y: 0, duration: Double.random(in: 6...12)), SKAction.removeFromParent()]))
@@ -4551,6 +4513,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             }
             run(SKAction.repeatForever(SKAction.sequence([dust, SKAction.wait(forDuration: 0.16)])), withKey: "marsDust")
         }
+
+        HabitatBackdrop.install(in: self, biome: biome, groundY: groundY)
 
         // Mushroom: spore particles
         if biome == .mushroom {
@@ -4899,7 +4863,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
         let bear = SKSpriteNode(texture: bearTex, size: CGSize(width: 200, height: 150))
         // The UFO hovers high; the bear and crow stay near the ground
-        bear.position = CGPoint(x: size.width + 120, y: bossLevel == 3 ? size.height * 0.68 : groundY + 75)
+        let hoverY = min(size.height * 0.68, safeContentFrame.maxY - 145)
+        bear.position = CGPoint(x: size.width + 120, y: bossLevel == 3 ? hoverY : groundY + 75)
         bear.xScale = -1
         bear.zPosition = 8
         bear.name = "boss"
@@ -5751,9 +5716,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
 #if DEBUG && targetEnvironment(simulator)
+    func previewBoss(level: Int) {
+        startBossFight(level: level)
+    }
+
     /// Visual fixtures exercise the real overlays without granting progression or currency.
     func previewResult(completed: Bool) {
-        score = 420
+        score = activeCampaignStage?.masteryScore ?? 500
         hitsTaken = 1
         distanceTraveled = 7200
         ladybug.targetY = nil

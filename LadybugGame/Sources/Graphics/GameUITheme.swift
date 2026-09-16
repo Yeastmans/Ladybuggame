@@ -100,9 +100,21 @@ enum GameUITheme {
 
     /// Smooth, generated sky; no bundled bitmap or visible color bands.
     static func gardenSky(size: CGSize) -> SKSpriteNode {
+        sky(size: size, top: UIColor(red: 0.27, green: 0.59, blue: 0.84, alpha: 1),
+            bottom: UIColor(red: 0.75, green: 0.91, blue: 0.92, alpha: 1))
+    }
+
+    static func habitatSky(size: CGSize, biome: Biome) -> SKSpriteNode {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        biome.skyColor.getRed(&r, green: &g, blue: &b, alpha: &a)
+        let haze: CGFloat = [.meadowNight, .cave, .space].contains(biome) ? 0.025 : 0.15
+        let bottom = UIColor(red: r + (1-r) * haze, green: g + (1-g) * haze, blue: b + (1-b) * haze, alpha: 1)
+        return sky(size: size, top: biome.skyColor, bottom: bottom)
+    }
+
+    private static func sky(size: CGSize, top: UIColor, bottom: UIColor) -> SKSpriteNode {
         let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 256)).image { renderer in
-            let colors = [UIColor(red: 0.27, green: 0.59, blue: 0.84, alpha: 1).cgColor,
-                          UIColor(red: 0.75, green: 0.91, blue: 0.92, alpha: 1).cgColor]
+            let colors = [top.cgColor, bottom.cgColor]
             if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1]) {
                 renderer.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: 256), options: [])
             }

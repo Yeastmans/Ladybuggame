@@ -4,6 +4,30 @@ import SpriteKit
 
 final class GamePolishTests: XCTestCase {
     @MainActor
+    func testAdventureUnlocksAndBestStarsSurviveReplayAndReopen() throws {
+        let suite = "LadybugCampaignTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let progress = CampaignProgressStore(defaults: defaults)
+        let first = CampaignStage.all[0]
+        XCTAssertTrue(progress.isUnlocked(0))
+        XCTAssertFalse(progress.isUnlocked(1))
+        let clear = progress.completeStage(first, score: first.masteryScore, distance: first.targetDistance, hitsTaken: 1, livesRemaining: 2)
+        XCTAssertEqual(clear.stars, 3)
+        XCTAssertTrue(clear.isFirstClear)
+        XCTAssertTrue(progress.isUnlocked(1))
+        let replay = progress.completeStage(first, score: 10, distance: first.targetDistance, hitsTaken: 3, livesRemaining: 1)
+        XCTAssertEqual(replay.stars, 1)
+        XCTAssertFalse(replay.isFirstClear)
+        XCTAssertEqual(replay.previousBestStars, 3)
+        let reopened = CampaignProgressStore(defaults: defaults)
+        XCTAssertEqual(reopened.record(for: 0).bestStars, 3)
+        XCTAssertEqual(reopened.record(for: 0).bestScore, first.masteryScore)
+        XCTAssertEqual(reopened.continueStageID, 1)
+        XCTAssertFalse(reopened.isUnlocked(2))
+    }
+
+    @MainActor
     func testLegacyWalletMigrationAndRepeatedDelivery() throws {
         let suite = "LadybugWalletTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

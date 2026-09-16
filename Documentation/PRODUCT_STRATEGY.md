@@ -1,5 +1,7 @@
 # Ladybug Run — Product Strategy and Release Roadmap
 
+> Historical brainstorming below predates the September 2026 polish pass. The game now has 16 finite Adventure stages, tutorial, settings, safe-area navigation, results, versioned wallet migration, and automated iOS checks. Ads and real-money merchandising are disabled. Use `MONETIZATION_TESTING.md`, `POLISH_QA.md`, and `TESTFLIGHT_SETUP.md` for current delivery status; the feature gaps and advertising proposals below are not the current implementation or committed scope.
+
 ## Product goal
 
 Turn the current SpriteKit prototype into a polished, replayable, commercially viable iPhone game. Revenue is an outcome of retention, player trust, discoverability, and disciplined testing; ads by themselves do not guarantee profit.

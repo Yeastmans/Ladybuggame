@@ -47,11 +47,13 @@ jobs:
             -configuration Release -destination 'generic/platform=iOS' \
             -archivePath ../LadybugRun.xcarchive CODE_SIGNING_ALLOWED=NO \
             2>&1 | tee ../xcode-archive.log
+          python3 Scripts/verify_app_bundle.py ../LadybugRun.xcarchive/Products/Applications/LadybugGame.app
           mkdir -p ../iPhoneBuild/Payload
           cp -R ../LadybugRun.xcarchive/Products/Applications/LadybugGame.app ../iPhoneBuild/Payload/
           cd ../iPhoneBuild
           zip -qr LadybugRun-unsigned.ipa Payload
           shasum -a 256 LadybugRun-unsigned.ipa > SHA256.txt
+          python3 -c 'import os,json,pathlib; pathlib.Path("build-receipt.json").write_text(json.dumps({"source_commit":os.environ["GITHUB_SHA"],"workflow_run":os.environ["GITHUB_RUN_ID"],"signing":"unsigned - requires signing before installation","configuration":"Release"},indent=2))'
       - uses: actions/upload-artifact@v4
         with:
           name: LadybugRun-iPhone-unsigned
@@ -59,6 +61,7 @@ jobs:
           path: |
             iPhoneBuild/LadybugRun-unsigned.ipa
             iPhoneBuild/SHA256.txt
+            iPhoneBuild/build-receipt.json
             LadybugRun.xcarchive/dSYMs
       - uses: actions/upload-artifact@v4
         if: always()

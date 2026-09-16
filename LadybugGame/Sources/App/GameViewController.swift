@@ -44,6 +44,10 @@ class GameViewController: UIViewController {
                     let game = GameScene(size: view.bounds.size)
                     game.campaignStageID = id
                     scene = game
+                } else if screen.hasPrefix("boss-"), let level = Int(screen.dropFirst(5)), (1...3).contains(level) {
+                    let game = GameScene(size: view.bounds.size)
+                    game.campaignStageID = [5, 10, 14][level - 1]
+                    scene = game
                 }
             }
         }
@@ -55,6 +59,8 @@ class GameViewController: UIViewController {
         if arguments.contains("--ui-testing") {
             if let shop = scene as? ShopScene, arguments.contains("hat-preview") { shop.activate("item_hat_wizard") }
             if let game = scene as? GameScene {
+                if let argument = arguments.first(where: { $0.hasPrefix("boss-") }),
+                   let level = Int(argument.dropFirst(5)), (1...3).contains(level) { game.previewBoss(level: level) }
                 if arguments.contains("stage-clear") { game.previewResult(completed: true) }
                 if arguments.contains("game-over") { game.previewResult(completed: false) }
                 if arguments.contains("pause") { game.pauseForInterruption() }

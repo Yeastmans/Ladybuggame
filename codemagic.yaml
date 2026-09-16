@@ -6,7 +6,7 @@ workflows:
     environment:
       vars:
         XCODE_SCHEME: "LadybugGame"
-      xcode: latest
+      xcode: "26.2"
     scripts:
       - name: Install XcodeGen
         script: |
@@ -50,6 +50,8 @@ workflows:
             DEVELOPMENT_TEAM=""
       - name: Create unsigned IPA
         script: |
+          set -euo pipefail
+          python3 LadybugGame/Scripts/verify_app_bundle.py "$CM_BUILD_DIR/LadybugGame.xcarchive/Products/Applications/LadybugGame.app"
           mkdir -p Payload
           cp -r "$CM_BUILD_DIR/LadybugGame.xcarchive/Products/Applications/LadybugGame.app" Payload/
           # Copy icon as iTunesArtwork for sideloading tools

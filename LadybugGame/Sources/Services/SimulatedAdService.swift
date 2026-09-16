@@ -1,8 +1,7 @@
 import UIKit
 
-/// Explicit release switch for the temporary on-device monetization test.
-/// Keep this enabled for sideload/TestFlight QA. Replace the service in
-/// AppServices and set this to false before an App Store submission.
+/// Ads are disabled in the polish build. The old simulator adapter is retained
+/// for development only; enabling it does not connect a revenue provider.
 enum MonetizationConfiguration {
     static let usesSimulatedAds = false
     static let simulatedRewardedDuration: TimeInterval = 5

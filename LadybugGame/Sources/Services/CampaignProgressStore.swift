@@ -29,7 +29,7 @@ final class CampaignProgressStore {
     private let lastStageKey = "AdventureLastStageID"
     private var records: [String: CampaignStageRecord]
 
-    private init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         if let data = defaults.data(forKey: recordsKey),
            let decoded = try? JSONDecoder().decode([String: CampaignStageRecord].self, from: data) {

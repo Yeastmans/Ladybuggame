@@ -1,38 +1,23 @@
-# Monetization Test Build
+# Economy and monetization status — September 2026
 
-This build enables the complete monetization flow without connecting to an ad network.
+The polish build exposes earnable gems and cosmetic customization. It does not expose real-money purchases or ads. `MonetizationConfiguration.usesSimulatedAds` is false and `AppServices` selects `DisabledAdService`.
 
-## Simulated ads
+The old StoreKit catalog and simulated-ad adapter remain in source for development. They are not a working commercial integration. Do not describe this build as monetized, advertise a Remove Ads purchase, or turn placeholders on for release.
 
-- Rewarded ads display a branded **YOUR AD HERE** test placeholder for 5 seconds, with the exact pending reward, countdown, and progress bar.
-- Interstitial ads display the same test placeholder for 3 seconds and explain that the next run is almost ready.
-- The screen clearly states that no production ad network is connected.
-- A reward is granted only when the full simulated ad completes.
-- Closing or interrupting a future production ad must report failure and grant nothing.
-- Interstitials still obey the normal cap: after three eligible runs, at least four minutes apart, and never during gameplay.
-- The Remove Ads entitlement disables interstitials but not optional rewarded ads.
+## Current dressing-room behavior
 
-The temporary switch is `MonetizationConfiguration.usesSimulatedAds` in `SimulatedAdService.swift`. It must be replaced with a production provider and set to `false` before App Store submission.
+1. Open Dress up and select a color, hat, shoes, wings, or spots.
+2. Inspect the assembled ladybug before confirming.
+3. An owned item can be worn or removed. Buying an unowned item uses only earned gems.
+4. With insufficient gems, Keep exploring returns to the menu.
+5. Cost and cosmetic ownership share one versioned wallet snapshot. Transaction IDs are also stored there; repeated delivery on this installation is covered by unit tests.
 
-## Gem purchase confirmation
+The wallet is local to this installation. A local snapshot is not cloud recovery, cross-device synchronization, or proof of crash-safe purchase delivery in every circumstance.
 
-- Tapping a locked cosmetic opens a confirmation card showing the item, current balance, and gem price.
-- Gems are not spent until **Buy** is tapped.
-- If the balance is too low, the confirmation offers **Get More Gems** instead of a buy action.
-- Owned cosmetics equip immediately and do not trigger another purchase.
+## Recommended commercial next step
 
-## Test flows
+Evaluate a free opening chapter and one permanent full-adventure unlock after device playtests. The entitlement, stage access policy, localized purchase UI, and App Store products still need implementation and configuration. Keep existing player progress when introducing it.
 
-1. Lose all lives and choose **Test Ad • Revive**. After 5 seconds the run resumes with one life and brief invincibility. This is limited to once per run.
-2. Complete a stage with a gem reward and choose **Test Ad • Double**. After 5 seconds the same reward is granted once more.
-3. Open **Shop → Get Gems** and choose the daily test-ad bonus. After 5 seconds, 5 gems are granted. It is available once per calendar day.
-4. Complete three runs that each last at least 60 seconds. The next result-screen exit displays a 3-second **YOUR AD HERE** interstitial.
-5. StoreKit buttons use real StoreKit 2 products. They remain unavailable until matching products are configured in App Store Connect (or an Xcode StoreKit test configuration).
+Before enabling sales, test real StoreKit success, pending approval, cancellation, failed verification, interruption, restore, refunds/revocation, product unavailability, and ownership while offline. Decide reinstall and cross-device behavior explicitly. TestFlight and sandbox receipts are required evidence; simulator wallet tests alone are insufficient.
 
-## Before release
-
-- Replace `SimulatedAdService` with the selected ad network adapter.
-- Add consent/privacy choices and production ad-unit IDs.
-- Configure all StoreKit product IDs and prices in App Store Connect.
-- Test purchase success, pending, cancellation, refunds, revocation, restore, ad interruption, and offline/no-fill behavior.
-- Confirm the privacy manifest and App Store privacy answers match the final SDKs.
+Keep ads, subscriptions, paid power, and paid random rewards outside the initial scope. Final audience and pricing remain product decisions.

@@ -1,5 +1,7 @@
 # App Store Release Checklist
 
+Current polish build: 16 Adventure stages, replayable flight lesson, settings, improved navigation/results, and earned-gem dressing room. Ads and real-money shop offers are disabled. Ad-specific items below apply only if that product direction is adopted later. Current pipeline details and owner steps are in `TESTFLIGHT_SETUP.md`; verified test evidence belongs in `POLISH_QA.md`.
+
 ## Accounts and business setup
 
 - [ ] Active Apple Developer Program membership.
