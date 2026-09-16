@@ -11,7 +11,7 @@ let h = CGFloat(size)
 let colorSpace = CGColorSpaceCreateDeviceRGB()
 guard let ctx = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8,
                           bytesPerRow: size * 4, space: colorSpace,
-                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+                          bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else {
     print("Failed to create context")
     exit(1)
 }

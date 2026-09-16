@@ -63,6 +63,7 @@ jobs:
             iPhoneBuild/SHA256.txt
             iPhoneBuild/build-receipt.json
             LadybugRun.xcarchive/dSYMs
+            LadybugGame/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:
