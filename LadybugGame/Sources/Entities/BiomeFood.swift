@@ -112,16 +112,33 @@ class BiomeFood: SKSpriteNode {
             ])
             run(SKAction.repeatForever(tilt), withKey: "tilt")
         } else {
-            let dist = CGFloat.random(in: 8...18)
+            let distanceRange: ClosedRange<CGFloat>
+            let moveDurationRange: ClosedRange<TimeInterval>
+            let pauseDurationRange: ClosedRange<TimeInterval>
+            switch biomeName {
+            case "Red Dust Mite":
+                distanceRange = 14...26
+                moveDurationRange = 0.22...0.38
+                pauseDurationRange = 0.10...0.24
+            case "Solar Grub":
+                distanceRange = 5...10
+                moveDurationRange = 0.72...1.05
+                pauseDurationRange = 0.50...0.85
+            default:
+                distanceRange = 8...18
+                moveDurationRange = 0.4...0.7
+                pauseDurationRange = 0.3...0.6
+            }
+            let dist = CGFloat.random(in: distanceRange)
             let right = SKAction.sequence([
                 SKAction.run { [weak self] in self?.xScale = abs(self?.xScale ?? 1) },
-                SKAction.moveBy(x: dist, y: 0, duration: Double.random(in: 0.4...0.7))
+                SKAction.moveBy(x: dist, y: 0, duration: Double.random(in: moveDurationRange))
             ])
             let left = SKAction.sequence([
                 SKAction.run { [weak self] in self?.xScale = -(abs(self?.xScale ?? 1)) },
-                SKAction.moveBy(x: -dist, y: 0, duration: Double.random(in: 0.4...0.7))
+                SKAction.moveBy(x: -dist, y: 0, duration: Double.random(in: moveDurationRange))
             ])
-            let pause = SKAction.wait(forDuration: Double.random(in: 0.3...0.6))
+            let pause = SKAction.wait(forDuration: Double.random(in: pauseDurationRange))
             run(SKAction.repeatForever(SKAction.sequence([right, pause, left, pause])), withKey: "crawl")
 
             // Walking bob

@@ -92,7 +92,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var hitsTaken = 0
     private var stageProgressFill: SKSpriteNode?
     private var stageProgressLabel: SKLabelNode?
-    private let stageProgressWidth: CGFloat = 190
+    private var stageProgressWidth: CGFloat = 190
     private var roleCueTimer: TimeInterval = 0
     private var rewardedRevivesUsed = 0
     private var isMonetizationPresentationActive = false
@@ -108,6 +108,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var hasTransitionedToNight = false
     private var isTouching = false
     private var gnatTimer: TimeInterval = 0
+    private var activeFlightTouch: UITouch?
+    private var dragStartY: CGFloat = 0
+    private var dragBugY: CGFloat = 0
     private var touchY: CGFloat?
     private var touchX: CGFloat?
     private var lastUpdateTime: TimeInterval = 0
@@ -150,6 +153,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     private var slothTimer: TimeInterval = 0
     private var lavaPoolTimer: TimeInterval = 0
     private var dogTimer: TimeInterval = 0
+    private var marsVentTimer: TimeInterval = 0
+    private var oxygenBugTimer: TimeInterval = 0
+    private var oxygenShieldDuration: TimeInterval = 0
+    private var isOxygenShieldActive: Bool { oxygenShieldDuration > 0 }
 
     // Boss fight
     private var isBossFight = false
@@ -413,126 +420,89 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func setupHUD() {
-        let leftPanel = GameUITheme.makePanel(
-            size: CGSize(width: 146, height: 56),
-            cornerRadius: 14,
-            fillColor: SKColor(red: 0.055, green: 0.045, blue: 0.12, alpha: 0.82),
-            strokeColor: SKColor(white: 1, alpha: 0.20)
-        )
-        leftPanel.position = CGPoint(x: 96, y: size.height - 36)
-        leftPanel.zPosition = 98
-        addChild(leftPanel)
+        childNode(withName: "gameplayHUD")?.removeFromParent()
+        stageProgressFill = nil
+        stageProgressLabel = nil
+        let area = safeContentFrame
+        let root = SKNode()
+        root.name = "gameplayHUD"
+        root.zPosition = 98
+        addChild(root)
+        let top = area.maxY - 23
 
-        let scoreIcon = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        scoreIcon.text = "SCORE"
-        scoreIcon.fontSize = 10
-        scoreIcon.fontColor = SKColor(white: 1, alpha: 0.58)
-        scoreIcon.horizontalAlignmentMode = .left
-        scoreIcon.position = CGPoint(x: 34, y: size.height - 25)
-        scoreIcon.zPosition = 100
-        addChild(scoreIcon)
-
-        scoreLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        scoreLabel.text = "0"
-        scoreLabel.fontSize = 19
-        scoreLabel.fontColor = .white
-        scoreLabel.horizontalAlignmentMode = .left
-        scoreLabel.position = CGPoint(x: 82, y: size.height - 29)
-        scoreLabel.zPosition = 100
-        addChild(scoreLabel)
-
-        let livesPanel = GameUITheme.makePanel(
-            size: CGSize(width: 138, height: 40),
-            cornerRadius: 13,
-            fillColor: SKColor(red: 0.12, green: 0.045, blue: 0.09, alpha: 0.84),
-            strokeColor: GameUITheme.coral.withAlphaComponent(0.48)
-        )
-        livesPanel.position = CGPoint(x: size.width - 87, y: size.height - 30)
-        livesPanel.zPosition = 98
-        addChild(livesPanel)
-
-        let livesCaption = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        livesCaption.text = "LIVES"
-        livesCaption.fontSize = 9
-        livesCaption.fontColor = SKColor(white: 1, alpha: 0.52)
-        livesCaption.horizontalAlignmentMode = .left
-        livesCaption.position = CGPoint(x: size.width - 151, y: size.height - 33)
-        livesCaption.zPosition = 100
-        addChild(livesCaption)
-
-        livesLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        livesLabel.fontSize = 16
-        livesLabel.fontColor = SKColor(red: 1.0, green: 0.34, blue: 0.40, alpha: 1)
-        livesLabel.horizontalAlignmentMode = .right
-        livesLabel.position = CGPoint(x: size.width - 23, y: size.height - 35)
-        livesLabel.zPosition = 100
-        updateLivesDisplay()
-        addChild(livesLabel)
-
-        // Gem counter (top-left, below score)
-        let gemIcon = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        gemIcon.text = "💎"
-        gemIcon.fontSize = 12
-        gemIcon.horizontalAlignmentMode = .left
-        gemIcon.position = CGPoint(x: 34, y: size.height - 49)
-        gemIcon.zPosition = 100
-        addChild(gemIcon)
-
-        gemLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        func text(_ value: String, x: CGFloat, y: CGFloat, size: CGFloat, color: SKColor = .white) -> SKLabelNode {
+            let node = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
+            node.text = value
+            node.fontSize = size
+            node.fontColor = color
+            node.position = CGPoint(x: x, y: y)
+            node.verticalAlignmentMode = .center
+            node.zPosition = 2
+            root.addChild(node)
+            return node
+        }
+        let scorePanel = GameUITheme.makePanel(size: CGSize(width: 112, height: 46), cornerRadius: 12)
+        scorePanel.position = CGPoint(x: area.minX + 56, y: top)
+        root.addChild(scorePanel)
+        scoreLabel = text("\(score)", x: area.minX + 56, y: top + 9, size: 18)
+        gemLabel = text("◆ \(GameScene.gemCount)", x: area.minX + 56, y: top - 12, size: 12, color: GameUITheme.gold)
+        // Callers update the count directly; the panel provides its persistent icon.
         gemLabel.text = "\(GameScene.gemCount)"
-        gemLabel.fontSize = 14
-        gemLabel.fontColor = SKColor(red: 0.86, green: 0.72, blue: 1.0, alpha: 1.0)
-        gemLabel.horizontalAlignmentMode = .left
-        gemLabel.position = CGPoint(x: 56, y: size.height - 49)
-        gemLabel.zPosition = 100
-        addChild(gemLabel)
+        gemLabel.position.x += 8
+        _ = text("◆", x: area.minX + 33, y: top - 12, size: 11, color: GameUITheme.gold)
 
+        let pause = GameUITheme.makeButton(title: "Ⅱ", name: "pauseButton",
+            size: CGSize(width: 46, height: 46), color: GameUITheme.violet)
+        pause.position = CGPoint(x: area.maxX - 23, y: top)
+        pause.zPosition = 3
+        pause.isAccessibilityElement = true
+        pause.accessibilityLabel = "Pause game"
+        pause.accessibilityTraits = .button
+        pause.onActivate = { [weak self] in self?.togglePause() }
+        root.addChild(pause)
+
+        let hearts = GameUITheme.makePanel(size: CGSize(width: 112, height: 46), cornerRadius: 12)
+        hearts.position = CGPoint(x: area.maxX - 110, y: top)
+        root.addChild(hearts)
+        livesLabel = text("", x: area.maxX - 110, y: top, size: 16, color: GameUITheme.coral)
+        updateLivesDisplay()
+
+        let middleLeft = area.minX + 122
+        let middleRight = area.maxX - 176
+        stageProgressWidth = max(80, min(190, middleRight - middleLeft - 20))
         if let stage = activeCampaignStage {
-            let stagePanel = GameUITheme.makePanel(
-                size: CGSize(width: stageProgressWidth + 30, height: 56),
-                cornerRadius: 14,
-                fillColor: SKColor(red: 0.055, green: 0.045, blue: 0.12, alpha: 0.82),
-                strokeColor: stage.biome.skyColor.withAlphaComponent(0.58)
-            )
-            stagePanel.position = CGPoint(x: size.width / 2, y: size.height - 36)
-            stagePanel.zPosition = 98
-            addChild(stagePanel)
-
-            let stageLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            stageLabel.text = "STAGE \(stage.number)  •  \(stage.biome.name.uppercased())"
-            stageLabel.fontSize = 11
-            stageLabel.fontColor = .white
-            stageLabel.position = CGPoint(x: size.width / 2, y: size.height - 24)
-            stageLabel.zPosition = 100
-            addChild(stageLabel)
-            stageProgressLabel = stageLabel
-
-            let track = SKSpriteNode(color: SKColor(white: 0.02, alpha: 0.72), size: CGSize(width: stageProgressWidth, height: 8))
-            track.position = CGPoint(x: size.width / 2, y: size.height - 47)
-            track.zPosition = 100
-            addChild(track)
-
-            let fill = SKSpriteNode(color: SKColor(red: 1.0, green: 0.80, blue: 0.18, alpha: 1), size: CGSize(width: 1, height: 6))
+            let center = (middleLeft + middleRight) / 2
+            let panel = GameUITheme.makePanel(size: CGSize(width: stageProgressWidth + 20, height: 46), cornerRadius: 12)
+            panel.position = CGPoint(x: center, y: top)
+            root.addChild(panel)
+            stageProgressLabel = text("Stage \(stage.number)", x: center, y: top + 10, size: 12)
+            let track = SKSpriteNode(color: SKColor(white: 1, alpha: 0.15), size: CGSize(width: stageProgressWidth, height: 6))
+            track.position = CGPoint(x: center, y: top - 11)
+            root.addChild(track)
+            let fill = SKSpriteNode(color: GameUITheme.gold, size: CGSize(width: 1, height: 6))
             fill.anchorPoint = CGPoint(x: 0, y: 0.5)
-            fill.position = CGPoint(x: size.width / 2 - stageProgressWidth / 2, y: size.height - 47)
-            fill.zPosition = 101
-            addChild(fill)
+            fill.position = CGPoint(x: center - stageProgressWidth / 2, y: top - 11)
+            fill.zPosition = 2
+            root.addChild(fill)
             stageProgressFill = fill
             updateCampaignProgressHUD()
         }
+    }
 
-        // Pause button
-        let pauseBtn = GameUITheme.makeButton(
-            title: "Ⅱ",
-            name: "pauseButton",
-            size: CGSize(width: 38, height: 38),
-            color: SKColor(red: 0.25, green: 0.20, blue: 0.40, alpha: 0.96),
-            fontSize: 15
-        )
-        let pauseX = activeCampaignStage == nil ? size.width / 2 : size.width / 2 + stageProgressWidth / 2 + 42
-        pauseBtn.position = CGPoint(x: pauseX, y: size.height - 30)
-        pauseBtn.zPosition = 100
-        addChild(pauseBtn)
+    func refreshSafeAreaLayout() {
+        guard ladybug != nil else { return }
+        setupHUD()
+    }
+
+    func pauseForInterruption() {
+        isTouching = false
+        activeFlightTouch = nil
+        touchY = nil
+        touchX = nil
+        ladybug?.targetY = nil
+        lastUpdateTime = 0
+        if !isPaused_, !isGameOver, !isCampaignStageComplete, !isMonetizationPresentationActive { togglePause() }
+        SoundManager.shared.stopMusic()
     }
 
     private func updateLivesDisplay() {
@@ -581,7 +551,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             stageProgressLabel?.text = "STAGE \(stage.number)  •  BOSS"
         } else {
             let percent = Int(progress * 100)
-            stageProgressLabel?.text = "STAGE \(stage.number)  •  \(stage.biome.name.uppercased())  •  \(percent)%"
+            stageProgressLabel?.text = "STAGE \(stage.number)  ·  \(percent)%"
         }
     }
 
@@ -643,7 +613,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // Sparkly color effect (body color already baked into texture via spawnLadybug)
         if let colorId = ShopScene.equippedColor,
            let item = ShopScene.allItems.first(where: { $0.id == colorId }) {
-            if item.isSparkly {
+            if item.isSparkly, !GameSettings.reducedEffects {
                 let sparkle = SKAction.run { [weak self] in
                     guard let self = self else { return }
                     let dot = SKShapeNode(circleOfRadius: CGFloat.random(in: 1.5...2.5))
@@ -667,25 +637,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             let hatNode = SKSpriteNode()
             hatNode.zPosition = 12 // above everything including body
             hatNode.position = CGPoint(x: 16, y: 10) // on top of head
-            switch hatId {
-            case "hat_tophat":
-                let tex = TextureGenerator.generateTopHatTexture(size: CGSize(width: 18, height: 16))
-                hatNode.texture = tex
-                hatNode.size = tex.size()
-            case "hat_cap":
-                let tex = TextureGenerator.generateCapTexture(size: CGSize(width: 20, height: 14))
-                hatNode.texture = tex
-                hatNode.size = tex.size()
-            case "hat_crown":
-                let tex = TextureGenerator.generateCrownTexture(size: CGSize(width: 20, height: 14))
-                hatNode.texture = tex
-                hatNode.size = tex.size()
-            case "hat_flower":
-                let tex = TextureGenerator.generateFlowerHatTexture(size: CGSize(width: 16, height: 16))
-                hatNode.texture = tex
-                hatNode.size = tex.size()
-            default: break
-            }
+            let tex = CosmeticArt.hatTexture(id: hatId, size: CGSize(width: 20, height: 17))
+            hatNode.texture = tex
+            hatNode.size = tex.size()
             hatNode.name = "hat"
             ladybug.addChild(hatNode)
         }
@@ -770,8 +724,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             return
         }
 
+        if isPaused_ {
+            if tappedNodes.contains(where: { $0.name == "pauseMenuBtn" }) { returnToMenu() }
+            else if tappedNodes.contains(where: { $0.name == "resumeLabel" }) { togglePause() }
+            return
+        }
         for node in tappedNodes {
-            if node.name == "pauseButton" || node.name == "pauseOverlay" || node.name == "resumeLabel" {
+            if node.name == "pauseButton" {
                 togglePause()
                 return
             }
@@ -781,9 +740,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             }
         }
 
-        if isPaused_ { return }
+        if isPaused_ || activeFlightTouch != nil { return }
+        activeFlightTouch = touch
+        dragStartY = loc.y
+        dragBugY = ladybug.position.y
         isTouching = true
-        touchY = loc.y
+        touchY = GameSettings.relativeDrag && !isBossFight ? dragBugY : loc.y
         touchX = loc.x
     }
 
@@ -1003,23 +965,29 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         label.text = title
     }
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if isPaused_ { return }
-        guard let touch = touches.first else { return }
-        let loc = touch.location(in: self)
-        touchY = loc.y
-        touchX = loc.x
+        guard !isPaused_, !isGameOver, !isCampaignStageComplete,
+              let activeFlightTouch, touches.contains(activeFlightTouch) else { return }
+        let location = activeFlightTouch.location(in: self)
+        touchY = GameSettings.relativeDrag && !isBossFight ? dragBugY + location.y - dragStartY : location.y
+        touchX = location.x
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        isTouching = false
-        touchY = nil
-        ladybug.targetY = nil
+        guard let activeFlightTouch, touches.contains(activeFlightTouch) else { return }
+        clearFlightTouch()
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let activeFlightTouch, touches.contains(activeFlightTouch) else { return }
+        clearFlightTouch()
+    }
+
+    private func clearFlightTouch() {
+        activeFlightTouch = nil
         isTouching = false
         touchY = nil
-        ladybug.targetY = nil
+        touchX = nil
+        ladybug?.targetY = nil
     }
 
     // MARK: - Update
@@ -1061,6 +1029,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         checkCaveEntities()
         updateBubblePowerup(dt: dt)
         updateVacuumMode(dt: dt)
+        updateOxygenShield(dt: dt)
 
         roleCueTimer += dt
         if roleCueTimer >= 0.25 {
@@ -1183,7 +1152,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if let spider = child as? Spider {
                 spider.jumpIfPlayerNear(playerX: ladybug.position.x)
             }
-            if let enemy = child as? BiomeEnemy {
+            if let enemy = child as? BiomeEnemy, enemy.physicsBody != nil {
                 enemy.lungeIfNear(playerX: ladybug.position.x)
             }
         }
@@ -1293,7 +1262,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func scrollWorldObjects(delta: CGFloat) {
         for child in children {
-            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood || child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider || child is FallingRock || child is Bubble || child is Vacuum {
+            if child is Aphid || child is FruitFly || child is Log || child is Bird || child is Frog || child is Dragonfly || child is Firefly || child is HeartBug || child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood || child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider || child is FallingRock || child is Bubble || child is Vacuum || child is CraterVent {
                 child.position.x -= delta
                 // Cave ground tracking: snap ground entities to terrain
                 if isCaveBiome, let terrain = caveTerrain {
@@ -1432,7 +1401,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func isNearGroundObject(x: CGFloat, range: CGFloat) -> Bool {
         for child in children {
-            if child is Log || child is Frog || child is Ant || child is Spider || child.name == "pond" {
+            if child is Log || child is Frog || child is Ant || child is Spider || child is CraterVent || child.name == "pond" {
                 if abs(child.position.x - x) < range { return true }
             }
         }
@@ -1588,6 +1557,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             spawnCrystalDecor(x: x)
         case .space:
             spawnSpaceDecor(x: x)
+        case .mars:
+            spawnMarsDecor(x: x)
         }
     }
 
@@ -2178,6 +2149,144 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
     }
 
+    private func spawnMarsDecor(x: CGFloat) {
+        let roll = Int.random(in: 0...4)
+        switch roll {
+        case 0: // Rust-dark surface rock
+            let rock = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 10...22), height: CGFloat.random(in: 6...13)))
+            rock.fillColor = SKColor(red: 0.34, green: 0.10, blue: 0.07, alpha: 0.95)
+            rock.strokeColor = SKColor(red: 0.82, green: 0.29, blue: 0.14, alpha: 0.65)
+            addDecor(rock, x: x, y: groundY + 4)
+        case 1: // Harmless dark crater
+            let crater = SKShapeNode(ellipseOf: CGSize(width: CGFloat.random(in: 28...52), height: CGFloat.random(in: 8...15)))
+            crater.fillColor = SKColor(red: 0.24, green: 0.07, blue: 0.05, alpha: 0.90)
+            crater.strokeColor = SKColor(red: 0.55, green: 0.17, blue: 0.10, alpha: 0.85)
+            crater.lineWidth = 2
+            addDecor(crater, x: x, y: groundY + 2)
+        case 2: // Jagged red ridge
+            let path = CGMutablePath()
+            path.move(to: CGPoint(x: -18, y: 0))
+            path.addLine(to: CGPoint(x: -8, y: 18))
+            path.addLine(to: CGPoint(x: 1, y: 7))
+            path.addLine(to: CGPoint(x: 10, y: 24))
+            path.addLine(to: CGPoint(x: 20, y: 0))
+            path.closeSubpath()
+            let ridge = SKShapeNode(path: path)
+            ridge.fillColor = SKColor(red: 0.47, green: 0.13, blue: 0.08, alpha: 0.90)
+            addDecor(ridge, x: x, y: groundY)
+        case 3: // Windblown iron dust
+            for _ in 0..<3 {
+                let dust = SKShapeNode(circleOfRadius: CGFloat.random(in: 0.8...1.8))
+                dust.fillColor = SKColor(red: 0.96, green: 0.42, blue: 0.20, alpha: 0.55)
+                addDecor(dust, x: x + CGFloat.random(in: -12...12), y: groundY + CGFloat.random(in: 8...32))
+            }
+        default: // Abandoned communications mast
+            let mastPath = CGMutablePath()
+            mastPath.move(to: CGPoint(x: 0, y: 0))
+            mastPath.addLine(to: CGPoint(x: 0, y: 28))
+            mastPath.move(to: CGPoint(x: -6, y: 0))
+            mastPath.addLine(to: CGPoint(x: 0, y: 20))
+            mastPath.addLine(to: CGPoint(x: 7, y: 0))
+            let mast = SKShapeNode(path: mastPath)
+            mast.strokeColor = SKColor(red: 0.30, green: 0.24, blue: 0.22, alpha: 0.90)
+            mast.lineWidth = 2
+            addDecor(mast, x: x, y: groundY)
+            mast.strokeColor = SKColor(red: 0.30, green: 0.24, blue: 0.22, alpha: 0.90)
+            let dish = SKShapeNode(ellipseOf: CGSize(width: 15, height: 7))
+            dish.fillColor = SKColor(red: 0.48, green: 0.40, blue: 0.36, alpha: 0.90)
+            dish.zRotation = -0.35
+            addDecor(dish, x: x + 4, y: groundY + 29)
+        }
+    }
+
+    private func setupMarsSky() {
+        let horizon = SKShapeNode(rectOf: CGSize(width: size.width + 20, height: size.height * 0.24))
+        horizon.fillColor = SKColor(red: 0.78, green: 0.25, blue: 0.14, alpha: 0.24)
+        horizon.strokeColor = .clear
+        horizon.position = CGPoint(x: size.width / 2, y: groundY + size.height * 0.12)
+        horizon.zPosition = -0.82
+        horizon.name = "biomeSkyDecor"
+        addChild(horizon)
+
+        addMarsPlanet(at: CGPoint(x: size.width * 0.15, y: size.height * 0.78),
+                      radius: 28,
+                      body: SKColor(red: 0.20, green: 0.55, blue: 0.82, alpha: 1),
+                      accent: SKColor(red: 0.28, green: 0.72, blue: 0.45, alpha: 0.85),
+                      ringed: false)
+        addMarsPlanet(at: CGPoint(x: size.width * 0.67, y: size.height * 0.73),
+                      radius: 42,
+                      body: SKColor(red: 0.86, green: 0.55, blue: 0.25, alpha: 1),
+                      accent: SKColor(red: 0.58, green: 0.27, blue: 0.20, alpha: 0.80),
+                      ringed: true)
+        addMarsPlanet(at: CGPoint(x: size.width * 0.90, y: size.height * 0.88),
+                      radius: 18,
+                      body: SKColor(red: 0.48, green: 0.35, blue: 0.72, alpha: 1),
+                      accent: SKColor(red: 0.74, green: 0.58, blue: 0.88, alpha: 0.75),
+                      ringed: false)
+
+        let ridgePath = CGMutablePath()
+        ridgePath.move(to: CGPoint(x: 0, y: groundY))
+        ridgePath.addLine(to: CGPoint(x: size.width * 0.16, y: groundY + 48))
+        ridgePath.addLine(to: CGPoint(x: size.width * 0.31, y: groundY + 18))
+        ridgePath.addLine(to: CGPoint(x: size.width * 0.47, y: groundY + 62))
+        ridgePath.addLine(to: CGPoint(x: size.width * 0.64, y: groundY + 24))
+        ridgePath.addLine(to: CGPoint(x: size.width * 0.82, y: groundY + 54))
+        ridgePath.addLine(to: CGPoint(x: size.width, y: groundY))
+        ridgePath.closeSubpath()
+        let ridge = SKShapeNode(path: ridgePath)
+        ridge.fillColor = SKColor(red: 0.30, green: 0.08, blue: 0.07, alpha: 0.62)
+        ridge.strokeColor = .clear
+        ridge.zPosition = -0.35
+        ridge.name = "biomeSkyDecor"
+        addChild(ridge)
+    }
+
+    private func addMarsPlanet(at position: CGPoint, radius: CGFloat, body: SKColor, accent: SKColor, ringed: Bool) {
+        let root = SKNode()
+        root.position = position
+        root.zPosition = -0.58
+        root.alpha = 0
+        root.name = "biomeSkyDecor"
+
+        if ringed {
+            let ring = SKShapeNode(ellipseOf: CGSize(width: radius * 2.9, height: radius * 0.72))
+            ring.fillColor = .clear
+            ring.strokeColor = accent.withAlphaComponent(0.70)
+            ring.lineWidth = max(2, radius * 0.12)
+            ring.zRotation = -0.18
+            ring.zPosition = -1
+            root.addChild(ring)
+        }
+
+        let globe = SKShapeNode(circleOfRadius: radius)
+        globe.fillColor = body
+        globe.strokeColor = SKColor(white: 1.0, alpha: 0.24)
+        globe.lineWidth = max(1.5, radius * 0.06)
+        root.addChild(globe)
+
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: radius * 0.72, height: radius * 1.65))
+        shadow.fillColor = SKColor(white: 0.03, alpha: 0.24)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: radius * 0.45, y: radius * 0.02)
+        globe.addChild(shadow)
+
+        for offset in [CGPoint(x: -0.30, y: 0.20), CGPoint(x: 0.08, y: -0.28), CGPoint(x: 0.24, y: 0.34)] {
+            let spot = SKShapeNode(ellipseOf: CGSize(width: radius * 0.38, height: radius * 0.22))
+            spot.fillColor = accent
+            spot.strokeColor = .clear
+            spot.position = CGPoint(x: radius * offset.x, y: radius * offset.y)
+            globe.addChild(spot)
+        }
+
+        addChild(root)
+        root.run(SKAction.fadeIn(withDuration: 1.8))
+        let drift = SKAction.sequence([
+            SKAction.moveBy(x: 0, y: 3, duration: 2.8),
+            SKAction.moveBy(x: 0, y: -3, duration: 2.8),
+        ])
+        root.run(SKAction.repeatForever(drift), withKey: "planetDrift")
+    }
+
     private func spawnCityDecor(x: CGFloat) {
         let roll = Int.random(in: 0...6)
         switch roll {
@@ -2368,12 +2477,23 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     // MARK: - Contact
 
     func didBegin(_ contact: SKPhysicsContact) {
-        guard !isGameOver else { return }
+        guard !isGameOver, !isCampaignStageComplete else { return }
         let collision = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
 
         if collision == PhysicsCategory.ladybug | PhysicsCategory.aphid {
             // BiomeFood
             if let food = (contact.bodyA.node as? BiomeFood) ?? (contact.bodyB.node as? BiomeFood) {
+                // Oxygen Bug protects only against Mars crater vents.
+                if food.biomeName == "Oxygen Bug" {
+                    score += food.points
+                    showFloatingScore(food.points, at: food.position, color: SKColor(red: 0.35, green: 0.90, blue: 1.0, alpha: 1))
+                    showEatParticles(at: food.position)
+                    food.removeFromParent()
+                    ladybug.pulse()
+                    unlockBug(.oxygenBug)
+                    startOxygenShield(duration: 10.0)
+                    return
+                }
                 // Gem bug — grants gemstone instead of normal points
                 if food.isGemBug {
                     collectGemstone(at: food.position)
@@ -2428,6 +2548,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 case "Cosmic Dust":    unlockBug(.cosmicDust);     SoundManager.shared.play("pop")
                 case "Star Larva":     unlockBug(.starLarva);      SoundManager.shared.play("pop")
                 case "Nebula Jelly":   unlockBug(.nebulaJelly);    SoundManager.shared.play("pop")
+                case "Red Dust Mite":  unlockBug(.redDustMite);     SoundManager.shared.play("skitter")
+                case "Solar Grub":     unlockBug(.solarGrub);       SoundManager.shared.play("pop")
+                case "Martian Hopper": unlockBug(.martianHopper);   SoundManager.shared.play("skitter")
                 default: break
                 }
                 return
@@ -2553,8 +2676,24 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         if collision == PhysicsCategory.ladybug | PhysicsCategory.bird {
             if ladybug.isSheltered { return }
+            let enemyNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird) ? contact.bodyA.node : contact.bodyB.node
+            if enemyNode?.name == "craterVentBlast" {
+                if isOxygenShieldActive {
+                    ladybug.childNode(withName: "oxygenShield")?.run(SKAction.sequence([
+                        SKAction.scale(to: 1.18, duration: 0.08),
+                        SKAction.scale(to: 1.0, duration: 0.14),
+                    ]))
+                    SoundManager.shared.play("pop")
+                    return
+                }
+                if ladybug.isInBubble || ladybug.isInvincible { return }
+                if let vent = enemyNode?.parent as? CraterVent,
+                   !vent.consumeUnshieldedHit() { return }
+                takeDamage()
+                return
+            }
             if !ladybug.isInvincible {
-                let enemyNode = (contact.bodyA.categoryBitMask == PhysicsCategory.bird) ? contact.bodyA.node : contact.bodyB.node
+                // Enemy node is resolved before hazard-specific protection.
                 // Boss — damage but don't remove (a bubble absorbs the hit instead)
                 if enemyNode?.name == "boss" {
                     if ladybug.isInBubble {
@@ -2635,6 +2774,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Refractor": unlockBug(.refractor)
                     case "Void Moth": unlockBug(.voidMoth)
                     case "Alien Drone": unlockBug(.alienDrone)
+                    case "Alien Scout": unlockBug(.alienScout)
                     default: break
                     }
                 }
@@ -2669,6 +2809,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                     case "Crystal Wyrm": unlockBug(.crystalWyrm)
                     case "Geode Roller": unlockBug(.geodeRoller)
                     case "Cosmic Serpent": unlockBug(.cosmicSerpent)
+                    case "Rover Drone": unlockBug(.roverDrone)
+                    case "Crater Worm": unlockBug(.craterWorm)
                     default: break
                     }
                 }
@@ -2693,6 +2835,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func showEatParticles(at pos: CGPoint) {
+        guard !GameSettings.reducedEffects else { return }
         for _ in 0..<6 {
             let p = SKShapeNode(circleOfRadius: CGFloat.random(in: 1.5...3))
             p.fillColor = [SKColor.white, SKColor.yellow, SKColor.green].randomElement()!
@@ -2800,6 +2943,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         ladybug.flash()
         ladybug.makeInvincible()
         SoundManager.shared.play("hit")
+        GameSettings.feedback(.medium)
         if lives <= 0 { gameOver() }
     }
 
@@ -2826,7 +2970,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
         // Difficulty-scaled dt: food spawns faster/slower, enemies slower/faster
         let fdt = dt / foodSpawnMul   // food timers: smaller mul = faster dt = more food
-        let edt = dt / enemySpawnMul  // enemy timers: smaller mul = faster dt = more enemies
+        let openingGrace = campaignStageID == 0 && distanceTraveled < 1800
+        let pacing = EncounterPacing.enemyTimeScale(distance: Double(distanceTraveled),
+            targetDistance: activeCampaignStage.map { Double($0.targetDistance) })
+        let edt = openingGrace ? 0 : dt * pacing / enemySpawnMul
 
         switch currentBiome {
         case .meadowDay:
@@ -2839,7 +2986,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             birdTimer += edt
             if birdTimer >= max(2.5, 5.5 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBird() }
             frogTimer += edt
-            if frogTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003) { frogTimer = 0; spawnPondCreature() }
+            if frogTimer >= max(4.0, 8.0 - Double(distanceTraveled) * 0.0003), campaignStageID != 0 || distanceTraveled > 4200 { frogTimer = 0; spawnPondCreature() }
 
         case .meadowNight:
             gnatTimer += fdt
@@ -3088,6 +3235,24 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             if dragonflyTimer >= max(5.0, 9.0 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnFloatingBiomeEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Cosmic Serpent", size: CGSize(width: 54, height: 28)), name: "Cosmic Serpent") }
             waspTimer += edt
             if waspTimer >= max(4.5, 8.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnBiomeSwooper(name: "Alien Drone") }
+
+        case .mars:
+            aphidTimer += fdt
+            if aphidTimer >= 1.3 { aphidTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Red Dust Mite", size: CGSize(width: 24, height: 22)), pts: 35, flying: false, name: "Red Dust Mite") }
+            flyTimer += fdt
+            if flyTimer >= 1.7 { flyTimer = 0; spawnBiomeFood(texture: TextureGenerator.biomeCreatureTexture(named: "Solar Grub", size: CGSize(width: 30, height: 24)), pts: 55, flying: false, name: "Solar Grub") }
+            gnatTimer += fdt
+            if gnatTimer >= 2.1 { gnatTimer = 0; spawnMartianHopper() }
+            birdTimer += edt
+            if birdTimer >= max(3.8, 7.0 - Double(distanceTraveled) * 0.0003) { birdTimer = 0; spawnBiomeSwooper(name: "Alien Scout") }
+            dragonflyTimer += edt
+            if dragonflyTimer >= max(5.5, 9.5 - Double(distanceTraveled) * 0.0003) { dragonflyTimer = 0; spawnBiomeGroundEnemy(texture: TextureGenerator.biomeCreatureTexture(named: "Rover Drone", size: CGSize(width: 62, height: 38)), name: "Rover Drone") }
+            waspTimer += edt
+            if waspTimer >= max(6.0, 10.0 - Double(distanceTraveled) * 0.0003) { waspTimer = 0; spawnCraterWorm() }
+            oxygenBugTimer += dt
+            if oxygenBugTimer >= 18.0 { oxygenBugTimer = 0; spawnOxygenBug() }
+            marsVentTimer += edt
+            if marsVentTimer >= 7.5 { marsVentTimer = 0; spawnCraterVent() }
         }
     }
 
@@ -3116,6 +3281,184 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         // ~2% chance to become a rare gemstone bug
         if Int.random(in: 1...50) == 1 { food.makeGemBug() }
         addChild(food)
+    }
+
+    private func spawnMartianHopper() {
+        let spawnX = size.width + 30
+        if isNearGroundObject(x: spawnX, range: 70) { return }
+        let hopper = BiomeFood(
+            texture: TextureGenerator.biomeCreatureTexture(named: "Martian Hopper", size: CGSize(width: 34, height: 28)),
+            points: 45,
+            biomeName: "Martian Hopper",
+            isFlying: false
+        )
+        hopper.position = CGPoint(x: spawnX, y: groundY + hopper.size.height / 2)
+        hopper.setupPhysics()
+        if Int.random(in: 1...50) == 1 { hopper.makeGemBug() }
+        addChild(hopper)
+
+        let height = CGFloat.random(in: 30...52)
+        let squash = SKAction.group([
+            SKAction.scaleX(to: 1.15, duration: 0.10),
+            SKAction.scaleY(to: 0.82, duration: 0.10),
+        ])
+        let jump = SKAction.group([
+            SKAction.moveBy(x: -8, y: height, duration: 0.28),
+            SKAction.scaleX(to: 0.92, duration: 0.28),
+            SKAction.scaleY(to: 1.12, duration: 0.28),
+            SKAction.rotate(toAngle: -0.10, duration: 0.28),
+        ])
+        jump.timingMode = .easeOut
+        let land = SKAction.group([
+            SKAction.moveBy(x: -6, y: -height, duration: 0.24),
+            SKAction.scale(to: 1.0, duration: 0.24),
+            SKAction.rotate(toAngle: 0, duration: 0.24),
+        ])
+        land.timingMode = .easeIn
+        hopper.run(SKAction.repeatForever(SKAction.sequence([
+            squash, jump, land, SKAction.wait(forDuration: 0.38),
+        ])), withKey: "martianHop")
+    }
+
+    private func spawnOxygenBug() {
+        let alreadyPresent = children.contains { child in
+            (child as? BiomeFood)?.biomeName == "Oxygen Bug"
+        }
+        guard !alreadyPresent else { return }
+
+        let bug = BiomeFood(
+            texture: TextureGenerator.biomeCreatureTexture(named: "Oxygen Bug", size: CGSize(width: 38, height: 38)),
+            points: 75,
+            biomeName: "Oxygen Bug",
+            isFlying: true
+        )
+        bug.position = CGPoint(x: size.width + 38,
+                               y: groundY + CGFloat.random(in: 65...size.height * 0.48))
+        bug.minY = groundY + 24
+        bug.setupPhysics()
+        bug.startMoving()
+
+        let aura = SKShapeNode(circleOfRadius: 25)
+        aura.fillColor = SKColor(red: 0.20, green: 0.82, blue: 1.0, alpha: 0.12)
+        aura.strokeColor = SKColor(red: 0.45, green: 0.94, blue: 1.0, alpha: 0.72)
+        aura.lineWidth = 2
+        aura.zPosition = -1
+        bug.addChild(aura)
+        aura.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.scale(to: 1.12, duration: 0.55),
+            SKAction.scale(to: 0.94, duration: 0.55),
+        ])))
+        addChild(bug)
+    }
+
+    private func startOxygenShield(duration: TimeInterval) {
+        oxygenShieldDuration = max(oxygenShieldDuration, duration)
+        ladybug.childNode(withName: "oxygenShield")?.removeFromParent()
+
+        let shield = SKShapeNode(circleOfRadius: 32)
+        shield.name = "oxygenShield"
+        shield.fillColor = SKColor(red: 0.18, green: 0.78, blue: 1.0, alpha: 0.13)
+        shield.strokeColor = SKColor(red: 0.48, green: 0.95, blue: 1.0, alpha: 0.92)
+        shield.lineWidth = 2.5
+        shield.glowWidth = 5
+        shield.zPosition = -1
+        ladybug.addChild(shield)
+        shield.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.scale(to: 1.08, duration: 0.45),
+            SKAction.scale(to: 0.96, duration: 0.45),
+        ])), withKey: "oxygenPulse")
+
+        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        label.text = "OXYGEN SHIELD — 10s"
+        label.fontSize = 17
+        label.fontColor = SKColor(red: 0.45, green: 0.94, blue: 1.0, alpha: 1)
+        label.position = CGPoint(x: size.width / 2, y: size.height * 0.60)
+        label.zPosition = 130
+        addChild(label)
+        label.run(SKAction.sequence([
+            SKAction.wait(forDuration: 1.0),
+            SKAction.fadeOut(withDuration: 0.30),
+            SKAction.removeFromParent(),
+        ]))
+        SoundManager.shared.play("powerup")
+    }
+
+    private func updateOxygenShield(dt: TimeInterval) {
+        guard oxygenShieldDuration > 0 else { return }
+        oxygenShieldDuration -= dt
+        if oxygenShieldDuration <= 0 {
+            oxygenShieldDuration = 0
+            if let shield = ladybug.childNode(withName: "oxygenShield") {
+                shield.removeAllActions()
+                shield.run(SKAction.sequence([
+                    SKAction.fadeOut(withDuration: 0.30),
+                    SKAction.removeFromParent(),
+                ]))
+            }
+        }
+    }
+
+    private func spawnCraterWorm() {
+        let spawnX = size.width + 50
+        if isNearGroundObject(x: spawnX, range: 100) || isNearBiomeEnemy(x: spawnX, range: 180) { return }
+
+        let marker = SKShapeNode(ellipseOf: CGSize(width: 72, height: 16))
+        marker.fillColor = SKColor(red: 0.22, green: 0.06, blue: 0.05, alpha: 0.92)
+        marker.strokeColor = SKColor(red: 0.92, green: 0.30, blue: 0.14, alpha: 0.85)
+        marker.lineWidth = 2
+        addDecor(marker, x: spawnX, y: groundY + 2)
+        let warning = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        warning.text = "!"
+        warning.fontSize = 22
+        warning.fontColor = SKColor(red: 1.0, green: 0.78, blue: 0.18, alpha: 1)
+        warning.position = CGPoint(x: 0, y: 22)
+        marker.addChild(warning)
+        warning.run(SKAction.repeat(SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.15, duration: 0.14),
+            SKAction.fadeAlpha(to: 1.0, duration: 0.14),
+        ]), count: 3))
+
+        let worm = BiomeEnemy(
+            texture: TextureGenerator.biomeCreatureTexture(named: "Crater Worm", size: CGSize(width: 58, height: 38)),
+            biomeName: "Crater Worm"
+        )
+        worm.position = CGPoint(x: spawnX, y: groundY - worm.size.height * 0.55)
+        worm.alpha = 0.15
+        addChild(worm)
+        SoundManager.shared.play("hiss")
+
+        let emerge = SKAction.group([
+            SKAction.moveTo(y: groundY + worm.size.height / 2, duration: 0.22),
+            SKAction.fadeIn(withDuration: 0.18),
+        ])
+        emerge.timingMode = .easeOut
+        worm.run(SKAction.sequence([
+            SKAction.wait(forDuration: 0.85),
+            emerge,
+            SKAction.run { [weak worm] in
+                worm?.setupPhysics()
+                worm?.startPatrolling()
+            },
+        ]), withKey: "craterEmergence")
+        marker.run(SKAction.sequence([
+            SKAction.wait(forDuration: 1.05),
+            SKAction.fadeOut(withDuration: 0.35),
+            SKAction.removeFromParent(),
+        ]))
+    }
+
+    private func spawnCraterVent() {
+        let spawnX = size.width + 65
+        if isNearGroundObject(x: spawnX, range: 150) || isNearBiomeEnemy(x: spawnX, range: 180) { return }
+        let nearbyVent = children.contains { child in
+            child is CraterVent && abs(child.position.x - spawnX) < 240
+        }
+        guard !nearbyVent else { return }
+
+        let vent = CraterVent()
+        vent.position = CGPoint(x: spawnX, y: groundY + 1)
+        addChild(vent)
+        vent.startEruption()
     }
 
     // MARK: - Cave Terrain Helpers
@@ -3239,12 +3582,13 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Refractor": frames = [TextureGenerator.biomeCreatureTexture(named: "Refractor", size: CGSize(width: 36, height: 32))]
         case "Void Moth": frames = TextureGenerator.generateVoidMothFrames(size: CGSize(width: 44, height: 36))
         case "Alien Drone": frames = [TextureGenerator.generateAlienDroneTexture(size: CGSize(width: 36, height: 28))]
+        case "Alien Scout": frames = [TextureGenerator.biomeCreatureTexture(named: "Alien Scout", size: CGSize(width: 46, height: 42))]
         default: frames = birdTextures
         }
         let swooper = BiomeSwooper(textures: frames, biomeName: name)
         swooper.position = CGPoint(x: size.width + 60, y: size.height * CGFloat.random(in: 0.70...0.95))
         swooper.xScale = -1
-        swooper.setupPhysics()
+        if name != "Alien Scout" { swooper.setupPhysics() }
         addChild(swooper)
         // Biome-specific swooper sound
         switch name {
@@ -3264,6 +3608,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         case "Refractor": SoundManager.shared.play("screech")
         case "Void Moth": SoundManager.shared.play("screech")
         case "Alien Drone": SoundManager.shared.play("buzz")
+        case "Alien Scout": SoundManager.shared.play("buzz")
         case "Snow Owl": SoundManager.shared.play("hoot")
         case "Toucan": SoundManager.shared.play("squawk")
         default: SoundManager.shared.play("caw")
@@ -3284,6 +3629,40 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             let cross = SKAction.moveBy(x: -(size.width + 180), y: 0, duration: Double.random(in: 7.0...9.0))
             swooper.run(SKAction.sequence([cross, SKAction.removeFromParent()]))
         } else {
+            if name == "Alien Scout" {
+                let scanner = SKShapeNode(circleOfRadius: 34)
+                scanner.fillColor = SKColor(red: 0.18, green: 1.0, blue: 0.48, alpha: 0.08)
+                scanner.strokeColor = SKColor(red: 0.30, green: 1.0, blue: 0.55, alpha: 0.85)
+                scanner.lineWidth = 2
+                scanner.zPosition = -1
+                swooper.addChild(scanner)
+                scanner.run(SKAction.repeat(SKAction.sequence([
+                    SKAction.group([
+                        SKAction.scale(to: 1.28, duration: 0.18),
+                        SKAction.fadeAlpha(to: 0.18, duration: 0.18),
+                    ]),
+                    SKAction.group([
+                        SKAction.scale(to: 0.82, duration: 0.18),
+                        SKAction.fadeAlpha(to: 1.0, duration: 0.18),
+                    ]),
+                ]), count: 3))
+                swooper.run(SKAction.sequence([
+                    SKAction.wait(forDuration: 0.95),
+                    SKAction.run { [weak self, weak swooper] in
+                        guard let self, let swooper else { return }
+                        scanner.removeFromParent()
+                        swooper.setupPhysics()
+                        SoundManager.shared.play("whoosh")
+                        swooper.swoopAcross(sceneWidth: self.size.width,
+                                            ladybugX: self.ladybug.position.x,
+                                            targetY: self.ladybug.position.y,
+                                            groundY: self.groundY,
+                                            duration: 2.25)
+                    },
+                ]), withKey: "alienScan")
+                return
+            }
+
             // Delayed whoosh as it dives
             swooper.run(SKAction.sequence([SKAction.wait(forDuration: 0.5), SKAction.run {
                 SoundManager.shared.play("whoosh")
@@ -3947,6 +4326,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         removeAction(forKey: "cloudDrift")
         removeAction(forKey: "swampFog")
         removeAction(forKey: "spaceStars")
+        removeAction(forKey: "marsDust")
 
         // Fade out and remove all previous sky decorations
         for child in children {
@@ -4192,6 +4572,30 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             }
         }
 
+        // Mars: red horizon, distant planets, and windblown surface dust.
+        if biome == .mars {
+            setupMarsSky()
+            let dust = SKAction.run { [weak self] in
+                guard let self else { return }
+                let grain = SKShapeNode(circleOfRadius: CGFloat.random(in: 0.7...1.7))
+                grain.fillColor = SKColor(red: 0.95, green: 0.40, blue: 0.18, alpha: 0.42)
+                grain.strokeColor = .clear
+                grain.position = CGPoint(x: self.size.width + 4,
+                                         y: self.groundY + CGFloat.random(in: 4...90))
+                grain.zPosition = 2
+                grain.name = "biomeSkyDecor"
+                self.addChild(grain)
+                grain.run(SKAction.sequence([
+                    SKAction.group([
+                        SKAction.moveBy(x: -(self.size.width + 20), y: CGFloat.random(in: -8...10), duration: 3.4),
+                        SKAction.fadeOut(withDuration: 3.4),
+                    ]),
+                    SKAction.removeFromParent(),
+                ]))
+            }
+            run(SKAction.repeatForever(SKAction.sequence([dust, SKAction.wait(forDuration: 0.16)])), withKey: "marsDust")
+        }
+
         // Mushroom: spore particles
         if biome == .mushroom {
             let spores = SKAction.run { [weak self] in
@@ -4212,6 +4616,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func showRainbow() {
+        guard !GameSettings.reducedEffects else { return }
         let colors: [SKColor] = [
             SKColor(red: 1.0, green: 0.0, blue: 0.0, alpha: 0.25),
             SKColor(red: 1.0, green: 0.5, blue: 0.0, alpha: 0.25),
@@ -4381,9 +4786,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         self.isPaused = isPaused_
 
         if isPaused_ {
-            isTouching = false
-            touchY = nil
-            ladybug.targetY = nil
+            clearFlightTouch()
+            SoundManager.shared.stopMusic()
 
             let overlay = SKShapeNode(rectOf: size)
             overlay.fillColor = SKColor(white: 0.0, alpha: 0.68)
@@ -4425,7 +4829,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             let resume = GameUITheme.makeButton(
                 title: "▶  Resume Run",
                 name: "resumeLabel",
-                size: CGSize(width: 190, height: 42),
+                size: CGSize(width: 190, height: 46),
                 color: GameUITheme.mint,
                 fontSize: 15
             )
@@ -4436,7 +4840,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             let menuBg = GameUITheme.makeButton(
                 title: "Back to Menu",
                 name: "pauseMenuBtn",
-                size: CGSize(width: 154, height: 36),
+                size: CGSize(width: 154, height: 44),
                 color: SKColor(red: 0.48, green: 0.18, blue: 0.25, alpha: 1),
                 fontSize: 13
             )
@@ -4447,6 +4851,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             enumerateChildNodes(withName: "pauseOverlay") { node, _ in node.removeFromParent() }
             enumerateChildNodes(withName: "resumeLabel") { node, _ in node.removeFromParent() }
             enumerateChildNodes(withName: "pauseMenuBtn") { node, _ in node.removeFromParent() }
+            SoundManager.shared.startMusic()
             lastUpdateTime = 0 // Reset to avoid big dt jump
         }
     }
@@ -4486,10 +4891,11 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                child is Frog || child is Dragonfly || child is Firefly || child is HeartBug ||
                child is Ant || child is Spider || child is GnatSwarm || child is BiomeFood ||
                child is BiomeEnemy || child is BiomeSwooper || child is CaveSpider ||
-               child is FallingRock || child is Bubble || child is Vacuum || child.name == "monkey" || child.name == "envDecor" ||
+               child is FallingRock || child is Bubble || child is Vacuum || child is CraterVent || child.name == "monkey" || child.name == "envDecor" ||
                child.name == "pond" || child.name == "rockShadow" ||
                child.name == "slothRig" || child.name == "lavaPool" ||
                child.name == "underwaterSeaweedBack" || child.name == "underwaterSeaweedFront" {
+                (child as? CraterVent)?.deactivate()
                 child.removeFromParent()
             }
         }
@@ -5354,6 +5760,12 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         touchY = nil
         touchX = nil
         ladybug.targetY = nil
+        oxygenShieldDuration = 0
+        ladybug.childNode(withName: "oxygenShield")?.removeFromParent()
+
+        for child in children {
+            (child as? CraterVent)?.deactivate()
+        }
 
         let result = CampaignProgressStore.shared.completeStage(
             stage,
@@ -5376,6 +5788,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         )
         finalizeRunIfNeeded(completed: true)
         SoundManager.shared.play("powerup")
+        GameSettings.feedback(.soft)
         showCampaignCompleteUI(stage: stage, result: result, reward: reward)
     }
 
@@ -5467,7 +5880,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let button = GameUITheme.makeButton(
             title: text,
             name: name,
-            size: CGSize(width: width, height: 38),
+            size: CGSize(width: width, height: 44),
             color: color,
             fontSize: width > 150 ? 13 : 14
         )
@@ -5489,6 +5902,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         SoundManager.shared.play("death")
         SoundManager.shared.play("gameOver")
         ladybug.exitBubble()
+        oxygenShieldDuration = 0
+        ladybug.childNode(withName: "oxygenShield")?.removeFromParent()
+        for child in children { (child as? CraterVent)?.deactivate() }
         isVacuumMode = false
         ladybug.childNode(withName: "vacuumRing")?.removeFromParent()
         ladybug.childNode(withName: "magnetRing")?.removeFromParent()
@@ -5532,7 +5948,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         addChild(gameOverEyebrow)
 
         let goLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        goLabel.text = campaignStageID == nil ? "RUN OVER" : "STAGE FAILED"
+        goLabel.text = campaignStageID == nil ? "Nice exploring!" : "One more try?"
         goLabel.fontSize = 36
         goLabel.fontColor = SKColor(red: 1.0, green: 0.42, blue: 0.45, alpha: 1)
         goLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 70)

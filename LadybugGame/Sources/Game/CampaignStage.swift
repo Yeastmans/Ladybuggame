@@ -37,7 +37,8 @@ struct CampaignStage: Identifiable, Sendable {
         CampaignStage(id: 11, biome: .ruins, objective: "Escape the guardians of the old temple.", targetDistance: 16_500, masteryScore: 1_050, bossLevel: nil),
         CampaignStage(id: 12, biome: .mushroom, objective: "Separate glowing snacks from toxic spores.", targetDistance: 17_000, masteryScore: 1_100, bossLevel: nil),
         CampaignStage(id: 13, biome: .crystal, objective: "Cross the caverns without touching the shards.", targetDistance: 17_500, masteryScore: 1_150, bossLevel: nil),
-        CampaignStage(id: 14, biome: .space, objective: "Board the final arena and stop the Void Harvester.", targetDistance: 18_000, masteryScore: 1_200, bossLevel: 3),
+        CampaignStage(id: 14, biome: .space, objective: "Board the orbital arena and stop the Void Harvester.", targetDistance: 18_000, masteryScore: 1_200, bossLevel: 3),
+        CampaignStage(id: 15, biome: .mars, objective: "Cross the red frontier and time your flight over crater vents.", targetDistance: 18_500, masteryScore: 1_250, bossLevel: nil),
     ]
 
     static func stage(id: Int) -> CampaignStage? {

@@ -1,14 +1,10 @@
 import SpriteKit
 
-class BugopediaScene: SKScene {
-
+final class BugopediaScene: GameScreenScene {
     private let tracker = BugTracker.shared
     private var currentBiome: Biome = .meadowDay
-
-    override func didMove(to view: SKView) {
-        backgroundColor = SKColor(red: 0.08, green: 0.06, blue: 0.14, alpha: 1.0)
-        showBiome(.meadowDay)
-    }
+    private var page = 0
+    private var detail: BugTracker.BugType?
 
     private func bugsForBiome(_ biome: Biome) -> [BugTracker.BugType] {
         switch biome {
@@ -27,246 +23,77 @@ class BugopediaScene: SKScene {
         case .mushroom: return [.sporeBug, .glowShroom, .fungusGnat, .toxicSpore, .myceliumCrawler, .capBouncer]
         case .crystal: return [.gemLarva, .prismFly, .crystalMite, .shardSentinel, .crystalWyrm, .refractor, .geodeRoller]
         case .space: return [.cosmicDust, .starLarva, .nebulaJelly, .alienDrone, .voidMoth, .cosmicSerpent]
+        case .mars: return [.redDustMite, .solarGrub, .martianHopper, .oxygenBug, .alienScout, .roverDrone, .craterWorm]
         }
     }
 
-    private func showBiome(_ biome: Biome) {
-        currentBiome = biome
+
+    override func rebuild() {
         removeAllChildren()
-
-        // Title
-        let title = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        title.text = "Creature Collection"
-        title.fontSize = 24
-        title.fontColor = .white
-        title.position = CGPoint(x: size.width / 2, y: size.height - 28)
-        title.zPosition = 10
-        addChild(title)
-
-        // Back
-        let back = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        back.text = "< Back"
-        back.fontSize = 14
-        back.fontColor = SKColor(white: 0.7, alpha: 1)
-        back.horizontalAlignmentMode = .left
-        back.position = CGPoint(x: 15, y: size.height - 28)
-        back.zPosition = 10
-        back.name = "back"
-        addChild(back)
-
-        // Count
+        backgroundColor = GameUITheme.ink
+        let area = safeContentFrame
+        if let detail { buildDetail(detail); return }
+        label("Field guide", at: CGPoint(x: area.midX, y: area.maxY - 22), fontSize: 26)
+        button("Back", name: "back", at: CGPoint(x: area.minX + 43, y: area.maxY - 22), width: 86)
         let all = BugTracker.BugType.allCases
         let found = all.filter { tracker.isUnlocked($0) }.count
-        let countL = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        countL.text = "\(found)/\(all.count)"
-        countL.fontSize = 12
-        countL.fontColor = SKColor(white: 0.5, alpha: 1)
-        countL.horizontalAlignmentMode = .right
-        countL.position = CGPoint(x: size.width - 15, y: size.height - 28)
-        countL.zPosition = 10
-        addChild(countL)
-
-        let totalTrack = SKSpriteNode(color: SKColor(white: 1.0, alpha: 0.13), size: CGSize(width: 96, height: 5))
-        totalTrack.position = CGPoint(x: size.width - 63, y: size.height - 43)
-        totalTrack.zPosition = 10
-        addChild(totalTrack)
-        let totalFill = SKSpriteNode(color: SKColor(red: 0.48, green: 0.90, blue: 0.48, alpha: 1), size: CGSize(width: max(1, 96 * CGFloat(found) / CGFloat(max(1, all.count))), height: 5))
-        totalFill.anchorPoint = CGPoint(x: 0, y: 0.5)
-        totalFill.position = CGPoint(x: size.width - 111, y: size.height - 43)
-        totalFill.zPosition = 11
-        addChild(totalFill)
-
-        // Biome tabs
-        let biomes: [(Biome, String)] = [
-            (.meadowDay, "Meadow"), (.meadowNight, "Night"), (.desert, "Desert"),
-            (.snow, "Tundra"), (.jungle, "Jungle"), (.cave, "Cave"),
-            (.underwater, "Sea"), (.volcano, "Volcano"), (.cloud, "Sky"),
-            (.swamp, "Swamp"), (.city, "Garden"),
-            (.ruins, "Ruins"), (.mushroom, "Shroom"), (.crystal, "Crystal"), (.space, "Space"),
-        ]
-        let tabW: CGFloat = 32
-        let tabStartX = (size.width - CGFloat(biomes.count) * tabW) / 2 + tabW / 2
-        for (i, (b, name)) in biomes.enumerated() {
-            let active = b == biome
-            let tab = SKShapeNode(rectOf: CGSize(width: tabW - 3, height: 20), cornerRadius: 5)
-            tab.fillColor = active ? b.skyColor.withAlphaComponent(0.8) : SKColor(white: 0.18, alpha: 1)
-            tab.strokeColor = active ? .white : .clear
-            tab.lineWidth = active ? 1.5 : 0
-            tab.position = CGPoint(x: tabStartX + CGFloat(i) * tabW, y: size.height - 55)
-            tab.zPosition = 10
-            tab.name = "biome_\(b.rawValue)"
-            addChild(tab)
-
-            let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            label.text = name
-            label.fontSize = 7
-            label.fontColor = .white
-            label.verticalAlignmentMode = .center
-            label.name = "biome_\(b.rawValue)"
-            tab.addChild(label)
+        label("\(found) / \(all.count)", at: CGPoint(x: area.maxX - 49, y: area.maxY - 22), fontSize: 14, color: GameUITheme.gold)
+        button("‹", name: "biomePrevious", at: CGPoint(x: area.midX - 151, y: area.maxY - 78), width: 52)
+        label(currentBiome.name, at: CGPoint(x: area.midX, y: area.maxY - 78), fontSize: 21)
+        button("›", name: "biomeNext", at: CGPoint(x: area.midX + 151, y: area.maxY - 78), width: 52)
+        let bugs = bugsForBiome(currentBiome)
+        let items = Array(bugs.dropFirst(page * 4).prefix(4))
+        let width = min(170, (area.width - 30) / 4)
+        let height = min(155, area.height - 174)
+        for (index, bug) in items.enumerated() {
+            let unlocked = tracker.isUnlocked(bug)
+            let card = button("", name: "bug_\(bug.rawValue)",
+                at: CGPoint(x: area.midX + (CGFloat(index) - CGFloat(items.count - 1) / 2) * (width + 10), y: area.midY - 18),
+                width: width, height: height, color: GameUITheme.panel)
+            card.accessibilityLabel = unlocked ? "\(bug.rawValue), \(bug.category.rawValue)" : "Undiscovered creature"
+            let sprite = SKSpriteNode(texture: tracker.texture(for: bug, size: CGSize(width: 52, height: 48)))
+            sprite.position.y = height / 2 - 31
+            if !unlocked { sprite.color = .black; sprite.colorBlendFactor = 1; sprite.alpha = 0.5 }
+            card.addChild(sprite)
+            label(unlocked ? bug.rawValue : "Undiscovered", at: CGPoint(x: 0, y: -height / 2 + 34),
+                  fontSize: 12, width: width - 10, parent: card)
+            label(unlocked ? (bug.category == .food ? "+ Snack" : "! Threat") : "Find it in the wild",
+                  at: CGPoint(x: 0, y: -height / 2 + 14), fontSize: 10,
+                  color: bug.category == .food ? GameUITheme.mint : GameUITheme.gold, parent: card)
         }
-
-        // Bug grid for this biome
-        let bugs = bugsForBiome(biome)
-        let cols = 6
-        let cellW: CGFloat = 58
-        let cellH: CGFloat = 62
-        let gridW = CGFloat(min(cols, bugs.count)) * cellW
-        let startX = (size.width - gridW) / 2 + cellW / 2
-        let startY = size.height - 90
-
-        for (i, bug) in bugs.enumerated() {
-            let col = i % cols
-            let row = i / cols
-            let x = startX + CGFloat(col) * cellW
-            let y = startY - CGFloat(row) * cellH
-
-            let foundBug = tracker.isUnlocked(bug)
-            let roleColor = bug.category == .food
-                ? SKColor(red: 0.28, green: 0.82, blue: 0.48, alpha: 1)
-                : SKColor(red: 0.96, green: 0.24, blue: 0.28, alpha: 1)
-            let card = SKShapeNode(rectOf: CGSize(width: 52, height: 56), cornerRadius: 8)
-            card.fillColor = foundBug ? roleColor.withAlphaComponent(0.10) : SKColor(white: 0.12, alpha: 0.82)
-            card.strokeColor = foundBug ? roleColor.withAlphaComponent(0.62) : SKColor(white: 1.0, alpha: 0.10)
-            card.lineWidth = 1.2
-            card.position = CGPoint(x: x, y: y - 7)
-            card.zPosition = 1
-            card.name = "bug_\(bug.rawValue)"
-            addChild(card)
-
-            let tex = tracker.texture(for: bug, size: CGSize(width: 32, height: 32))
-            let sprite = SKSpriteNode(texture: tex, size: CGSize(width: 32, height: 32))
-            sprite.position = CGPoint(x: x, y: y)
-            sprite.zPosition = 2
-            sprite.name = "bug_\(bug.rawValue)"
-            addChild(sprite)
-
-            let label = SKLabelNode(fontNamed: "AvenirNext-Medium")
-            label.text = tracker.isUnlocked(bug) ? bug.rawValue : "???"
-            label.fontSize = 7
-            label.fontColor = tracker.isUnlocked(bug) ? .white : SKColor(white: 0.4, alpha: 1)
-            label.position = CGPoint(x: x, y: y - 22)
-            label.zPosition = 3
-            label.name = "bug_\(bug.rawValue)"
-            addChild(label)
-
-            let roleBadge = SKShapeNode(circleOfRadius: 6)
-            roleBadge.fillColor = roleColor
-            roleBadge.strokeColor = SKColor(white: 1.0, alpha: 0.55)
-            roleBadge.lineWidth = 0.8
-            roleBadge.position = CGPoint(x: x + 19, y: y + 18)
-            roleBadge.zPosition = 4
-            roleBadge.name = "bug_\(bug.rawValue)"
-            addChild(roleBadge)
-            let roleMark = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            roleMark.text = bug.category == .food ? "+" : "!"
-            roleMark.fontSize = 9
-            roleMark.fontColor = .white
-            roleMark.verticalAlignmentMode = .center
-            roleMark.name = "bug_\(bug.rawValue)"
-            roleBadge.addChild(roleMark)
-        }
-
-        // Biome count
-        let biomeFound = bugs.filter { tracker.isUnlocked($0) }.count
-        let biomeCt = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        biomeCt.text = "\(biomeFound)/\(bugs.count) in \(biome.name)"
-        biomeCt.fontSize = 11
-        biomeCt.fontColor = SKColor(white: 0.5, alpha: 1)
-        biomeCt.position = CGPoint(x: size.width / 2, y: 22)
-        biomeCt.zPosition = 10
-        addChild(biomeCt)
+        let foot = area.minY + 24
+        if page > 0 { button("Previous", name: "pagePrevious", at: CGPoint(x: area.midX - 142, y: foot), width: 108) }
+        label("\(page + 1) / \((bugs.count + 3) / 4)", at: CGPoint(x: area.midX, y: foot), fontSize: 13)
+        if (page + 1) * 4 < bugs.count { button("Next", name: "pageNext", at: CGPoint(x: area.midX + 142, y: foot), width: 108) }
     }
 
-    private func showDetail(_ bug: BugTracker.BugType) {
-        childNode(withName: "detail")?.removeFromParent()
-
-        let bg = SKShapeNode(rectOf: CGSize(width: size.width * 0.5, height: size.height * 0.55), cornerRadius: 14)
-        bg.fillColor = SKColor(white: 0.05, alpha: 0.95)
-        bg.strokeColor = SKColor(white: 1, alpha: 0.2)
-        bg.lineWidth = 1.5
-        bg.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        bg.zPosition = 50
-        bg.name = "detail"
-        addChild(bg)
-
-        let tex = tracker.texture(for: bug, size: CGSize(width: 56, height: 56))
-        let sprite = SKSpriteNode(texture: tex, size: CGSize(width: 56, height: 56))
-        sprite.position = CGPoint(x: 0, y: size.height * 0.14)
-        bg.addChild(sprite)
-
-        let isFound = tracker.isUnlocked(bug)
-        let nameL = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        nameL.text = isFound ? bug.rawValue : "???"
-        nameL.fontSize = 20
-        nameL.fontColor = .white
-        nameL.position = CGPoint(x: 0, y: size.height * 0.04)
-        bg.addChild(nameL)
-
-        if isFound {
-            let role = SKLabelNode(fontNamed: "AvenirNext-Bold")
-            role.text = "\(bug.category.rawValue.uppercased())  •  \(bug.points)"
-            role.fontSize = 14
-            role.fontColor = bug.category == .food
-                ? SKColor(red: 0.35, green: 0.92, blue: 0.55, alpha: 1)
-                : SKColor(red: 1.0, green: 0.32, blue: 0.30, alpha: 1)
-            role.position = CGPoint(x: 0, y: -size.height * 0.03)
-            bg.addChild(role)
-
-            let desc = SKLabelNode(fontNamed: "AvenirNext-Regular")
-            desc.text = bug.description
-            desc.fontSize = 11
-            desc.fontColor = SKColor(white: 0.8, alpha: 1)
-            desc.preferredMaxLayoutWidth = size.width * 0.42
-            desc.numberOfLines = 3
-            desc.position = CGPoint(x: 0, y: -size.height * 0.12)
-            bg.addChild(desc)
-        } else {
-            let unk = SKLabelNode(fontNamed: "AvenirNext-Regular")
-            unk.text = "Not yet discovered!"
-            unk.fontSize = 13
-            unk.fontColor = SKColor(white: 0.5, alpha: 1)
-            unk.position = CGPoint(x: 0, y: -size.height * 0.05)
-            bg.addChild(unk)
-        }
-
-        let close = SKLabelNode(fontNamed: "AvenirNext-Regular")
-        close.text = "Tap to close"
-        close.fontSize = 10
-        close.fontColor = SKColor(white: 0.4, alpha: 1)
-        close.position = CGPoint(x: 0, y: -size.height * 0.22)
-        close.name = "closeDetail"
-        bg.addChild(close)
+    private func buildDetail(_ bug: BugTracker.BugType) {
+        let area = safeContentFrame
+        let unlocked = tracker.isUnlocked(bug)
+        let sprite = SKSpriteNode(texture: tracker.texture(for: bug, size: CGSize(width: 100, height: 92)))
+        sprite.position = CGPoint(x: area.minX + area.width * 0.23, y: area.midY + 22)
+        if !unlocked { sprite.color = .black; sprite.colorBlendFactor = 1 }
+        addChild(sprite)
+        let x = area.minX + area.width * 0.68
+        label(unlocked ? bug.rawValue : "A mystery awaits", at: CGPoint(x: x, y: area.maxY - 46), fontSize: 24, width: area.width * 0.52)
+        label(unlocked ? "\(bug.category.rawValue.uppercased())  ·  \(bug.points)" : currentBiome.name,
+              at: CGPoint(x: x, y: area.maxY - 85), fontSize: 13, color: GameUITheme.gold)
+        label(unlocked ? bug.description : "Explore this habitat to discover its creatures. Your field guide fills up as you play.",
+              at: CGPoint(x: x, y: area.midY - 10), fontSize: 16, width: area.width * 0.51)
+        button("Back to guide", name: "closeDetail", at: CGPoint(x: area.midX, y: area.minY + 27), width: 170)
     }
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let nodes = self.nodes(at: touch.location(in: self))
-
-        if childNode(withName: "detail") != nil {
-            childNode(withName: "detail")?.removeFromParent()
-            return
+    override func activate(_ name: String) {
+        switch name {
+        case "back": show(MenuScene(size: size)); return
+        case "closeDetail": detail = nil
+        case "biomePrevious": currentBiome = Biome(rawValue: (currentBiome.rawValue + Biome.allCases.count - 1) % Biome.allCases.count) ?? .meadowDay; page = 0
+        case "biomeNext": currentBiome = Biome(rawValue: (currentBiome.rawValue + 1) % Biome.allCases.count) ?? .meadowDay; page = 0
+        case "pagePrevious": page = max(0, page - 1)
+        case "pageNext": page = min((bugsForBiome(currentBiome).count - 1) / 4, page + 1)
+        default:
+            if name.hasPrefix("bug_") { detail = BugTracker.BugType(rawValue: String(name.dropFirst(4))) }
         }
-
-        for node in nodes {
-            if node.name == "back" {
-                let menu = MenuScene(size: size)
-                menu.scaleMode = scaleMode
-                view?.presentScene(menu, transition: .fade(withDuration: 0.3))
-                return
-            }
-            if let name = node.name, name.hasPrefix("biome_") {
-                let raw = Int(name.replacingOccurrences(of: "biome_", with: "")) ?? 0
-                if let b = Biome(rawValue: raw) { showBiome(b) }
-                return
-            }
-            if let name = node.name, name.hasPrefix("bug_") {
-                let bugName = String(name.dropFirst(4))
-                if let bug = BugTracker.BugType.allCases.first(where: { $0.rawValue == bugName }) {
-                    showDetail(bug)
-                    return
-                }
-            }
-        }
+        rebuild()
     }
 }

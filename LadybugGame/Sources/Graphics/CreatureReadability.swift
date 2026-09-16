@@ -43,9 +43,6 @@ enum CreatureReadability {
         warning.zPosition = 3
         root.addChild(warning)
 
-        root.run(SKAction.repeatForever(SKAction.sequence([
-            SKAction.fadeAlpha(to: 0.45, duration: 0.34),
-            SKAction.fadeAlpha(to: 1.0, duration: 0.34),
-        ])))
+        // Persistent role markers stay calm. Attack animations carry urgency.
     }
 }

@@ -1087,6 +1087,178 @@ extension TextureGenerator {
         return SKTexture(image: image)
     }
 
+    // MARK: - Mars creatures
+
+    static func generateMarsAlienScoutTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+
+            // Hover jets and compact suit.
+            cg.setFillColor(UIColor(red: 0.20, green: 0.90, blue: 1.00, alpha: 0.75).cgColor)
+            for x in [w * 0.30, w * 0.52] {
+                let flame = UIBezierPath()
+                flame.move(to: CGPoint(x: x - w * 0.055, y: h * 0.77))
+                flame.addLine(to: CGPoint(x: x, y: h * 0.97))
+                flame.addLine(to: CGPoint(x: x + w * 0.055, y: h * 0.77))
+                flame.close()
+                cg.addPath(flame.cgPath); cg.fillPath()
+            }
+            cg.setFillColor(UIColor(red: 0.16, green: 0.20, blue: 0.28, alpha: 1).cgColor)
+            let suit = UIBezierPath(roundedRect: CGRect(x: w * 0.18, y: h * 0.55, width: w * 0.52, height: h * 0.28), cornerRadius: w * 0.10)
+            cg.addPath(suit.cgPath); cg.fillPath()
+            cg.setStrokeColor(UIColor(red: 0.28, green: 0.95, blue: 0.55, alpha: 1).cgColor)
+            cg.setLineWidth(max(1.0, w * 0.035)); cg.addPath(suit.cgPath); cg.strokePath()
+
+            // Purple three-eyed scout under a glass dome.
+            cg.setFillColor(UIColor(red: 0.47, green: 0.22, blue: 0.62, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.15, y: h * 0.18, width: w * 0.55, height: h * 0.48))
+            let eyeColor = UIColor(red: 0.55, green: 1.00, blue: 0.42, alpha: 1)
+            drawAngryEye(cg, cx: w * 0.29, cy: h * 0.39, r: w * 0.055, color: eyeColor)
+            drawAngryEye(cg, cx: w * 0.43, cy: h * 0.35, r: w * 0.060, color: eyeColor)
+            drawAngryEye(cg, cx: w * 0.57, cy: h * 0.39, r: w * 0.055, color: eyeColor)
+            cg.setFillColor(UIColor(red: 0.50, green: 0.85, blue: 1.00, alpha: 0.22).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.08, y: h * 0.08, width: w * 0.68, height: h * 0.62))
+            cg.setStrokeColor(UIColor(red: 0.70, green: 0.94, blue: 1.00, alpha: 0.90).cgColor)
+            cg.setLineWidth(max(1.0, w * 0.035))
+            cg.strokeEllipse(in: CGRect(x: w * 0.08, y: h * 0.08, width: w * 0.68, height: h * 0.62))
+
+            // Hand scanner.
+            cg.setStrokeColor(UIColor(red: 0.20, green: 0.25, blue: 0.32, alpha: 1).cgColor)
+            cg.setLineWidth(max(2.0, w * 0.07)); cg.setLineCap(.round)
+            cg.move(to: CGPoint(x: w * 0.66, y: h * 0.61)); cg.addLine(to: CGPoint(x: w * 0.80, y: h * 0.72)); cg.strokePath()
+            cg.setFillColor(UIColor(red: 0.22, green: 0.26, blue: 0.34, alpha: 1).cgColor)
+            let scanner = UIBezierPath(roundedRect: CGRect(x: w * 0.76, y: h * 0.55, width: w * 0.20, height: h * 0.22), cornerRadius: w * 0.05)
+            cg.addPath(scanner.cgPath); cg.fillPath()
+            cg.setFillColor(UIColor(red: 0.35, green: 1.00, blue: 0.50, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.82, y: h * 0.60, width: w * 0.08, height: w * 0.08))
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateMarsRoverDroneTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+
+            // Six rugged wheels.
+            for x in [0.12, 0.25, 0.38, 0.52, 0.65, 0.78] as [CGFloat] {
+                cg.setFillColor(UIColor(red: 0.10, green: 0.09, blue: 0.10, alpha: 1).cgColor)
+                cg.fillEllipse(in: CGRect(x: w * x - w * 0.085, y: h * 0.66, width: w * 0.17, height: h * 0.28))
+                cg.setFillColor(UIColor(red: 0.78, green: 0.26, blue: 0.10, alpha: 1).cgColor)
+                cg.fillEllipse(in: CGRect(x: w * x - w * 0.035, y: h * 0.73, width: w * 0.07, height: w * 0.07))
+            }
+
+            // Armored body and hostile sensor.
+            cg.setFillColor(UIColor(red: 0.24, green: 0.24, blue: 0.25, alpha: 1).cgColor)
+            let body = UIBezierPath(roundedRect: CGRect(x: w * 0.05, y: h * 0.28, width: w * 0.72, height: h * 0.48), cornerRadius: w * 0.08)
+            cg.addPath(body.cgPath); cg.fillPath()
+            cg.setStrokeColor(UIColor(red: 0.92, green: 0.34, blue: 0.12, alpha: 1).cgColor)
+            cg.setLineWidth(max(1.0, w * 0.035)); cg.addPath(body.cgPath); cg.strokePath()
+            cg.setFillColor(UIColor(red: 0.12, green: 0.11, blue: 0.12, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.47, y: h * 0.37, width: w * 0.22, height: h * 0.24))
+            cg.setFillColor(UIColor(red: 1.00, green: 0.10, blue: 0.08, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.52, y: h * 0.41, width: w * 0.12, height: h * 0.15))
+            cg.setFillColor(UIColor.white.withAlphaComponent(0.85).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.55, y: h * 0.43, width: w * 0.035, height: w * 0.035))
+
+            // Antenna and drill.
+            cg.setStrokeColor(UIColor(red: 0.35, green: 0.35, blue: 0.38, alpha: 1).cgColor)
+            cg.setLineWidth(max(1.0, w * 0.025))
+            cg.move(to: CGPoint(x: w * 0.22, y: h * 0.29)); cg.addLine(to: CGPoint(x: w * 0.18, y: h * 0.08)); cg.strokePath()
+            cg.setFillColor(UIColor(red: 1.00, green: 0.25, blue: 0.10, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.145, y: h * 0.04, width: w * 0.07, height: w * 0.07))
+            cg.setFillColor(UIColor(red: 0.48, green: 0.47, blue: 0.48, alpha: 1).cgColor)
+            let drill = UIBezierPath()
+            drill.move(to: CGPoint(x: w * 0.72, y: h * 0.44))
+            drill.addLine(to: CGPoint(x: w * 0.98, y: h * 0.57))
+            drill.addLine(to: CGPoint(x: w * 0.72, y: h * 0.68))
+            drill.close()
+            cg.addPath(drill.cgPath); cg.fillPath()
+            cg.setStrokeColor(UIColor(red: 0.16, green: 0.15, blue: 0.16, alpha: 0.9).cgColor)
+            cg.setLineWidth(max(1.0, w * 0.025))
+            for offset in [0.77, 0.83, 0.89] as [CGFloat] {
+                cg.move(to: CGPoint(x: w * offset, y: h * 0.48)); cg.addLine(to: CGPoint(x: w * (offset + 0.04), y: h * 0.62)); cg.strokePath()
+            }
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateMarsCraterWormTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+            let segments: [(CGFloat, CGFloat, CGFloat)] = [(0.16, 0.55, 0.16), (0.32, 0.50, 0.18), (0.49, 0.46, 0.20), (0.66, 0.43, 0.22)]
+            for (x, y, r) in segments {
+                cg.setFillColor(UIColor(red: 0.20, green: 0.16, blue: 0.20, alpha: 1).cgColor)
+                let segmentRect = CGRect(x: w * (x - r), y: h * (y - r), width: w * r * 2, height: h * r * 2)
+                cg.fillEllipse(in: segmentRect)
+                cg.setStrokeColor(UIColor(red: 0.76, green: 0.12, blue: 0.46, alpha: 1).cgColor)
+                cg.setLineWidth(max(1.0, w * 0.025)); cg.strokeEllipse(in: segmentRect)
+                let spike = UIBezierPath()
+                spike.move(to: CGPoint(x: w * x, y: h * (y - r)))
+                spike.addLine(to: CGPoint(x: w * (x + 0.04), y: h * (y - r - 0.16)))
+                spike.addLine(to: CGPoint(x: w * (x + 0.08), y: h * (y - r + 0.02)))
+                spike.close()
+                cg.setFillColor(UIColor(red: 0.92, green: 0.18, blue: 0.48, alpha: 1).cgColor)
+                cg.addPath(spike.cgPath); cg.fillPath()
+            }
+            cg.setFillColor(UIColor(red: 0.24, green: 0.16, blue: 0.22, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.60, y: h * 0.28, width: w * 0.38, height: h * 0.50))
+            drawAngryEye(cg, cx: w * 0.79, cy: h * 0.43, r: w * 0.060, color: UIColor(red: 1.00, green: 0.48, blue: 0.10, alpha: 1))
+            cg.setFillColor(UIColor(red: 0.08, green: 0.04, blue: 0.07, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.76, y: h * 0.56, width: w * 0.18, height: h * 0.12))
+            cg.setFillColor(UIColor(white: 0.95, alpha: 1).cgColor)
+            for x in [0.79, 0.85, 0.91] as [CGFloat] {
+                let tooth = UIBezierPath()
+                tooth.move(to: CGPoint(x: w * x, y: h * 0.57))
+                tooth.addLine(to: CGPoint(x: w * (x + 0.025), y: h * 0.67))
+                tooth.addLine(to: CGPoint(x: w * (x + 0.05), y: h * 0.57))
+                tooth.close()
+                cg.addPath(tooth.cgPath); cg.fillPath()
+            }
+        }
+        return SKTexture(image: image)
+    }
+
+    static func generateOxygenBugTexture(size: CGSize) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cg = ctx.cgContext
+            let w = size.width; let h = size.height
+
+            // Transparent oxygen bubble.
+            cg.setFillColor(UIColor(red: 0.32, green: 0.88, blue: 1.00, alpha: 0.18).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.03, y: h * 0.03, width: w * 0.94, height: h * 0.94))
+            cg.setStrokeColor(UIColor(red: 0.55, green: 0.95, blue: 1.00, alpha: 0.95).cgColor)
+            cg.setLineWidth(max(1.2, w * 0.035))
+            cg.strokeEllipse(in: CGRect(x: w * 0.03, y: h * 0.03, width: w * 0.94, height: h * 0.94))
+
+            // Cyan beetle with a friendly face.
+            cg.setStrokeColor(UIColor(red: 0.02, green: 0.35, blue: 0.48, alpha: 1).cgColor)
+            cg.setLineWidth(max(1.0, w * 0.04)); cg.setLineCap(.round)
+            for x in [0.28, 0.45, 0.62] as [CGFloat] {
+                cg.move(to: CGPoint(x: w * x, y: h * 0.67)); cg.addLine(to: CGPoint(x: w * (x - 0.06), y: h * 0.80)); cg.strokePath()
+            }
+            cg.setFillColor(UIColor(red: 0.02, green: 0.70, blue: 0.88, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.18, y: h * 0.34, width: w * 0.55, height: h * 0.42))
+            cg.setFillColor(UIColor(red: 0.04, green: 0.45, blue: 0.72, alpha: 1).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.54, y: h * 0.37, width: w * 0.28, height: h * 0.36))
+            cg.setStrokeColor(UIColor(red: 0.02, green: 0.30, blue: 0.50, alpha: 1).cgColor)
+            cg.setLineWidth(max(1.0, w * 0.025))
+            cg.move(to: CGPoint(x: w * 0.68, y: h * 0.38)); cg.addLine(to: CGPoint(x: w * 0.68, y: h * 0.69)); cg.strokePath()
+            drawCuteEye(cg, cx: w * 0.31, cy: h * 0.49, r: w * 0.085)
+            drawCuteEye(cg, cx: w * 0.44, cy: h * 0.49, r: w * 0.075)
+            drawSmile(cg, cx: w * 0.38, cy: h * 0.63, r: w * 0.055)
+            cg.move(to: CGPoint(x: w * 0.32, y: h * 0.36)); cg.addQuadCurve(to: CGPoint(x: w * 0.24, y: h * 0.22), control: CGPoint(x: w * 0.28, y: h * 0.24)); cg.strokePath()
+            cg.move(to: CGPoint(x: w * 0.43, y: h * 0.35)); cg.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.20), control: CGPoint(x: w * 0.47, y: h * 0.25)); cg.strokePath()
+        }
+        return SKTexture(image: image)
+    }
+
     // MARK: - Central registry: creature name -> styled texture
     // Single source of truth used by both GameScene spawns and the Bugopedia,
     // so the collection icons always match the in-game look.
@@ -1210,6 +1382,21 @@ extension TextureGenerator {
             return generateFoodCreature(size: size, style: .jelly, body: UIColor(red: 0.60, green: 0.30, blue: 0.80, alpha: 1), accent: UIColor(red: 0.85, green: 0.55, blue: 1.00, alpha: 1))
         case "Cosmic Serpent":
             return generateEnemyCreature(size: size, style: .serpent, body: UIColor(red: 0.28, green: 0.23, blue: 0.48, alpha: 1), eye: UIColor(red: 0.50, green: 0.80, blue: 1.00, alpha: 1), accent: UIColor(red: 0.55, green: 0.65, blue: 0.95, alpha: 1))
+        // Mars
+        case "Red Dust Mite":
+            return generateFoodCreature(size: size, style: .mite, body: UIColor(red: 0.78, green: 0.20, blue: 0.10, alpha: 1), accent: UIColor(red: 1.00, green: 0.42, blue: 0.18, alpha: 1))
+        case "Solar Grub":
+            return generateFoodCreature(size: size, style: .grub, body: UIColor(red: 1.00, green: 0.62, blue: 0.08, alpha: 1), accent: UIColor(red: 1.00, green: 0.92, blue: 0.32, alpha: 1))
+        case "Martian Hopper":
+            return generateFoodCreature(size: size, style: .cricket, body: UIColor(red: 0.48, green: 0.88, blue: 0.12, alpha: 1), accent: UIColor(red: 0.06, green: 0.68, blue: 0.62, alpha: 1))
+        case "Oxygen Bug":
+            return generateOxygenBugTexture(size: size)
+        case "Alien Scout":
+            return generateMarsAlienScoutTexture(size: size)
+        case "Rover Drone":
+            return generateMarsRoverDroneTexture(size: size)
+        case "Crater Worm":
+            return generateMarsCraterWormTexture(size: size)
         default:
             return generateSimpleCreature(size: size, bodyColor: UIColor(white: 0.6, alpha: 1), eyeColor: .white)
         }

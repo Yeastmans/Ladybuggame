@@ -48,7 +48,8 @@ final class PurchaseService {
         guard let product = products[id] else { return .unavailable }
 
         do {
-            switch try await product.purchase() {
+            let result = try await product.purchase()
+            switch result {
             case let .success(result):
                 guard case let .verified(transaction) = result else {
                     return .failed("transaction_unverified")

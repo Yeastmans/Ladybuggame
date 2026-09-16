@@ -147,6 +147,15 @@ final class BugTracker: @unchecked Sendable {
         case alienDrone = "Alien Drone"
         case voidMoth = "Void Moth"
         case cosmicSerpent = "Cosmic Serpent"
+        // Mars food and power-up
+        case redDustMite = "Red Dust Mite"
+        case solarGrub = "Solar Grub"
+        case martianHopper = "Martian Hopper"
+        case oxygenBug = "Oxygen Bug"
+        // Mars enemies
+        case alienScout = "Alien Scout"
+        case roverDrone = "Rover Drone"
+        case craterWorm = "Crater Worm"
 
         var category: Category {
             switch self {
@@ -162,7 +171,8 @@ final class BugTracker: @unchecked Sendable {
                  .scarab, .dustMite, .templeWorm,
                  .sporeBug, .glowShroom, .fungusGnat,
                  .gemLarva, .prismFly, .crystalMite,
-                 .cosmicDust, .starLarva, .nebulaJelly:
+                 .cosmicDust, .starLarva, .nebulaJelly,
+                 .redDustMite, .solarGrub, .martianHopper, .oxygenBug:
                 return .food
             case .bird, .frog, .dragonfly, .ant, .spider, .bat, .toad,
                  .scorpion, .rattlesnake, .vulture, .hawk, .desertWasp, .iceSpider, .snowOwl, .frostMoth,
@@ -176,7 +186,8 @@ final class BugTracker: @unchecked Sendable {
                  .stoneGuardian, .tombSpider, .curseWraith, .sandViper,
                  .toxicSpore, .myceliumCrawler, .capBouncer,
                  .shardSentinel, .crystalWyrm, .refractor, .geodeRoller,
-                 .alienDrone, .voidMoth, .cosmicSerpent:
+                 .alienDrone, .voidMoth, .cosmicSerpent,
+                 .alienScout, .roverDrone, .craterWorm:
                 return .enemy
             }
         }
@@ -302,6 +313,14 @@ final class BugTracker: @unchecked Sendable {
             case .alienDrone: return "Small alien scout. Zips around erratically!"
             case .voidMoth: return "Dark matter moth. Swoops from the void!"
             case .cosmicSerpent: return "Space snake slithering through stars!"
+            // Mars
+            case .redDustMite: return "Tiny rust-red mite skittering across the Martian dust."
+            case .solarGrub: return "Golden grub warmed by the distant sun. Bright and filling!"
+            case .martianHopper: return "Spring-legged alien snack that bounces across the red plains."
+            case .oxygenBug: return "Rare cyan helper. Shields you from crater vents for 10 seconds!"
+            case .alienScout: return "Three-eyed explorer that scans before diving at its target."
+            case .roverDrone: return "Six-wheeled machine that charges with a spinning drill."
+            case .craterWorm: return "Armored ambusher that bursts from a marked crater."
             }
         }
 
@@ -351,6 +370,10 @@ final class BugTracker: @unchecked Sendable {
             case .cosmicDust: return "40 pts"
             case .starLarva: return "55 pts"
             case .nebulaJelly: return "50 pts"
+            case .redDustMite: return "35 pts"
+            case .solarGrub: return "55 pts"
+            case .martianHopper: return "45 pts"
+            case .oxygenBug: return "75 pts + O₂ Shield"
             case .snowFlea: return "15 pts"
             case .iceMoth: return "25 pts"
             case .jungleBeetle: return "30 pts"
@@ -367,7 +390,8 @@ final class BugTracker: @unchecked Sendable {
                  .stoneGuardian, .tombSpider, .curseWraith, .sandViper,
                  .toxicSpore, .myceliumCrawler, .capBouncer,
                  .shardSentinel, .crystalWyrm, .refractor, .geodeRoller,
-                 .alienDrone, .voidMoth, .cosmicSerpent:
+                 .alienDrone, .voidMoth, .cosmicSerpent,
+                 .alienScout, .roverDrone, .craterWorm:
                 return "Danger!"
             }
         }
@@ -519,6 +543,14 @@ final class BugTracker: @unchecked Sendable {
         case .alienDrone: return TextureGenerator.generateAlienDroneTexture(size: size)
         case .voidMoth: return TextureGenerator.generateVoidMothFrames(size: size).first!
         case .cosmicSerpent: return TextureGenerator.biomeCreatureTexture(named: "Cosmic Serpent", size: size)
+        // Mars
+        case .redDustMite: return TextureGenerator.biomeCreatureTexture(named: "Red Dust Mite", size: size)
+        case .solarGrub: return TextureGenerator.biomeCreatureTexture(named: "Solar Grub", size: size)
+        case .martianHopper: return TextureGenerator.biomeCreatureTexture(named: "Martian Hopper", size: size)
+        case .oxygenBug: return TextureGenerator.biomeCreatureTexture(named: "Oxygen Bug", size: size)
+        case .alienScout: return TextureGenerator.biomeCreatureTexture(named: "Alien Scout", size: size)
+        case .roverDrone: return TextureGenerator.biomeCreatureTexture(named: "Rover Drone", size: size)
+        case .craterWorm: return TextureGenerator.biomeCreatureTexture(named: "Crater Worm", size: size)
         }
     }
 

@@ -17,6 +17,7 @@ enum Biome: Int, CaseIterable, Sendable {
     case mushroom = 12
     case crystal = 13
     case space = 14
+    case mars = 15
 
     var name: String {
         switch self {
@@ -35,6 +36,7 @@ enum Biome: Int, CaseIterable, Sendable {
         case .mushroom: return "Mushroom Forest"
         case .crystal: return "Crystal Caverns"
         case .space: return "Space"
+        case .mars: return "Mars"
         }
     }
 
@@ -55,6 +57,7 @@ enum Biome: Int, CaseIterable, Sendable {
         case .mushroom: return 13000
         case .crystal: return 14000
         case .space: return 15000
+        case .mars: return 18000
         }
     }
 
@@ -75,6 +78,7 @@ enum Biome: Int, CaseIterable, Sendable {
         case .mushroom: return SKColor(red: 0.22, green: 0.15, blue: 0.30, alpha: 1.0)
         case .crystal: return SKColor(red: 0.12, green: 0.08, blue: 0.22, alpha: 1.0)
         case .space: return SKColor(red: 0.02, green: 0.02, blue: 0.06, alpha: 1.0)
+        case .mars: return SKColor(red: 0.30, green: 0.09, blue: 0.08, alpha: 1.0)
         }
     }
 
@@ -95,6 +99,7 @@ enum Biome: Int, CaseIterable, Sendable {
         case .mushroom: return SKColor(red: 0.30, green: 0.22, blue: 0.18, alpha: 1.0)
         case .crystal: return SKColor(red: 0.18, green: 0.15, blue: 0.28, alpha: 1.0)
         case .space: return SKColor(red: 0.10, green: 0.10, blue: 0.14, alpha: 1.0)
+        case .mars: return SKColor(red: 0.67, green: 0.25, blue: 0.14, alpha: 1.0)
         }
     }
 
@@ -115,6 +120,7 @@ enum Biome: Int, CaseIterable, Sendable {
         case .mushroom: return SKColor(red: 0.22, green: 0.16, blue: 0.12, alpha: 1.0)
         case .crystal: return SKColor(red: 0.14, green: 0.10, blue: 0.22, alpha: 1.0)
         case .space: return SKColor(red: 0.08, green: 0.08, blue: 0.12, alpha: 1.0)
+        case .mars: return SKColor(red: 0.38, green: 0.14, blue: 0.10, alpha: 1.0)
         }
     }
 
@@ -135,6 +141,7 @@ enum Biome: Int, CaseIterable, Sendable {
         case .mushroom: return SKColor(red: 0.35, green: 0.20, blue: 0.30, alpha: 1.0)
         case .crystal: return SKColor(red: 0.25, green: 0.20, blue: 0.40, alpha: 1.0)
         case .space: return SKColor(red: 0.12, green: 0.12, blue: 0.18, alpha: 1.0)
+        case .mars: return SKColor(red: 0.86, green: 0.38, blue: 0.18, alpha: 1.0)
         }
     }
 

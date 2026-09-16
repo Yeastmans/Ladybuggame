@@ -56,10 +56,10 @@ class BiomeEnemy: SKSpriteNode {
         let isSnake = biomeName == "Rattlesnake" || biomeName == "Garden Snake"
             || biomeName == "Swamp Snake" || biomeName == "Sand Viper"
             || biomeName == "Cosmic Serpent"
-        let isCharger = biomeName == "Guard Dog" || biomeName == "Komodo Dragon"
-        let minDist: CGFloat = isCharger ? -20 : -15
-        let maxDist: CGFloat = isCharger ? 240 : 70
-        if dist > minDist && dist < maxDist {
+            || biomeName == "Crater Worm"
+        let isCharger = biomeName == "Guard Dog" || biomeName == "Komodo Dragon" || biomeName == "Rover Drone"
+        let triggerDistance: CGFloat = isCharger ? 240 : 70
+        if abs(dist) < triggerDistance {
             hasLunged = true
             baseY = position.y
             SoundManager.shared.play("hiss")
@@ -93,7 +93,7 @@ class BiomeEnemy: SKSpriteNode {
                     SKAction.scaleX(to: 1.15 * (dist >= 0 ? -1 : 1), duration: 0.12),
                     SKAction.scaleY(to: 0.88, duration: 0.12),
                 ])
-                let dashDur = biomeName == "Guard Dog" ? 0.38 : 0.55
+                let dashDur = biomeName == "Guard Dog" ? 0.38 : (biomeName == "Rover Drone" ? 0.44 : 0.55)
                 let dash = SKAction.moveBy(x: (abs(dist) + 60) * dir, y: 0, duration: dashDur)
                 dash.timingMode = .easeIn
                 let skid = SKAction.group([

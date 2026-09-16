@@ -15,6 +15,9 @@ class Ladybug: SKSpriteNode {
     private var invincibleTimer: TimeInterval = 0
     private var walkBobTime: CGFloat = 0
     private var walkLegTime: CGFloat = 0
+    private var eyesClosed = false
+    private var pulseTime: TimeInterval = 0
+    private var landingTime: TimeInterval = 0
 
     let gravity: CGFloat = -450
     let followStrength: CGFloat = 1.6
@@ -44,20 +47,19 @@ class Ladybug: SKSpriteNode {
         let wait = SKAction.wait(forDuration: 3.0, withRange: 3.0)
         let close = SKAction.run { [weak self] in
             guard let self = self, self.isOnGround else { return }
-            self.texture = self.blinkTexture
+            self.eyesClosed = true
         }
         let holdClosed = SKAction.wait(forDuration: 0.12)
         let open = SKAction.run { [weak self] in
             guard let self = self, self.isOnGround else { return }
-            self.texture = self.walkTexture
+            self.eyesClosed = false
         }
         run(SKAction.repeatForever(SKAction.sequence([wait, close, holdClosed, open])), withKey: "blink")
     }
 
     private func startWalkAnimation() {
         guard walkFrames.count >= 2 else { return }
-        let walk = SKAction.animate(with: walkFrames, timePerFrame: 0.12)
-        run(SKAction.repeatForever(walk), withKey: "walk")
+        // The physics animation step owns the walking texture, including blinking.
         // Animate shoes in sync with leg movement
         let shoeNodes = children.filter { $0.name == "shoe" }
         guard !shoeNodes.isEmpty else { return }
@@ -125,6 +127,25 @@ class Ladybug: SKSpriteNode {
         allowsLanding: Bool = true,
         gravityScale: CGFloat = 1
     ) {
+        var remaining = min(max(dt, 0), 0.1)
+        while remaining > 0.000001 {
+            let step = min(remaining, 1.0 / 120.0)
+            stepPhysics(dt: step, groundY: groundY, ceilingY: ceilingY,
+                        allowsLanding: allowsLanding, gravityScale: gravityScale)
+            remaining -= step
+        }
+        pulseTime = max(0, pulseTime - dt)
+        landingTime = max(0, landingTime - dt)
+        if !GameSettings.reducedEffects {
+            let pulse = 1 + sin(CGFloat(pulseTime / 0.18) * .pi) * 0.12
+            let squash = sin(CGFloat(landingTime / 0.20) * .pi) * 0.12
+            xScale *= pulse + squash
+            yScale *= pulse - squash
+        }
+    }
+
+    private func stepPhysics(dt: TimeInterval, groundY: CGFloat, ceilingY: CGFloat,
+                             allowsLanding: Bool, gravityScale: CGFloat) {
         if invincibleTimer > 0 { invincibleTimer -= dt }
         if !allowsLanding && isOnGround {
             beginFloating(at: max(position.y, groundY + 24))
@@ -142,8 +163,8 @@ class Ladybug: SKSpriteNode {
             if !isOnGround {
                 isFlying = true
                 let diff = ty - position.y
-                velocityY += diff * followStrength
-                velocityY *= damping
+                velocityY += diff * followStrength * CGFloat(dt * 60)
+                velocityY *= pow(damping, CGFloat(dt * 60))
                 velocityY = max(-maxVelocityY, min(maxVelocityY, velocityY))
 
                 // Dramatic tilt — up to ~25 degrees
@@ -165,16 +186,19 @@ class Ladybug: SKSpriteNode {
             walkLegTime += CGFloat(dt) * 14
 
             // Bob up and down (bigger bounce)
-            let bob = sin(walkBobTime) * 3.5
+            let bob = max(0, sin(walkBobTime)) * (GameSettings.reducedEffects ? 0.8 : 2)
             position.y = groundY + bob
 
             // Body rock while walking
             zRotation = sin(walkLegTime) * 0.06
 
             // Squash/stretch for walking feel (more pronounced)
-            let squash = 1.0 + sin(walkLegTime * 2) * 0.06
+            let squash = 1.0 + sin(walkLegTime * 2) * (GameSettings.reducedEffects ? 0 : 0.025)
             yScale = squash
             xScale = 2.0 - squash
+            if eyesClosed { texture = blinkTexture }
+            else if !walkFrames.isEmpty { texture = walkFrames[Int(walkLegTime / 1.4) % walkFrames.count] }
+            else { texture = walkTexture }
 
             return
         }
@@ -202,6 +226,7 @@ class Ladybug: SKSpriteNode {
                 xScale = 1.0
                 yScale = 1.0
                 stopFlapAnimation()
+                landingTime = 0.20
                 SoundManager.shared.play("land")
             } else {
                 velocityY = max(28, abs(velocityY) * 0.18)
@@ -214,10 +239,14 @@ class Ladybug: SKSpriteNode {
     func makeInvincible(duration: TimeInterval = 1.5) { invincibleTimer = duration }
 
     func pulse() {
-        run(SKAction.sequence([SKAction.scale(to: 1.15, duration: 0.06), SKAction.scale(to: 1.0, duration: 0.06)]))
+        pulseTime = 0.18
     }
 
     func flash() {
+        if GameSettings.reducedEffects {
+            run(SKAction.sequence([SKAction.fadeAlpha(to: 0.65, duration: 0.15), SKAction.fadeIn(withDuration: 0.45)]), withKey: "damageFlash")
+            return
+        }
         let blink = SKAction.sequence([SKAction.fadeAlpha(to: 0.3, duration: 0.08), SKAction.fadeAlpha(to: 1.0, duration: 0.08)])
         run(SKAction.repeat(blink, count: 4))
     }
@@ -297,6 +326,9 @@ class Ladybug: SKSpriteNode {
         invincibleTimer = 0
         walkBobTime = 0
         walkLegTime = 0
+        pulseTime = 0
+        landingTime = 0
+        eyesClosed = false
         startBlinking()
         startWalkAnimation()
     }

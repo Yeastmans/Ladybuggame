@@ -4,7 +4,7 @@ import UIKit
 /// Keep this enabled for sideload/TestFlight QA. Replace the service in
 /// AppServices and set this to false before an App Store submission.
 enum MonetizationConfiguration {
-    static let usesSimulatedAds = true
+    static let usesSimulatedAds = false
     static let simulatedRewardedDuration: TimeInterval = 5
     static let simulatedInterstitialDuration: TimeInterval = 3
 }

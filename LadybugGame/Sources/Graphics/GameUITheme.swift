@@ -1,6 +1,17 @@
 import SpriteKit
 
+/// VoiceOver activation uses the same action as a released touch.
+final class GameActionButton: SKShapeNode {
+    var onActivate: (() -> Void)?
+    override func accessibilityActivate() -> Bool {
+        guard let onActivate else { return false }
+        onActivate()
+        return true
+    }
+}
+
 /// Shared visual language for menus, overlays, HUD cards, and buttons.
+@MainActor
 enum GameUITheme {
     static let ink = SKColor(red: 0.075, green: 0.055, blue: 0.14, alpha: 1)
     static let panel = SKColor(red: 0.12, green: 0.09, blue: 0.21, alpha: 0.96)
@@ -44,8 +55,8 @@ enum GameUITheme {
         size: CGSize,
         color: SKColor,
         fontSize: CGFloat = 16
-    ) -> SKShapeNode {
-        let button = SKShapeNode(rectOf: size, cornerRadius: min(13, size.height * 0.30))
+    ) -> GameActionButton {
+        let button = GameActionButton(rectOf: size, cornerRadius: min(13, size.height * 0.30))
         button.fillColor = color
         button.strokeColor = shifted(color, by: 0.22)
         button.lineWidth = 1.5
@@ -76,11 +87,14 @@ enum GameUITheme {
         label.name = name
         label.zPosition = 2
         button.addChild(label)
+        if label.frame.width > size.width - 22 {
+            label.fontSize *= (size.width - 22) / label.frame.width
+        }
         return button
     }
 
     static func addAmbientSparkles(to parent: SKNode, size: CGSize, count: Int = 14, zPosition: CGFloat = -5) {
-        guard count > 0 else { return }
+        guard count > 0, !GameSettings.reducedEffects else { return }
         for index in 0..<count {
             let radius = CGFloat(1 + index % 3)
             let sparkle = SKShapeNode(circleOfRadius: radius)

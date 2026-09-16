@@ -1,0 +1,50 @@
+name: iOS quality
+on:
+  push:
+    paths:
+      - 'LadybugGame/**'
+      - '.github/workflows/ios-quality.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ios-quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  simulator:
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate project and app icon
+        working-directory: LadybugGame
+        run: |
+          brew install xcodegen
+          swift Scripts/generate_icon.swift Resources/Assets.xcassets/AppIcon.appiconset
+          xcodegen generate
+      - name: Test and capture actual game screens
+        working-directory: LadybugGame
+        run: |
+          set -o pipefail
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for k,v in d["devices"].items() if "iOS" in k for x in v if "iPhone" in x["name"]))')
+          xcodebuild test -project LadybugGame.xcodeproj -scheme LadybugGame \
+            -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+            -parallel-testing-enabled NO -resultBundlePath ../PolishTests.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee ../xcode-test.log
+      - name: Export screenshots
+        if: always()
+        run: |
+          if [ -d PolishTests.xcresult ]; then
+            xcrun xcresulttool export attachments --path PolishTests.xcresult --output-path PolishScreenshots
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-quality-results
+          retention-days: 7
+          path: |
+            xcode-test.log
+            PolishTests.xcresult
+            PolishScreenshots

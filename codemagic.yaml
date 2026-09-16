@@ -19,6 +19,21 @@ workflows:
         script: |
           cd LadybugGame
           xcodegen generate
+      - name: Test gameplay and capture simulator screens
+        script: |
+          set -euo pipefail
+          cd LadybugGame
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for k,v in d["devices"].items() if "iOS" in k for x in v if "iPhone" in x["name"]))')
+          xcodebuild test \
+            -project LadybugGame.xcodeproj \
+            -scheme LadybugGame \
+            -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+            -parallel-testing-enabled NO \
+            -resultBundlePath "$CM_BUILD_DIR/PolishTests.xcresult" \
+            CODE_SIGNING_ALLOWED=NO
+          xcrun xcresulttool export attachments \
+            --path "$CM_BUILD_DIR/PolishTests.xcresult" \
+            --output-path "$CM_BUILD_DIR/PolishScreenshots"
       - name: Archive app
         script: |
           cd LadybugGame
@@ -45,10 +60,6 @@ workflows:
           rm -rf Payload
     artifacts:
       - LadybugGame.ipa
-    publishing:
-      email:
-        recipients:
-          - user@example.com
-        notify:
-          success: true
-          failure: true
+      - PolishTests.xcresult
+      - PolishScreenshots/**
+      - LadybugGame.xcarchive/dSYMs/**

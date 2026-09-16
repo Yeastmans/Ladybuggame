@@ -1,7 +1,8 @@
 import AVFoundation
 import UIKit
 
-final class SoundManager: @unchecked Sendable {
+@MainActor
+final class SoundManager {
     static let shared = SoundManager()
     private var players: [String: AVAudioPlayer] = [:]
     private var musicPlayer: AVAudioPlayer?
@@ -9,7 +10,7 @@ final class SoundManager: @unchecked Sendable {
 
     private init() {
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: .mixWithOthers)
+            try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {}
 
@@ -45,15 +46,15 @@ final class SoundManager: @unchecked Sendable {
     }
 
     func play(_ name: String) {
+        guard GameSettings.sound else { return }
         players[name]?.currentTime = 0
         players[name]?.play()
     }
 
     func startMusic() {
-        guard !isMusicPlaying else { return }
-        isMusicPlaying = true
-        musicPlayer?.currentTime = 0
-        musicPlayer?.play()
+        guard GameSettings.music, musicPlayer?.isPlaying != true else { return }
+        try? AVAudioSession.sharedInstance().setActive(true)
+        isMusicPlaying = musicPlayer?.play() ?? false
     }
 
     func stopMusic() {
