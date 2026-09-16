@@ -42,7 +42,7 @@ final class GameScreenshots: XCTestCase {
     func testScreensAtLandscapePhoneSize() {
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
-        let screens = ["menu", "map", "settings", "collection", "shop", "hat-preview", "tutorial", "stage-clear", "game-over", "pause"]
+        let screens = ["menu", "map", "settings", "collection", "shop", "hat-preview", "tutorial", "stage-clear", "game-over", "pause", "art-gallery"]
             + (0..<16).map { "biome-\($0)" } + ["boss-1", "boss-2", "boss-3"]
         for screen in screens {
             app.launchArguments = ["--ui-testing", "--preview-screen", screen]

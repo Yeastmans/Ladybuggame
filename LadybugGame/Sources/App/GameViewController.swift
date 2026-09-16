@@ -31,6 +31,7 @@ class GameViewController: UIViewController {
         if arguments.contains("--ui-testing"), let flag = arguments.firstIndex(of: "--preview-screen"), flag + 1 < arguments.count {
             let screen = arguments[flag + 1]
             switch screen {
+            case "art-gallery": scene = ArtReviewScene(size: view.bounds.size)
             case "settings": scene = SettingsScene(size: view.bounds.size)
             case "collection": scene = BugopediaScene(size: view.bounds.size)
             case "shop", "hat-preview": scene = ShopScene(size: view.bounds.size)

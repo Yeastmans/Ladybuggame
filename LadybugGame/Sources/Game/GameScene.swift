@@ -334,15 +334,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         }
 
         for i in 0..<5 {
-            let cloudGroup = SKNode()
-            let numPuffs = Int.random(in: 3...5)
-            for j in 0..<numPuffs {
-                let puff = SKShapeNode(circleOfRadius: CGFloat.random(in: 12...25))
-                puff.fillColor = SKColor(white: 1.0, alpha: CGFloat.random(in: 0.5...0.8))
-                puff.strokeColor = .clear
-                puff.position = CGPoint(x: CGFloat(j) * CGFloat.random(in: 14...22), y: CGFloat.random(in: -5...5))
-                cloudGroup.addChild(puff)
-            }
+            let cloudSize = CGSize(width: CGFloat.random(in: 95...145), height: CGFloat.random(in: 42...58))
+            let cloudGroup = SKSpriteNode(texture: IllustrationPaint.cloud(size: cloudSize))
+            cloudGroup.alpha = 0.88
             cloudGroup.position = CGPoint(x: CGFloat(i) * size.width * 0.22 + CGFloat.random(in: 0...80),
                                           y: size.height * CGFloat.random(in: 0.68...0.92))
             cloudGroup.zPosition = -6

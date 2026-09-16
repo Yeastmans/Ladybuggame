@@ -41,7 +41,6 @@ enum TextureGenerator {
 
             let legColor = UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor
             let isFlying = wingPhase != nil
-            let bodyFill = (bodyColor ?? UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1.0)).cgColor
             let spotFill = (spotColor ?? UIColor(red: 0.10, green: 0.05, blue: 0.05, alpha: 1.0)).cgColor
             // Derive a darker stroke from body color
             var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
@@ -104,8 +103,8 @@ enum TextureGenerator {
 
                 // Body dome (same as walking but drawn over wing)
                 let bodyRect = CGRect(x: w * 0.18, y: h * 0.25, width: w * 0.65, height: h * 0.48)
-                cg.setFillColor(bodyFill)
-                cg.fillEllipse(in: bodyRect)
+                IllustrationPaint.oval(bodyRect,
+                    color: bodyColor ?? UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1), in: cg)
                 cg.setStrokeColor(bodyStroke)
                 cg.setLineWidth(1.2)
                 cg.strokeEllipse(in: bodyRect)
@@ -121,8 +120,8 @@ enum TextureGenerator {
             } else {
                 // === Body dome (side profile) ===
                 let bodyRect = CGRect(x: w * 0.12, y: h * 0.22, width: w * 0.60, height: h * 0.52)
-                cg.setFillColor(bodyFill)
-                cg.fillEllipse(in: bodyRect)
+                IllustrationPaint.oval(bodyRect,
+                    color: bodyColor ?? UIColor(red: 0.85, green: 0.12, blue: 0.10, alpha: 1), in: cg)
                 cg.setStrokeColor(bodyStroke)
                 cg.setLineWidth(1.5)
                 cg.strokeEllipse(in: bodyRect)
@@ -145,8 +144,20 @@ enum TextureGenerator {
             let headR = w * 0.14
             let headCX = w * 0.82
             let headCY = h * 0.50
-            cg.setFillColor(UIColor(red: 0.10, green: 0.08, blue: 0.08, alpha: 1.0).cgColor)
-            cg.fillEllipse(in: CGRect(x: headCX - headR, y: headCY - headR, width: headR * 2, height: headR * 2))
+            IllustrationPaint.oval(CGRect(x: headCX - headR, y: headCY - headR, width: headR * 2, height: headR * 2),
+                color: UIColor(red: 0.12, green: 0.10, blue: 0.14, alpha: 1), in: cg)
+            // Cream collar and a small smile make the silhouette readable at game size.
+            cg.setFillColor(UIColor(red: 1, green: 0.93, blue: 0.78, alpha: 0.88).cgColor)
+            cg.fillEllipse(in: CGRect(x: headCX - headR * 0.75, y: headCY - headR * 0.56,
+                                     width: headR * 0.30, height: headR * 0.35))
+            if !dead {
+                cg.setStrokeColor(UIColor(red: 1, green: 0.85, blue: 0.76, alpha: 0.72).cgColor)
+                cg.setLineWidth(max(0.55, w * 0.012))
+                cg.move(to: CGPoint(x: headCX + headR * 0.30, y: headCY + headR * 0.45))
+                cg.addQuadCurve(to: CGPoint(x: headCX + headR * 0.75, y: headCY + headR * 0.32),
+                                control: CGPoint(x: headCX + headR * 0.62, y: headCY + headR * 0.62))
+                cg.strokePath()
+            }
 
             // Antennae (hidden when wearing hat)
             if !hideAntennae {
@@ -245,12 +256,14 @@ enum TextureGenerator {
             }
 
             // Body (oval, side profile)
-            cg.setFillColor(color.bodyColor.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.10, y: h * 0.30, width: w * 0.70, height: h * 0.45))
+            IllustrationPaint.oval(CGRect(x: w * 0.10, y: h * 0.30, width: w * 0.70, height: h * 0.45),
+                color: color.bodyColor, in: cg, outline: 0.55)
+            cg.setFillColor(UIColor(white: 1, alpha: 0.32).cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.22, y: h * 0.36, width: w * 0.23, height: h * 0.08))
 
             // Head (right side)
-            cg.setFillColor(color.headColor.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.32, width: w * 0.28, height: h * 0.36))
+            IllustrationPaint.oval(CGRect(x: w * 0.68, y: h * 0.32, width: w * 0.28, height: h * 0.36),
+                color: color.headColor, in: cg)
 
             // Eye
             cg.setFillColor(UIColor.white.cgColor)
@@ -331,8 +344,8 @@ enum TextureGenerator {
             }
 
             // Body
-            cg.setFillColor(color.body.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.20, y: h * 0.38, width: w * 0.50, height: h * 0.35))
+            IllustrationPaint.oval(CGRect(x: w * 0.20, y: h * 0.38, width: w * 0.50, height: h * 0.35),
+                color: color.body, in: cg, outline: 0.55)
 
             // Stripes
             cg.setStrokeColor(UIColor(white: 0.0, alpha: 0.15).cgColor)
@@ -342,14 +355,16 @@ enum TextureGenerator {
             cg.strokePath()
 
             // Head
-            cg.setFillColor(color.head.cgColor)
-            cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.35, width: w * 0.28, height: h * 0.32))
+            IllustrationPaint.oval(CGRect(x: w * 0.62, y: h * 0.35, width: w * 0.28, height: h * 0.32),
+                color: color.head, in: cg)
 
             // Eye
             cg.setFillColor(color.eye.cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.74, y: h * 0.38, width: w * 0.16, height: w * 0.16))
             cg.setFillColor(UIColor.black.cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.80, y: h * 0.42, width: w * 0.06, height: w * 0.06))
+            cg.setFillColor(UIColor.white.cgColor)
+            cg.fillEllipse(in: CGRect(x: w * 0.79, y: h * 0.41, width: w * 0.025, height: w * 0.025))
 
             // Legs
             cg.setStrokeColor(UIColor(white: 0.2, alpha: 0.5).cgColor)
