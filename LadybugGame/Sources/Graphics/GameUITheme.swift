@@ -107,7 +107,7 @@ enum GameUITheme {
     static func habitatSky(size: CGSize, biome: Biome) -> SKSpriteNode {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         biome.skyColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-        let haze: CGFloat = [.meadowNight, .cave, .space].contains(biome) ? 0.025 : 0.15
+        let haze: CGFloat = [Biome.meadowNight, .cave, .space].contains(biome) ? 0.025 : 0.15
         let bottom = UIColor(red: r + (1-r) * haze, green: g + (1-g) * haze, blue: b + (1-b) * haze, alpha: 1)
         return sky(size: size, top: biome.skyColor, bottom: bottom)
     }
