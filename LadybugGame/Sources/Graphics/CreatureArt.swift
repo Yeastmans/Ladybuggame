@@ -80,6 +80,7 @@ extension TextureGenerator {
                 cg.setFillColor(shade(body, 0.65).cgColor)
                 cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.30, width: w * 0.34, height: h * 0.48))
                 // Dome shell
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: w * 0.02, y: h * 0.18, width: w * 0.72, height: h * 0.62), color: body, in: cg, outline: 0.6)
                 // Shell split line
                 cg.setStrokeColor(shade(body, 0.65).cgColor)
@@ -123,6 +124,7 @@ extension TextureGenerator {
 
             case .snail:
                 // Slug body along the bottom + head bump
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: w * 0.06, y: h * 0.60, width: w * 0.88, height: h * 0.34), color: body, in: cg, outline: 0.6)
                 cg.fillEllipse(in: CGRect(x: w * 0.66, y: h * 0.42, width: w * 0.28, height: h * 0.36))
                 // Eye stalks with eyes on top
@@ -199,6 +201,7 @@ extension TextureGenerator {
                     cg.addLine(to: CGPoint(x: cx + cos(ang) * rad * 1.28, y: cy + sin(ang) * rad * 1.28))
                     cg.strokePath()
                 }
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: cx - rad, y: cy - rad, width: rad * 2, height: rad * 2), color: body, in: cg, outline: 0.6)
                 // Rosy cheek
                 cg.setFillColor(accent.withAlphaComponent(0.6).cgColor)
@@ -212,6 +215,7 @@ extension TextureGenerator {
                 cg.fillEllipse(in: CGRect(x: w * 0.20, y: h * 0.02, width: w * 0.24, height: h * 0.34))
                 cg.fillEllipse(in: CGRect(x: w * 0.42, y: h * 0.00, width: w * 0.26, height: h * 0.36))
                 // Body with stripes
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: w * 0.06, y: h * 0.30, width: w * 0.84, height: h * 0.56), color: body, in: cg, outline: 0.6)
                 cg.saveGState()
                 cg.addEllipse(in: CGRect(x: w * 0.06, y: h * 0.30, width: w * 0.84, height: h * 0.56))
@@ -236,6 +240,7 @@ extension TextureGenerator {
                 cg.setFillColor(accent.cgColor)
                 cg.fillEllipse(in: CGRect(x: w * 0.00, y: h * 0.44, width: w * 0.22, height: h * 0.30))
                 // Curled segmented body, head at right
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: w * 0.14, y: h * 0.34, width: w * 0.30, height: h * 0.42), color: body, in: cg, outline: 0.6)
                 cg.fillEllipse(in: CGRect(x: w * 0.34, y: h * 0.24, width: w * 0.36, height: h * 0.52))
                 cg.fillEllipse(in: CGRect(x: w * 0.58, y: h * 0.22, width: w * 0.36, height: h * 0.54))
@@ -269,6 +274,7 @@ extension TextureGenerator {
                 cg.addLine(to: CGPoint(x: w * 0.06, y: h * 0.92))
                 cg.strokePath()
                 // Body + head
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: w * 0.14, y: h * 0.36, width: w * 0.68, height: h * 0.44), color: body, in: cg, outline: 0.6)
                 cg.fillEllipse(in: CGRect(x: w * 0.68, y: h * 0.32, width: w * 0.28, height: h * 0.42))
                 // Front legs
@@ -323,6 +329,7 @@ extension TextureGenerator {
                     cg.strokePath()
                 }
                 // Abdomen, thorax, head
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: w * 0.02, y: h * 0.36, width: w * 0.40, height: h * 0.40), color: body, in: cg, outline: 0.6)
                 cg.fillEllipse(in: CGRect(x: w * 0.38, y: h * 0.42, width: w * 0.26, height: h * 0.30))
                 cg.fillEllipse(in: CGRect(x: w * 0.60, y: h * 0.30, width: w * 0.36, height: h * 0.46))
@@ -375,6 +382,7 @@ extension TextureGenerator {
                     cg.strokePath()
                 }
                 // Abdomen + head
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: w * 0.06, y: h * 0.30, width: w * 0.50, height: h * 0.48), color: body, in: cg, outline: 0.6)
                 cg.fillEllipse(in: CGRect(x: w * 0.50, y: h * 0.38, width: w * 0.34, height: h * 0.38))
                 // Abdomen marking
@@ -416,6 +424,7 @@ extension TextureGenerator {
                             control2: CGPoint(x: w * 0.44, y: h * 0.96))
                 cg.strokePath()
                 // Head
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: w * 0.64, y: h * 0.18, width: w * 0.32, height: h * 0.32), color: body, in: cg, outline: 0.6)
                 // Forked tongue
                 cg.setStrokeColor(UIColor(red: 0.90, green: 0.20, blue: 0.25, alpha: 1).cgColor)
@@ -550,6 +559,7 @@ extension TextureGenerator {
                     cg.setFillColor(UIColor(white: 0.95, alpha: 0.55).cgColor)
                     cg.fillEllipse(in: CGRect(x: w * dotXs[i] - r * 1.5, y: h * dotYs[i] - r * 1.6, width: r * 1.6, height: r * 0.9))
                     cg.fillEllipse(in: CGRect(x: w * dotXs[i] - r * 0.1, y: h * dotYs[i] - r * 1.6, width: r * 1.6, height: r * 0.9))
+                    cg.setFillColor(body.cgColor)
                     IllustrationPaint.oval(CGRect(x: w * dotXs[i] - r, y: h * dotYs[i] - r, width: r * 2, height: r * 2), color: body, in: cg, outline: 0.6)
                     // Glowing red eye on every bug
                     cg.setFillColor(eye.withAlphaComponent(0.9).cgColor)
@@ -559,6 +569,7 @@ extension TextureGenerator {
                 cg.setFillColor(UIColor(white: 0.95, alpha: 0.60).cgColor)
                 cg.fillEllipse(in: CGRect(x: w * 0.50, y: h * 0.60, width: w * 0.16, height: h * 0.10))
                 cg.fillEllipse(in: CGRect(x: w * 0.62, y: h * 0.58, width: w * 0.16, height: h * 0.10))
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: w * 0.46, y: h * 0.66, width: w * 0.34, height: h * 0.26), color: body, in: cg, outline: 0.6)
                 // Proboscis needle
                 cg.setStrokeColor(dark.cgColor)
@@ -582,6 +593,7 @@ extension TextureGenerator {
                     cg.closePath(); cg.fillPath()
                 }
                 // Body
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: scx - bodyR, y: scy - bodyR, width: bodyR * 2, height: bodyR * 2), color: body, in: cg, outline: 0.6)
                 drawAngryEye(cg, cx: scx + bodyR * 0.15, cy: scy - bodyR * 0.10, r: bodyR * 0.28, color: eye)
                 // Frown
@@ -637,6 +649,7 @@ extension TextureGenerator {
                 cg.addQuadCurve(to: CGPoint(x: w * 0.03, y: h * 0.18), control: CGPoint(x: w * 0.00, y: h * 0.52))
                 cg.strokePath()
                 // Body + legs
+                cg.setFillColor(body.cgColor)
                 IllustrationPaint.oval(CGRect(x: w * 0.08, y: h * 0.36, width: w * 0.62, height: h * 0.52), color: body, in: cg, outline: 0.6)
                 cg.fill(CGRect(x: w * 0.16, y: h * 0.72, width: w * 0.09, height: h * 0.24))
                 cg.fill(CGRect(x: w * 0.52, y: h * 0.72, width: w * 0.09, height: h * 0.24))
@@ -713,6 +726,7 @@ extension TextureGenerator {
             fp.closeSubpath()
             cg.addPath(fp); cg.fillPath()
             // Body (upright, belly out)
+            cg.setFillColor(body.cgColor)
             IllustrationPaint.oval(CGRect(x: w * 0.30, y: h * 0.26, width: w * 0.40, height: h * 0.44), color: body, in: cg, outline: 0.6)
             // Head
             cg.fillEllipse(in: CGRect(x: w * 0.36, y: h * 0.08, width: w * 0.36, height: h * 0.22))
@@ -762,6 +776,7 @@ extension TextureGenerator {
                 cg.strokePath()
             }
             // Low-slung body
+            cg.setFillColor(body.cgColor)
             IllustrationPaint.oval(CGRect(x: w * 0.26, y: h * 0.36, width: w * 0.52, height: h * 0.40), color: body, in: cg, outline: 0.6)
             // Head with heavy jaw
             cg.fillEllipse(in: CGRect(x: w * 0.72, y: h * 0.30, width: w * 0.24, height: h * 0.34))
@@ -810,6 +825,7 @@ extension TextureGenerator {
             cg.move(to: CGPoint(x: w * 0.26, y: h * 0.04)); cg.addLine(to: CGPoint(x: w * 0.36, y: h * 0.02)); cg.strokePath()
             cg.move(to: CGPoint(x: w * 0.64, y: h * 0.02)); cg.addLine(to: CGPoint(x: w * 0.73, y: h * 0.05)); cg.strokePath()
             // Shaggy body hanging below
+            cg.setFillColor(body.cgColor)
             IllustrationPaint.oval(CGRect(x: w * 0.18, y: h * 0.30, width: w * 0.64, height: h * 0.52), color: body, in: cg, outline: 0.6)
             // Fur fringe
             cg.setStrokeColor(body.withAlphaComponent(0.8).cgColor)
@@ -870,6 +886,7 @@ extension TextureGenerator {
             cg.setFillColor(shade(body, 1.25).cgColor)
             cg.fillEllipse(in: CGRect(x: w * 0.42, y: h * 0.48, width: w * 0.20, height: h * 0.24))
             // Head
+            cg.setFillColor(body.cgColor)
             IllustrationPaint.oval(CGRect(x: w * 0.56, y: h * 0.10, width: w * 0.34, height: h * 0.42), color: body, in: cg, outline: 0.6)
             // Pointed ears
             cg.move(to: CGPoint(x: w * 0.60, y: h * 0.20))
