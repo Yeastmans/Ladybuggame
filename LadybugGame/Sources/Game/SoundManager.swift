@@ -8,7 +8,20 @@ final class SoundManager {
     private var musicPlayer: AVAudioPlayer?
     private var isMusicPlaying = false
 
+    private var isAutomatedVisualTest: Bool {
+#if DEBUG && targetEnvironment(simulator)
+        // Headless CI machines may have no working Core Audio output device.
+        // Neither screenshots nor logic tests should initialize that device.
+        return ProcessInfo.processInfo.arguments.contains("--ui-testing")
+            || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || NSClassFromString("XCTestCase") != nil
+#else
+        return false
+#endif
+    }
+
     private init() {
+        guard !isAutomatedVisualTest else { return }
         do {
             try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
             try AVAudioSession.sharedInstance().setActive(true)
@@ -52,6 +65,7 @@ final class SoundManager {
     }
 
     func startMusic() {
+        guard !isAutomatedVisualTest else { return }
         guard GameSettings.music, musicPlayer?.isPlaying != true else { return }
         try? AVAudioSession.sharedInstance().setActive(true)
         isMusicPlaying = musicPlayer?.play() ?? false
