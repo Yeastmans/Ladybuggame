@@ -29,6 +29,7 @@ class Bird: SKSpriteNode {
     /// Steep dive at player, then pull up and exit
     func swoopAcross(sceneWidth: CGFloat, ladybugX: CGFloat, targetY: CGFloat, groundY: CGFloat, duration: TimeInterval) {
         xScale = -abs(xScale)
+        if let scene { CreatureReadability.warnIncoming(in: scene, atY: targetY) }
 
         let diveTargetX = ladybugX + CGFloat.random(in: -15...15)
         let diveTargetY = targetY
@@ -54,6 +55,6 @@ class Bird: SKSpriteNode {
         let pull = SKAction.follow(pullPath.cgPath, asOffset: true, orientToPath: false, duration: duration * 0.45)
         pull.timingMode = .easeOut
 
-        run(SKAction.sequence([dive, pull, SKAction.removeFromParent()]))
+        run(SKAction.sequence([.wait(forDuration: 0.45), dive, pull, SKAction.removeFromParent()]))
     }
 }

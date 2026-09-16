@@ -94,6 +94,10 @@ final class GamePolishTests: XCTestCase {
                     guard node.userData?["action"] != nil else { return }
                     let center = node.parent!.convert(node.position, to: scene)
                     XCTAssertTrue(scene.frame.contains(center), "\(type(of: scene)): \(node.name ?? "button")")
+                    for point in [CGPoint(x: node.frame.minX, y: node.frame.minY), CGPoint(x: node.frame.maxX, y: node.frame.maxY)] {
+                        let converted = node.parent!.convert(point, to: scene)
+                        XCTAssertTrue(scene.frame.contains(converted), "Button outside scene: \(node.name ?? "button")")
+                    }
                 }
             }
         }

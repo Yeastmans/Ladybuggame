@@ -39,6 +39,27 @@ jobs:
           if [ -d PolishTests.xcresult ]; then
             xcrun xcresulttool export attachments --path PolishTests.xcresult --output-path PolishScreenshots
           fi
+      - name: Build unsigned iPhone test package
+        working-directory: LadybugGame
+        run: |
+          set -o pipefail
+          xcodebuild archive -project LadybugGame.xcodeproj -scheme LadybugGame \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath ../LadybugRun.xcarchive CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee ../xcode-archive.log
+          mkdir -p ../iPhoneBuild/Payload
+          cp -R ../LadybugRun.xcarchive/Products/Applications/LadybugGame.app ../iPhoneBuild/Payload/
+          cd ../iPhoneBuild
+          zip -qr LadybugRun-unsigned.ipa Payload
+          shasum -a 256 LadybugRun-unsigned.ipa > SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LadybugRun-iPhone-unsigned
+          retention-days: 14
+          path: |
+            iPhoneBuild/LadybugRun-unsigned.ipa
+            iPhoneBuild/SHA256.txt
+            LadybugRun.xcarchive/dSYMs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -46,5 +67,6 @@ jobs:
           retention-days: 7
           path: |
             xcode-test.log
+            xcode-archive.log
             PolishTests.xcresult
             PolishScreenshots

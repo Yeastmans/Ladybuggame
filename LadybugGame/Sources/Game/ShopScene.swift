@@ -175,8 +175,9 @@ final class ShopScene: GameScreenScene {
             let owned = Self.isOwned(item.id)
             card.accessibilityLabel = "\(item.displayName), \(owned ? "owned" : "\(item.price) gems")"
             if Self.isEquipped(item.id) { card.strokeColor = GameUITheme.gold; card.lineWidth = 2 }
-            let preview = CosmeticArt.preview(item: item, size: min(70, height - 46))
-            preview.position.y = height / 2 - min(70, height - 46) / 2 - 2
+            let preview = CosmeticArt.preview(item: item, size: min(96, height - 47))
+            preview.position.y = 18
+            preview.zPosition = 2
             card.addChild(preview)
             label(item.displayName, at: CGPoint(x: 0, y: -height / 2 + 31), fontSize: 12, width: width - 12, parent: card)
             label(Self.isEquipped(item.id) ? "Wearing" : owned ? "Owned" : "◆ \(item.price)",

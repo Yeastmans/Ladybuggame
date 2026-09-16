@@ -33,13 +33,18 @@ class GameViewController: UIViewController {
             switch screen {
             case "settings": scene = SettingsScene(size: view.bounds.size)
             case "collection": scene = BugopediaScene(size: view.bounds.size)
-            case "shop": scene = ShopScene(size: view.bounds.size)
+            case "shop", "hat-preview": scene = ShopScene(size: view.bounds.size)
             case "tutorial": scene = FlightSchoolScene(size: view.bounds.size)
-            case "meadow", "night", "space":
+            case "meadow", "night", "space", "stage-clear", "game-over", "pause":
                 let game = GameScene(size: view.bounds.size)
                 game.campaignStageID = screen == "space" ? 14 : screen == "night" ? 1 : 0
                 scene = game
-            default: break
+            default:
+                if screen.hasPrefix("biome-"), let id = Int(screen.dropFirst(6)), CampaignStage.stage(id: id) != nil {
+                    let game = GameScene(size: view.bounds.size)
+                    game.campaignStageID = id
+                    scene = game
+                }
             }
         }
 #endif
@@ -47,6 +52,14 @@ class GameViewController: UIViewController {
         skView.presentScene(scene)
 #if DEBUG && targetEnvironment(simulator)
         if arguments.contains("map"), arguments.contains("--ui-testing"), let menu = scene as? MenuScene { menu.activate("map") }
+        if arguments.contains("--ui-testing") {
+            if let shop = scene as? ShopScene, arguments.contains("hat-preview") { shop.activate("item_hat_wizard") }
+            if let game = scene as? GameScene {
+                if arguments.contains("stage-clear") { game.previewResult(completed: true) }
+                if arguments.contains("game-over") { game.previewResult(completed: false) }
+                if arguments.contains("pause") { game.pauseForInterruption() }
+            }
+        }
 #endif
         skView.ignoresSiblingOrder = true
         skView.preferredFramesPerSecond = 60

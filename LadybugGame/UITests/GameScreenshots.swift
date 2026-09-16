@@ -2,10 +2,35 @@ import XCTest
 
 final class GameScreenshots: XCTestCase {
     @MainActor
+    func testMenuTutorialAndPauseNavigation() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "-FlightSchoolCompletedV1", "NO"]
+        app.launch()
+        let play = app.buttons["Let's play"]
+        XCTAssertTrue(play.waitForExistence(timeout: 15))
+        play.tap()
+        let skip = app.buttons["Skip"]
+        XCTAssertTrue(skip.waitForExistence(timeout: 10))
+        skip.tap()
+        let pause = app.buttons["Pause game"]
+        XCTAssertTrue(pause.waitForExistence(timeout: 10))
+        pause.tap()
+        let resume = app.buttons["▶  Resume Run"]
+        XCTAssertTrue(resume.waitForExistence(timeout: 5))
+        app.buttons["Back to Menu"].tap()
+        XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 5))
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.buttons["Practice flying"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testScreensAtLandscapePhoneSize() {
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
-        for screen in ["menu", "map", "settings", "collection", "shop", "tutorial", "meadow", "night", "space"] {
+        let screens = ["menu", "map", "settings", "collection", "shop", "hat-preview", "tutorial", "stage-clear", "game-over", "pause"]
+            + (0..<16).map { "biome-\($0)" }
+        for screen in screens {
             app.launchArguments = ["--ui-testing", "--preview-screen", screen]
             app.launch()
             XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15))

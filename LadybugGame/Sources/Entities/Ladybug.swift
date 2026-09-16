@@ -51,7 +51,7 @@ class Ladybug: SKSpriteNode {
         }
         let holdClosed = SKAction.wait(forDuration: 0.12)
         let open = SKAction.run { [weak self] in
-            guard let self = self, self.isOnGround else { return }
+            guard let self = self else { return }
             self.eyesClosed = false
         }
         run(SKAction.repeatForever(SKAction.sequence([wait, close, holdClosed, open])), withKey: "blink")
@@ -85,6 +85,7 @@ class Ladybug: SKSpriteNode {
     }
 
     private func startFlapAnimation() {
+        eyesClosed = false
         guard flyFrames.count >= 2 else { return }
         removeAction(forKey: "flap")
         stopWalkAnimation()

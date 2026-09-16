@@ -61,6 +61,9 @@ enum GameUITheme {
         button.strokeColor = shifted(color, by: 0.22)
         button.lineWidth = 1.5
         button.name = name
+        button.isAccessibilityElement = true
+        button.accessibilityLabel = title
+        button.accessibilityTraits = .button
 
         let shadow = SKShapeNode(rectOf: size, cornerRadius: min(13, size.height * 0.30))
         shadow.fillColor = SKColor(white: 0, alpha: 0.28)
@@ -77,12 +80,14 @@ enum GameUITheme {
         sheen.strokeColor = .clear
         sheen.position.y = size.height * 0.22
         sheen.zPosition = 1
-        button.addChild(sheen)
+        if !title.isEmpty { button.addChild(sheen) }
 
         let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
         label.text = title
         label.fontSize = fontSize
-        label.fontColor = .white
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        label.fontColor = red * 0.2126 + green * 0.7152 + blue * 0.0722 > 0.55 ? ink : .white
         label.verticalAlignmentMode = .center
         label.name = name
         label.zPosition = 2
@@ -91,6 +96,21 @@ enum GameUITheme {
             label.fontSize *= (size.width - 22) / label.frame.width
         }
         return button
+    }
+
+    /// Smooth, generated sky; no bundled bitmap or visible color bands.
+    static func gardenSky(size: CGSize) -> SKSpriteNode {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 256)).image { renderer in
+            let colors = [UIColor(red: 0.27, green: 0.59, blue: 0.84, alpha: 1).cgColor,
+                          UIColor(red: 0.75, green: 0.91, blue: 0.92, alpha: 1).cgColor]
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1]) {
+                renderer.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: 256), options: [])
+            }
+        }
+        let node = SKSpriteNode(texture: SKTexture(image: image), size: size)
+        node.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        node.zPosition = -20
+        return node
     }
 
     static func addAmbientSparkles(to parent: SKNode, size: CGSize, count: Int = 14, zPosition: CGFloat = -5) {

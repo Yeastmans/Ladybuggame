@@ -530,6 +530,8 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let objective = SKLabelNode(fontNamed: "AvenirNext-Medium")
         objective.text = stage.objective
         objective.fontSize = 11
+        objective.preferredMaxLayoutWidth = min(390, size.width * 0.53)
+        objective.numberOfLines = 2
         objective.fontColor = SKColor(white: 0.82, alpha: 1)
         objective.position = CGPoint(x: 0, y: -16)
         card.addChild(objective)
@@ -668,58 +670,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         let loc = touch.location(in: self)
         let tappedNodes = nodes(at: loc)
 
-        if isGameOver {
-            for node in tappedNodes {
-                if node.name == "gameOverRevive" {
-                    beginRewardedRevive()
-                    return
-                }
-                if node.name == "gameOverRetry" {
-                    finalizeRunIfNeeded(completed: false)
-                    let requestedStage = campaignStageID
-                    transitionFromFinishedRun { [weak self] in
-                        self?.presentRun(stageID: requestedStage)
-                    }
-                    return
-                }
-                if node.name == "gameOverMenu" {
-                    finalizeRunIfNeeded(completed: false)
-                    transitionFromFinishedRun { [weak self] in self?.returnToMenu() }
-                    return
-                }
-            }
-            return
-        }
-
-        if isCampaignStageComplete {
-            for node in tappedNodes {
-                if node.name == "campaignDoubleReward" {
-                    beginDoubleCampaignReward()
-                    return
-                }
-                if node.name == "campaignReplay" {
-                    let requestedStage = campaignStageID
-                    transitionFromFinishedRun { [weak self] in
-                        self?.presentRun(stageID: requestedStage)
-                    }
-                    return
-                }
-                if node.name == "campaignNext" {
-                    if let current = campaignStageID,
-                       CampaignStage.stage(id: current + 1) != nil,
-                       CampaignProgressStore.shared.isUnlocked(current + 1) {
-                        transitionFromFinishedRun { [weak self] in
-                            self?.presentRun(stageID: current + 1)
-                        }
-                    } else {
-                        transitionFromFinishedRun { [weak self] in self?.returnToMenu() }
-                    }
-                    return
-                }
-                if node.name == "campaignMenu" {
-                    transitionFromFinishedRun { [weak self] in self?.returnToMenu() }
-                    return
-                }
+        if isGameOver || isCampaignStageComplete {
+            let actions: Set<String> = ["gameOverRetry", "gameOverMenu", "gameOverRevive", "campaignReplay", "campaignNext", "campaignMenu", "campaignDoubleReward"]
+            if let action = tappedNodes.compactMap({ $0.name }).first(where: { actions.contains($0) }) {
+                activateResult(action)
             }
             return
         }
@@ -877,6 +831,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
 
     private func restoreRunAfterRewardedRevive() {
         isGameOver = false
+        activeFlightTouch = nil
         isTouching = false
         touchY = nil
         touchX = nil
@@ -951,10 +906,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
             self.campaignTotalReward += bonus
             PlayerWallet.shared.addGems(bonus)
             self.gemLabel.text = "\(GameScene.gemCount)"
-            if let rewardLabel = self.childNode(withName: "campaignRewardLabel") as? SKLabelNode {
+            if let rewardLabel = self.childNode(withName: "//campaignRewardLabel") as? SKLabelNode {
                 rewardLabel.text = "+\(self.campaignTotalReward) 💎  •  DOUBLED"
             }
-            self.childNode(withName: "campaignDoubleReward")?.removeFromParent()
+            self.childNode(withName: "//campaignDoubleReward")?.removeFromParent()
             SoundManager.shared.play("powerup")
         }
     }
@@ -995,9 +950,10 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     override func update(_ currentTime: TimeInterval) {
         guard !isGameOver, !isPaused_, !isCampaignStageComplete else { return }
         if lastUpdateTime == 0 { lastUpdateTime = currentTime; return }
-        let dt = currentTime - lastUpdateTime
+        let elapsed = currentTime - lastUpdateTime
+        let dt = min(elapsed, 0.1)
         lastUpdateTime = currentTime
-        guard dt > 0, dt < 0.5 else { return }
+        guard elapsed > 0, elapsed < 0.5 else { return }
 
         // During boss fights the ladybug floats above the finger so your thumb
         // never hides it while steering in all four directions
@@ -4834,6 +4790,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 fontSize: 15
             )
             resume.position = CGPoint(x: size.width / 2, y: size.height / 2 - 10)
+            resume.onActivate = { [weak self] in self?.togglePause() }
             resume.zPosition = 143
             addChild(resume)
 
@@ -4845,6 +4802,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
                 fontSize: 13
             )
             menuBg.position = CGPoint(x: size.width / 2, y: size.height / 2 - 61)
+            menuBg.onActivate = { [weak self] in self?.returnToMenu() }
             menuBg.zPosition = 143
             addChild(menuBg)
         } else {
@@ -5792,101 +5750,111 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         showCampaignCompleteUI(stage: stage, result: result, reward: reward)
     }
 
-    private func showCampaignCompleteUI(stage: CampaignStage, result: CampaignCompletionResult, reward: Int) {
-        let overlay = SKShapeNode(rectOf: size)
-        overlay.fillColor = SKColor(white: 0.01, alpha: 0.78)
-        overlay.strokeColor = .clear
-        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        overlay.zPosition = 180
-        overlay.name = "campaignResults"
-        addChild(overlay)
+#if DEBUG && targetEnvironment(simulator)
+    /// Visual fixtures exercise the real overlays without granting progression or currency.
+    func previewResult(completed: Bool) {
+        score = 420
+        hitsTaken = 1
+        distanceTraveled = 7200
+        ladybug.targetY = nil
+        if completed, let stage = activeCampaignStage {
+            isCampaignStageComplete = true
+            showCampaignCompleteUI(stage: stage, result: CampaignCompletionResult(stars: 3,
+                previousBestStars: 0, isFirstClear: true, isNewBestScore: true), reward: 24)
+        } else {
+            isGameOver = true
+            showGameOverUI()
+        }
+    }
+#endif
 
-        let resultsCard = GameUITheme.makePanel(
-            size: CGSize(width: min(540, size.width - 42), height: min(330, size.height - 24)),
-            cornerRadius: 22,
-            fillColor: SKColor(red: 0.075, green: 0.055, blue: 0.14, alpha: 0.98),
-            strokeColor: GameUITheme.gold.withAlphaComponent(0.80)
-        )
-        resultsCard.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        resultsCard.zPosition = 185
-        addChild(resultsCard)
+    private func resultCard(name: String, accent: SKColor) -> SKNode {
+        let area = safeContentFrame
+        let root = SKNode()
+        root.name = name
+        root.position = CGPoint(x: area.midX, y: area.midY)
+        root.zPosition = 180
+        addChild(root)
+        let shade = SKSpriteNode(color: SKColor(white: 0, alpha: 0.74), size: size)
+        shade.position = CGPoint(x: size.width / 2 - area.midX, y: size.height / 2 - area.midY)
+        root.addChild(shade)
+        let card = GameUITheme.makePanel(size: CGSize(width: min(530, area.width), height: min(310, area.height)),
+                                         cornerRadius: 24, strokeColor: accent)
+        card.zPosition = 1
+        root.addChild(card)
+        return root
+    }
 
-        let resultsEyebrow = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        resultsEyebrow.text = "ADVENTURE RESULTS"
-        resultsEyebrow.fontSize = 9
-        resultsEyebrow.fontColor = SKColor(white: 1, alpha: 0.50)
-        resultsEyebrow.position = CGPoint(x: size.width / 2, y: size.height / 2 + 126)
-        resultsEyebrow.zPosition = 190
-        addChild(resultsEyebrow)
+    @discardableResult
+    private func resultText(_ text: String, y: CGFloat, size: CGFloat, color: SKColor = .white,
+                            name: String? = nil, parent: SKNode) -> SKLabelNode {
+        let label = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
+        label.text = text
+        label.fontSize = size
+        label.fontColor = color
+        label.verticalAlignmentMode = .center
+        label.position.y = y
+        label.name = name
+        label.preferredMaxLayoutWidth = min(480, safeContentFrame.width - 30)
+        label.numberOfLines = 0
+        label.zPosition = 3
+        parent.addChild(label)
+        return label
+    }
 
-        let heading = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        heading.text = stage.id == CampaignStage.all.count - 1 ? "ADVENTURE COMPLETE" : "STAGE CLEAR"
-        heading.fontSize = 32
-        heading.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.24, alpha: 1)
-        heading.position = CGPoint(x: size.width / 2, y: size.height / 2 + 92)
-        heading.zPosition = 190
-        addChild(heading)
+    private func resultButton(_ text: String, name: String, x: CGFloat, y: CGFloat, width: CGFloat,
+                              color: SKColor, parent: SKNode) {
+        let button = GameUITheme.makeButton(title: text, name: name, size: CGSize(width: width, height: 46), color: color, fontSize: 15)
+        button.position = CGPoint(x: x, y: y)
+        button.zPosition = 4
+        button.isAccessibilityElement = true
+        button.accessibilityLabel = text
+        button.accessibilityTraits = .button
+        button.onActivate = { [weak self] in self?.activateResult(name) }
+        parent.addChild(button)
+    }
 
-        let stageName = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        stageName.text = "\(stage.number)  •  \(stage.biome.name)"
-        stageName.fontSize = 18
-        stageName.fontColor = .white
-        stageName.position = CGPoint(x: size.width / 2, y: size.height / 2 + 58)
-        stageName.zPosition = 190
-        addChild(stageName)
-
-        let stars = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        stars.text = String(repeating: "★", count: result.stars) + String(repeating: "☆", count: 3 - result.stars)
-        stars.fontSize = 30
-        stars.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.18, alpha: 1)
-        stars.position = CGPoint(x: size.width / 2, y: size.height / 2 + 18)
-        stars.zPosition = 190
-        addChild(stars)
-
-        let summary = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        summary.text = "Score \(score) / \(stage.masteryScore)  •  Hits \(hitsTaken)  •  Best \(CampaignProgressStore.shared.record(for: stage.id).bestScore)"
-        summary.fontSize = 13
-        summary.fontColor = SKColor(white: 0.82, alpha: 1)
-        summary.position = CGPoint(x: size.width / 2, y: size.height / 2 - 15)
-        summary.zPosition = 190
-        addChild(summary)
-
-        let rewardLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        rewardLabel.text = reward > 0 ? "+\(reward) 💎" : (result.isNewBestScore ? "NEW BEST" : "MASTERY SAVED")
-        rewardLabel.fontSize = 15
-        rewardLabel.fontColor = SKColor(red: 0.72, green: 0.58, blue: 1.0, alpha: 1)
-        rewardLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 42)
-        rewardLabel.zPosition = 190
-        rewardLabel.name = "campaignRewardLabel"
-        addChild(rewardLabel)
-
-        let hasNext = CampaignStage.stage(id: stage.id + 1) != nil
-        addResultButton(hasNext ? "Next Stage" : "Finish", name: "campaignNext", x: size.width / 2 - 125, y: size.height / 2 - 88, color: SKColor(red: 0.20, green: 0.62, blue: 0.32, alpha: 1))
-        addResultButton("Replay", name: "campaignReplay", x: size.width / 2, y: size.height / 2 - 88, color: SKColor(red: 0.22, green: 0.42, blue: 0.68, alpha: 1))
-        addResultButton("Menu", name: "campaignMenu", x: size.width / 2 + 125, y: size.height / 2 - 88, color: SKColor(white: 0.28, alpha: 1))
-        if reward > 0, AppServices.shared.ads.isRewardedReady {
-            addResultButton(
-                "\(rewardedAdButtonPrefix) • Double",
-                name: "campaignDoubleReward",
-                x: size.width / 2,
-                y: size.height / 2 - 132,
-                color: SKColor(red: 0.48, green: 0.28, blue: 0.76, alpha: 1),
-                width: 184
-            )
+    private func activateResult(_ name: String) {
+        guard !isMonetizationPresentationActive else { return }
+        GameSettings.feedback()
+        switch name {
+        case "gameOverRetry", "campaignReplay":
+            if isGameOver { finalizeRunIfNeeded(completed: false) }
+            let requested = campaignStageID
+            transitionFromFinishedRun { [weak self] in self?.presentRun(stageID: requested) }
+        case "gameOverMenu", "campaignMenu":
+            if isGameOver { finalizeRunIfNeeded(completed: false) }
+            transitionFromFinishedRun { [weak self] in self?.returnToMenu() }
+        case "campaignNext":
+            if let current = campaignStageID, CampaignStage.stage(id: current + 1) != nil,
+               CampaignProgressStore.shared.isUnlocked(current + 1) {
+                transitionFromFinishedRun { [weak self] in self?.presentRun(stageID: current + 1) }
+            } else { transitionFromFinishedRun { [weak self] in self?.returnToMenu() } }
+        case "gameOverRevive": beginRewardedRevive()
+        case "campaignDoubleReward": beginDoubleCampaignReward()
+        default: break
         }
     }
 
-    private func addResultButton(_ text: String, name: String, x: CGFloat, y: CGFloat, color: SKColor, width: CGFloat = 112) {
-        let button = GameUITheme.makeButton(
-            title: text,
-            name: name,
-            size: CGSize(width: width, height: 44),
-            color: color,
-            fontSize: width > 150 ? 13 : 14
-        )
-        button.position = CGPoint(x: x, y: y)
-        button.zPosition = 195
-        addChild(button)
+    private func showCampaignCompleteUI(stage: CampaignStage, result: CampaignCompletionResult, reward: Int) {
+        let root = resultCard(name: "campaignResults", accent: GameUITheme.gold)
+        let half = min(310, safeContentFrame.height) / 2
+        resultText(stage.id == CampaignStage.all.count - 1 ? "What an adventure!" : "Beautifully done!",
+                   y: half - 27, size: 27, color: GameUITheme.gold, parent: root)
+        resultText("Stage \(stage.number) · \(stage.biome.name)", y: half - 59, size: 16, parent: root)
+        resultText(String(repeating: "★", count: result.stars) + String(repeating: "☆", count: 3 - result.stars),
+                   y: half - 96, size: 32, color: GameUITheme.gold, parent: root)
+        let scoreMark = score >= stage.masteryScore ? "✓" : "○"
+        let hitMark = hitsTaken <= 1 ? "✓" : "○"
+        resultText("✓ Finish  ·  \(scoreMark) \(stage.masteryScore) points  ·  \(hitMark) At most 1 hit",
+                   y: half - 130, size: 12, parent: root)
+        resultText(reward > 0 ? "+\(reward) gems earned" : "Your best stars are saved",
+                   y: half - 156, size: 14, color: GameUITheme.mint, name: "campaignRewardLabel", parent: root)
+        let y = -half + 37
+        resultButton("Replay", name: "campaignReplay", x: -158, y: y, width: 108, color: GameUITheme.violet, parent: root)
+        resultButton(CampaignStage.stage(id: stage.id + 1) == nil ? "Finish" : "Next stage", name: "campaignNext",
+                     x: 0, y: y, width: 182, color: GameUITheme.mint, parent: root)
+        resultButton("Menu", name: "campaignMenu", x: 158, y: y, width: 108, color: GameUITheme.violet, parent: root)
     }
 
     private func gameOver() {
@@ -5921,79 +5889,20 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
     }
 
     private func showGameOverUI() {
-        let overlay = SKShapeNode(rectOf: size)
-        overlay.fillColor = SKColor(white: 0.0, alpha: 0.68)
-        overlay.strokeColor = .clear
-        overlay.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        overlay.zPosition = 150
-        overlay.name = "gameOverOverlay"
-        addChild(overlay)
-
-        let gameOverCard = GameUITheme.makePanel(
-            size: CGSize(width: min(470, size.width - 42), height: min(300, size.height - 24)),
-            cornerRadius: 22,
-            fillColor: SKColor(red: 0.10, green: 0.045, blue: 0.085, alpha: 0.98),
-            strokeColor: GameUITheme.coral.withAlphaComponent(0.82)
-        )
-        gameOverCard.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        gameOverCard.zPosition = 190
-        addChild(gameOverCard)
-
-        let gameOverEyebrow = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        gameOverEyebrow.text = campaignStageID == nil ? "ENDLESS RESULTS" : "ADVENTURE RESULTS"
-        gameOverEyebrow.fontSize = 9
-        gameOverEyebrow.fontColor = SKColor(white: 1, alpha: 0.48)
-        gameOverEyebrow.position = CGPoint(x: size.width / 2, y: size.height / 2 + 112)
-        gameOverEyebrow.zPosition = 200
-        addChild(gameOverEyebrow)
-
-        let goLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        goLabel.text = campaignStageID == nil ? "Nice exploring!" : "One more try?"
-        goLabel.fontSize = 36
-        goLabel.fontColor = SKColor(red: 1.0, green: 0.42, blue: 0.45, alpha: 1)
-        goLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 70)
-        goLabel.zPosition = 200
-        goLabel.name = "gameOverTitle"
-        addChild(goLabel)
-
-        let scoreText = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        scoreText.text = "Score  \(score)"
-        scoreText.fontSize = 22
-        scoreText.fontColor = .white
-        scoreText.position = CGPoint(x: size.width / 2, y: size.height / 2 + 28)
-        scoreText.zPosition = 200
-        scoreText.name = "gameOverScore"
-        addChild(scoreText)
-
-        let detail = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        let root = resultCard(name: "gameOverRoot", accent: GameUITheme.coral)
+        let half = min(310, safeContentFrame.height) / 2
+        resultText("One more adventure?", y: half - 33, size: 27, parent: root)
+        resultText("\(score) points", y: half - 75, size: 25, color: GameUITheme.gold, parent: root)
+        let detail: String
         if let stage = activeCampaignStage {
             let percent = min(100, Int(distanceTraveled / stage.targetDistance * 100))
-            let best = CampaignProgressStore.shared.record(for: stage.id).bestScore
-            detail.text = "Stage \(stage.number)  •  \(percent)%  •  Best \(best)"
-        } else {
-            detail.text = "Endless Best  \(max(MenuScene.highScore, score))"
-        }
-        detail.fontSize = 14
-        detail.fontColor = SKColor(red: 1.0, green: 0.84, blue: 0.25, alpha: 1)
-        detail.position = CGPoint(x: size.width / 2, y: size.height / 2 - 5)
-        detail.zPosition = 200
-        detail.name = "gameOverDetail"
-        addChild(detail)
-
-        if canOfferRewardedRevive {
-            addResultButton(
-                "\(rewardedAdButtonPrefix) • Revive",
-                name: "gameOverRevive",
-                x: size.width / 2,
-                y: size.height / 2 - 52,
-                color: SKColor(red: 0.26, green: 0.68, blue: 0.38, alpha: 1),
-                width: 184
-            )
-            addResultButton(campaignStageID == nil ? "Retry Run" : "Retry Stage", name: "gameOverRetry", x: size.width / 2 - 65, y: size.height / 2 - 98, color: SKColor(red: 0.22, green: 0.54, blue: 0.70, alpha: 1))
-            addResultButton("Menu", name: "gameOverMenu", x: size.width / 2 + 65, y: size.height / 2 - 98, color: SKColor(white: 0.28, alpha: 1))
-        } else {
-            addResultButton(campaignStageID == nil ? "Retry Run" : "Retry Stage", name: "gameOverRetry", x: size.width / 2 - 65, y: size.height / 2 - 60, color: SKColor(red: 0.22, green: 0.54, blue: 0.70, alpha: 1))
-            addResultButton("Menu", name: "gameOverMenu", x: size.width / 2 + 65, y: size.height / 2 - 60, color: SKColor(white: 0.28, alpha: 1))
-        }
+            detail = "\(stage.biome.name) · \(percent)% explored"
+        } else { detail = "Personal best: \(max(MenuScene.highScore, score))" }
+        resultText(detail, y: half - 108, size: 16, parent: root)
+        resultText(isBossFight ? "Watch the attack, find a safe gap, then use the power-up." : "Follow the snacks. Give hungry creatures room to pass.",
+                   y: half - 150, size: 14, color: SKColor(white: 0.78, alpha: 1), parent: root)
+        let y = -half + 38
+        resultButton("Try again", name: "gameOverRetry", x: -72, y: y, width: 190, color: GameUITheme.mint, parent: root)
+        resultButton("Menu", name: "gameOverMenu", x: 107, y: y, width: 130, color: GameUITheme.violet, parent: root)
     }
 }

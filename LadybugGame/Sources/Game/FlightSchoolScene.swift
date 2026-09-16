@@ -31,6 +31,7 @@ final class FlightSchoolScene: GameScreenScene {
         snack = nil
         lessonFinished = false
         backgroundColor = SKColor(red: 0.62, green: 0.83, blue: 0.92, alpha: 1)
+        addChild(GameUITheme.gardenSky(size: size))
         let area = safeContentFrame
         floorY = area.minY + 38
         let ground = SKSpriteNode(color: SKColor(red: 0.28, green: 0.56, blue: 0.29, alpha: 1),
@@ -38,6 +39,14 @@ final class FlightSchoolScene: GameScreenScene {
         ground.anchorPoint = .zero
         ground.position = .zero
         addChild(ground)
+        for index in 0..<7 {
+            let hill = SKShapeNode(ellipseOf: CGSize(width: 210, height: 50 + CGFloat(index % 3) * 13))
+            hill.fillColor = SKColor(red: 0.43, green: 0.69, blue: 0.38, alpha: 0.55)
+            hill.strokeColor = .clear
+            hill.position = CGPoint(x: CGFloat(index) * size.width / 5, y: floorY - 8)
+            hill.zPosition = -1
+            addChild(hill)
+        }
         let dimensions = CGSize(width: 48, height: 48)
         bug = Ladybug(walkTexture: TextureGenerator.generateLadybugTexture(size: dimensions),
             blinkTexture: TextureGenerator.generateLadybugBlinkTexture(size: dimensions),

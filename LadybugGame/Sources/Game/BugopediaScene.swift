@@ -51,9 +51,11 @@ final class BugopediaScene: GameScreenScene {
                 at: CGPoint(x: area.midX + (CGFloat(index) - CGFloat(items.count - 1) / 2) * (width + 10), y: area.midY - 18),
                 width: width, height: height, color: GameUITheme.panel)
             card.accessibilityLabel = unlocked ? "\(bug.rawValue), \(bug.category.rawValue)" : "Undiscovered creature"
-            let sprite = SKSpriteNode(texture: tracker.texture(for: bug, size: CGSize(width: 52, height: 48)))
-            sprite.position.y = height / 2 - 31
-            if !unlocked { sprite.color = .black; sprite.colorBlendFactor = 1; sprite.alpha = 0.5 }
+            let artSize = min(86, height - 47)
+            let sprite = SKSpriteNode(texture: tracker.texture(for: bug, size: CGSize(width: artSize, height: artSize)))
+            sprite.position.y = 18
+            sprite.zPosition = 2
+            if !unlocked { sprite.color = SKColor(white: 0.43, alpha: 1); sprite.colorBlendFactor = 1; sprite.alpha = 0.65 }
             card.addChild(sprite)
             label(unlocked ? bug.rawValue : "Undiscovered", at: CGPoint(x: 0, y: -height / 2 + 34),
                   fontSize: 12, width: width - 10, parent: card)

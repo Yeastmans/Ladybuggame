@@ -215,21 +215,7 @@ final class MenuScene: GameScreenScene {
     }
 
     private func addMenuBackdrop() {
-        let skyColors: [SKColor] = [
-            SKColor(red: 0.22, green: 0.46, blue: 0.78, alpha: 1),
-            SKColor(red: 0.31, green: 0.58, blue: 0.86, alpha: 1),
-            SKColor(red: 0.43, green: 0.69, blue: 0.91, alpha: 1),
-            SKColor(red: 0.56, green: 0.78, blue: 0.94, alpha: 1),
-        ]
-        let bandHeight = size.height / CGFloat(skyColors.count)
-        for (index, color) in skyColors.enumerated() {
-            let band = SKShapeNode(rectOf: CGSize(width: size.width + 4, height: bandHeight + 2))
-            band.fillColor = color
-            band.strokeColor = .clear
-            band.position = CGPoint(x: size.width / 2, y: bandHeight * (CGFloat(index) + 0.5))
-            band.zPosition = -20
-            addChild(band)
-        }
+        addChild(GameUITheme.gardenSky(size: size))
 
         let sunGlow = SKShapeNode(circleOfRadius: 52)
         sunGlow.fillColor = SKColor(red: 1.0, green: 0.89, blue: 0.36, alpha: 0.15)
