@@ -2,6 +2,12 @@
 
 The current GitHub and Codemagic workflows build an **unsigned** iPhone IPA for sideload testing. That package is not an App Store upload and still requires signing before installation. The debug-only screenshot fixtures are excluded from the Release archive.
 
+## Try the IPA on your iPhone now
+
+The project's existing sideload route is [Sideloadly](https://sideloadly.io/). On Windows, follow its official iTunes/iCloud prerequisites, connect your iPhone, load `LadybugRun-unsigned.ipa`, select the phone, and complete signing in Sideloadly. Enter Apple account details in that app. Sideloadly supports free Apple IDs; free-account installs require periodic refresh. Keep the bundle identifier consistent when updating an existing test installation so you can check save migration.
+
+This is a device-testing route. TestFlight and App Store distribution use the membership and distribution-signing setup below.
+
 ## Account setup — owner tasks
 
 1. Enroll in the Apple Developer Program. Choose individual or organization seller identity deliberately. Apple lists an annual US$99 fee, with local pricing where available. See [Apple enrollment](https://developer.apple.com/programs/enroll/).
