@@ -27,9 +27,9 @@ This signed workflow has not been executed or authenticated yet. Finish the acco
 
 ## First iPhone playtest — about 20 minutes
 
-- Begin with a new tutorial. Try either side of the screen; lift, release, collect, hide. Replay it from Settings.
+- Begin with a new tutorial. Try either side of the screen; lift, release, and collect. Build 7 ends the lesson after the snack, with no bush step. Replay it from Settings.
 - Play Meadow without coaching. Note the first moment where a danger or instruction is unclear.
-- Compare Follow finger and Drag controls. Check whether your finger obscures the action.
+- Open Settings > Control. Compare Follow finger with Relative drag and try each Finger offset option (Off, 40, 60, 80 points; default 60). Check whether your finger obscures the action, whether releasing still lands, and whether top/bottom movement remains comfortable. In boss arenas, the offset applies to direct steering even when Relative drag is selected.
 - Pause, lock the phone, return, and resume. Switch apps during a run; the run should return paused.
 - Toggle sound, music, haptics, and effects. Relaunch and check the choices persist. Test the silent switch and headphones.
 - Earn and spend gems, equip a hat, relaunch, and check ownership and balance.
