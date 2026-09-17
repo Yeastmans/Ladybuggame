@@ -1,4 +1,4 @@
-# Ladybug Run — polish delivery
+# Ladybug Run â€” polish delivery
 
 Candidate: **1.0.0 (4)**, source `b302651b832c75c6209e0864ee0dd35ea36dc623`, developed on `polish/app-store-opening`.
 
