@@ -6,8 +6,6 @@ final class FlightSchoolScene: GameScreenScene {
     private var bug: Ladybug!
     private var caption: SKLabelNode!
     private var progress: SKLabelNode!
-    private var shelter: SKSpriteNode?
-    private var bird: SKSpriteNode?
     private var snack: SKSpriteNode?
     private var step = 0
     private var heldTime: TimeInterval = 0
@@ -26,8 +24,6 @@ final class FlightSchoolScene: GameScreenScene {
         lastTime = 0
         target = nil
         pointer = nil
-        shelter = nil
-        bird = nil
         snack = nil
         lessonFinished = false
         backgroundColor = SKColor(red: 0.62, green: 0.83, blue: 0.92, alpha: 1)
@@ -66,12 +62,13 @@ final class FlightSchoolScene: GameScreenScene {
 
     private func showInstruction() {
         let messages = [
-            GameSettings.relativeDrag ? "Touch anywhere. Drag upward to lift off." : "Hold a finger above the ladybug to fly. Either side works!",
+            GameSettings.relativeDrag ? "Touch anywhere. Drag upward to lift off."
+                : GameSettings.controlOffset > 0 ? "Hold and move your finger to fly. Your bug flies above it!"
+                : "Hold a finger above the ladybug to fly. Either side works!",
             "Let go of the screen to float back down and land.",
             "Fly into the green snack. Friendly bugs give you points!",
-            "Land inside the bush. Stay hidden as the bird passes.",
         ]
-        progress.text = "FLIGHT SCHOOL  ·  \(step + 1) / 4"
+        progress.text = "FLIGHT SCHOOL  ·  \(step + 1) / 3"
         caption.text = messages[step]
         UIAccessibility.post(notification: .announcement, argument: messages[step])
     }
@@ -81,7 +78,7 @@ final class FlightSchoolScene: GameScreenScene {
         GameSettings.feedback()
         SoundManager.shared.play("eat")
         step += 1
-        if step >= 4 {
+        if step >= 3 {
             lessonFinished = true
             GameSettings.completedFlightSchool = true
             target = nil
@@ -95,13 +92,6 @@ final class FlightSchoolScene: GameScreenScene {
             return
         }
         if step == 2 { spawnSnack() }
-        if step == 3 {
-            let node = SKSpriteNode(texture: TextureGenerator.generateLogTexture(size: CGSize(width: 114, height: 70)))
-            node.position = CGPoint(x: safeContentFrame.maxX - 40, y: floorY + 35)
-            node.zPosition = 15
-            addChild(node)
-            shelter = node
-        }
         showInstruction()
     }
 
@@ -139,24 +129,6 @@ final class FlightSchoolScene: GameScreenScene {
                     spawnSnack()
                 }
             }
-        case 3:
-            guard let shelter else { return }
-            shelter.position.x = max(bug.position.x, shelter.position.x - CGFloat(dt) * 90)
-            let inside = abs(shelter.position.x - bug.position.x) < 32 && bug.isOnGround
-            shelter.alpha = inside ? 0.38 : 1
-            bug.isInsideLog = inside
-            if inside, bird == nil {
-                let node = SKSpriteNode(texture: TextureGenerator.generateBirdTextures(size: CGSize(width: 58, height: 40))[0])
-                node.position = CGPoint(x: safeContentFrame.maxX, y: floorY + 88)
-                node.zPosition = 12
-                addChild(node)
-                bird = node
-                caption.text = "Perfect! The bush keeps you safe from birds."
-            }
-            if let bird {
-                bird.position.x -= CGFloat(dt) * 150
-                if bird.position.x < safeContentFrame.minX - 40 { advance() }
-            }
         default: break
         }
     }
@@ -169,13 +141,18 @@ final class FlightSchoolScene: GameScreenScene {
         pointer = touch
         dragStart = position.y
         bugStart = bug.position.y
-        target = GameSettings.relativeDrag ? bugStart : position.y
+        target = flightTarget(at: position.y)
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let pointer, touches.contains(pointer) else { return }
         let y = pointer.location(in: self).y
-        target = GameSettings.relativeDrag ? bugStart + y - dragStart : y
+        target = flightTarget(at: y)
+    }
+
+    private func flightTarget(at y: CGFloat) -> CGFloat {
+        FlightControls.targetY(fingerY: y, startFingerY: dragStart, startBugY: bugStart,
+                              relative: GameSettings.relativeDrag, offset: GameSettings.controlOffset)
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {

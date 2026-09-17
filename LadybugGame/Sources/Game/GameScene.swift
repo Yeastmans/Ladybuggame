@@ -689,7 +689,7 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         dragStartY = loc.y
         dragBugY = ladybug.position.y
         isTouching = true
-        touchY = GameSettings.relativeDrag && !isBossFight ? dragBugY : loc.y
+        touchY = flightTarget(at: loc.y)
         touchX = loc.x
     }
 
@@ -913,13 +913,19 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         guard !isPaused_, !isGameOver, !isCampaignStageComplete,
               let activeFlightTouch, touches.contains(activeFlightTouch) else { return }
         let location = activeFlightTouch.location(in: self)
-        touchY = GameSettings.relativeDrag && !isBossFight ? dragBugY + location.y - dragStartY : location.y
+        touchY = flightTarget(at: location.y)
         touchX = location.x
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let activeFlightTouch, touches.contains(activeFlightTouch) else { return }
         clearFlightTouch()
+    }
+
+    private func flightTarget(at y: CGFloat) -> CGFloat {
+        FlightControls.targetY(fingerY: y, startFingerY: dragStartY, startBugY: dragBugY,
+                              relative: GameSettings.relativeDrag && !isBossFight,
+                              offset: GameSettings.controlOffset)
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -945,10 +951,9 @@ class GameScene: SKScene, @preconcurrency SKPhysicsContactDelegate {
         lastUpdateTime = currentTime
         guard elapsed > 0, elapsed < 0.5 else { return }
 
-        // During boss fights the ladybug floats above the finger so your thumb
-        // never hides it while steering in all four directions
+        // The shared input mapping applies finger clearance once, including bosses.
         if isTouching, let ty = touchY {
-            ladybug.targetY = isBossFight ? min(ty + 80, size.height - 30) : ty
+            ladybug.targetY = ty
         } else {
             ladybug.targetY = nil
         }

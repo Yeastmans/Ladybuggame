@@ -5,7 +5,8 @@ final class GameScreenshots: XCTestCase {
     func testMenuTutorialAndPauseNavigation() {
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-testing", "-FlightSchoolCompletedV1", "NO"]
+        app.launchArguments = ["--ui-testing", "-FlightSchoolCompletedV1", "NO",
+                               "-SettingsRelativeDrag", "NO", "-SettingsControlOffset", "60"]
         app.launch()
         let play = app.buttons["Let's play"]
         XCTAssertTrue(play.waitForExistence(timeout: 15))
@@ -36,6 +37,14 @@ final class GameScreenshots: XCTestCase {
         attachment.name = "settings-landscape-right"
         attachment.lifetime = .keepAlways
         add(attachment)
+        app.buttons["Control: Follow finger"].tap()
+        XCTAssertTrue(app.buttons["Finger offset: 60 pt"].waitForExistence(timeout: 5))
+        let controls = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        controls.name = "finger-offset-controls"
+        controls.lifetime = .keepAlways
+        add(controls)
+        app.buttons["Back"].tap()
+        XCTAssertTrue(app.buttons["Practice flying"].waitForExistence(timeout: 5))
     }
 
     @MainActor

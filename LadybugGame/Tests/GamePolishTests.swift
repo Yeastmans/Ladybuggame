@@ -79,6 +79,32 @@ final class GamePolishTests: XCTestCase {
     }
 
     @MainActor
+    func testFingerOffsetFlightRelativeAnchorAndScreenEdges() {
+        let texture = TextureGenerator.generateLadybugTexture(size: CGSize(width: 48, height: 48))
+        let bug = Ladybug(walkTexture: texture, blinkTexture: texture, flyFrames: [texture])
+        bug.position.y = 72
+        bug.targetY = FlightControls.targetY(fingerY: 130, startFingerY: 130, startBugY: 72,
+                                            relative: false, offset: 60)
+        for _ in 0..<300 { bug.updatePhysics(dt: 1 / 60, groundY: 72, ceilingY: 300) }
+        XCTAssertEqual(bug.position.y, 190, accuracy: 1)
+        // A touch near the top still keeps the bug inside the playable ceiling.
+        bug.targetY = FlightControls.targetY(fingerY: 295, startFingerY: 295, startBugY: bug.position.y,
+                                            relative: false, offset: 80)
+        for _ in 0..<120 { bug.updatePhysics(dt: 1 / 60, groundY: 72, ceilingY: 300) }
+        XCTAssertEqual(bug.position.y, 300, accuracy: 0.1)
+        bug.targetY = nil
+        for _ in 0..<180 { bug.updatePhysics(dt: 1 / 60, groundY: 72, ceilingY: 300) }
+        XCTAssertTrue(bug.isOnGround, "Releasing must still land with finger offset enabled")
+        // Relative input starts at the bug, even when the finger touches far away.
+        XCTAssertEqual(FlightControls.targetY(fingerY: 30, startFingerY: 30, startBugY: 200,
+                                              relative: true, offset: 60), 200)
+        XCTAssertEqual(FlightControls.targetY(fingerY: 60, startFingerY: 30, startBugY: 200,
+                                              relative: true, offset: 60), 230)
+        XCTAssertEqual(FlightControls.targetY(fingerY: 130, startFingerY: 0, startBugY: 72,
+                                              relative: false, offset: 0), 130)
+    }
+
+    @MainActor
     func testSpaceNeverLandsAndShelterPreventsTakeoff() {
         let texture = TextureGenerator.generateLadybugTexture(size: CGSize(width: 48, height: 48))
         let bug = Ladybug(walkTexture: texture, blinkTexture: texture, flyFrames: [texture])
@@ -114,13 +140,19 @@ final class GamePolishTests: XCTestCase {
             for scene in [MenuScene(size: dimensions), SettingsScene(size: dimensions),
                           ShopScene(size: dimensions), BugopediaScene(size: dimensions)] as [GameScreenScene] {
                 scene.rebuild()
-                scene.enumerateChildNodes(withName: "//*") { node, _ in
-                    guard node.userData?["action"] != nil else { return }
-                    let center = node.parent!.convert(node.position, to: scene)
-                    XCTAssertTrue(scene.frame.contains(center), "\(type(of: scene)): \(node.name ?? "button")")
-                    for point in [CGPoint(x: node.frame.minX, y: node.frame.minY), CGPoint(x: node.frame.maxX, y: node.frame.maxY)] {
-                        let converted = node.parent!.convert(point, to: scene)
-                        XCTAssertTrue(scene.frame.contains(converted), "Button outside scene: \(node.name ?? "button")")
+                for controlsPage in [false, true] {
+                    if controlsPage {
+                        guard let settings = scene as? SettingsScene else { continue }
+                        settings.activate("control")
+                    }
+                    scene.enumerateChildNodes(withName: "//*") { node, _ in
+                        guard node.userData?["action"] != nil else { return }
+                        let center = node.parent!.convert(node.position, to: scene)
+                        XCTAssertTrue(scene.frame.contains(center), "\(type(of: scene)): \(node.name ?? "button")")
+                        for point in [CGPoint(x: node.frame.minX, y: node.frame.minY), CGPoint(x: node.frame.maxX, y: node.frame.maxY)] {
+                            let converted = node.parent!.convert(point, to: scene)
+                            XCTAssertTrue(scene.frame.contains(converted), "Button outside scene: \(node.name ?? "button")")
+                        }
                     }
                 }
             }
